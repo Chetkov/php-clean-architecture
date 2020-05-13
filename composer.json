@@ -11,8 +11,8 @@
     ],
     "require": {
         "v.chetkov/console-logger": "^0.0.3",
-        "psr/log": "^1.1",
-        "twig/twig": "^1.2"
+        "psr/log": "*",
+        "twig/twig": "*"
     },
     "autoload": {
         "psr-4": {
