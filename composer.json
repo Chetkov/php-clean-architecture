@@ -1,0 +1,26 @@
+{
+    "name": "v.chetkov/php-clean-architecture",
+    "type": "library",
+    "description": "PHP Clean Architecture",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Валерий Четков",
+            "email": "chetkov.valeriy@gmail.com"
+        }
+    ],
+    "require": {
+        "v.chetkov/console-logger": "^0.0.3",
+        "psr/log": "^1.1",
+        "twig/twig": "^1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chetkov\\PHPCleanArchitecture\\": "src/"
+        }
+    },
+    "bin": [
+      "/bin/phpca-build-reports.php",
+      "/bin/phpca-check.php"
+    ]
+}

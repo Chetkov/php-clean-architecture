@@ -1,0 +1,227 @@
+{% extends "base.twig" %}
+
+{% block head %}
+    {{ parent() }}
+    <script type="text/javascript">
+        let dependentModules = JSON.parse('{{ dependent_modules_json|raw }}');
+        let dependencyModules = JSON.parse('{{ dependency_modules_json|raw }}');
+
+        google.charts.load("current", {packages: ['corechart', 'bar']});
+        google.charts.setOnLoadCallback(drawCharts);
+
+        function drawCharts() {
+            drawCharacteristicsChart();
+            drawAIChart();
+            if (dependentModules.length > 0) {
+                drawDependenciesChart('Входящие зависимости', 'Кол-во файлов в других модулях, зависящих от этого модуля', 'input-deps-chart', dependentModules);
+            }
+            if (dependencyModules.length > 0) {
+                drawDependenciesChart('Исходящие зависимости', 'Кол-во файлов в этом модуле, зависящих от других модулей', 'output-deps-chart', dependencyModules);
+            }
+        }
+
+        function drawDependenciesChart(title, description, chartType, modules) {
+            let container = document.getElementById(chartType);
+            var chart = new google.charts.Bar(container);
+            let chartData = [['Модуль', 'Кол-во файлов']];
+            for (let moduleName in modules) {
+                if (modules.hasOwnProperty(moduleName)) {
+                    let module = modules[moduleName];
+                    chartData.push([module.name, module.units_of_code.length]);
+                }
+            }
+            chartData.sort(function (a, b) {
+                return a[1] < b[1] ? 1 : (a[1] > b[1] ? -1 : 0);
+            });
+            container.style.height = 100 + (35 * chartData.length) + 'px';
+            let chartDataTable = google.visualization.arrayToDataTable(chartData);
+
+            var chartOptions = {
+                title: title,
+                legend: { position: 'none' },
+                chart: {
+                    title: title,
+                    subtitle: description
+                },
+                bars: 'horizontal',
+                axes: {
+                    x: {
+                        0: {side: 'top', label: 'Кол-во файлов'}
+                    }
+                },
+            };
+
+            chart.draw(chartDataTable, chartOptions);
+
+            google.visualization.events.addListener(chart, 'select', function () {
+                Array.from(document.getElementsByClassName('unit-of-code-row ' + chartType)).forEach(function (v, k) {
+                    v.style.display = 'none';
+                });
+
+                var selectedItem = chart.getSelection()[0];
+                if (selectedItem) {
+                    var cls = chartDataTable.getValue(selectedItem.row, 0);
+                    Array.from(document.getElementsByClassName(chartType + ' ' + cls)).forEach(function (v, k) {
+                        v.style.display = 'block';
+                    });
+                }
+            });
+        }
+
+        function drawCharacteristicsChart() {
+            var data = google.visualization.arrayToDataTable([
+                ['Характеристика', 'Значение метрики'],
+                ['Примитивность', {{ primitiveness_rate }}],
+                ['Абстрактность', {{ abstractness_rate }}],
+                ['Изменчивость', {{ variability_rate }}],
+                ['Расстояние до главной диагонали', {{ distance_rate }}],
+            ]);
+
+            var options = {
+                title: 'Характеристики',
+                bars: 'horizontal',
+                legend: { position: 'none' }
+            };
+
+            var chart = new google.visualization.BarChart(document.getElementById('characteristics-chart'));
+
+            chart.draw(data, google.charts.Bar.convertOptions(options));
+        }
+
+        function drawAIChart() {
+            var data = google.visualization.arrayToDataTable([
+                ['Имя', 'Изменчивость', 'Абстрактность'],
+                ['{{ name }}', {{ variability_rate }}, {{ abstractness_rate }}],
+            ]);
+
+            var options = {
+                title: 'A/I',
+                hAxis: {title: 'Изменчивость', minValue: 0, maxValue: 1},
+                vAxis: {title: 'Абстрактность', minValue: 0, maxValue: 1},
+                legend: { position: 'none' }
+            };
+
+            var chart = new google.visualization.BubbleChart(document.getElementById('a-i-chart'));
+
+            chart.draw(data, options);
+        }
+    </script>
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        #graph {
+            border: 1px solid mediumpurple;
+            width: 100%;
+            height: 400px;
+        }
+        #a-i-chart, #characteristics-chart {
+            width: 100%;
+            height: 500px;
+        }
+        #output-deps-chart, #input-deps-chart {
+            margin-top: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    {{ name }}
+{% endblock %}
+
+{% block header_title %}
+    {{ name }}
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="index.html">Главная</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ name }}</li>
+{% endblock %}
+
+{% block main_container %}
+    <div class="row">
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <div id="characteristics-chart"></div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <div id="a-i-chart"></div>
+        </div>
+    </div>
+    <div class="row">
+        <b>Граф зависимостей</b>
+        <div id="graph"></div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div id="output-deps-chart"></div>
+        </div>
+    </div>
+    <div>
+        <div class="col-12">
+            <table class="table table-borderless table-hover">
+                {% for dependency_module in dependency_modules %}
+                    {% for unit_of_code in dependency_module.units_of_code %}
+                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_module.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                            <td>
+                                <span style="cursor:pointer;" onclick="this.parentElement.getElementsByTagName('ul')[0].classList.toggle('hidden')">{{ unit_of_code.name }}</span>
+                                {% if unit_of_code.uid is defined %}
+                                    <a href="{{ unit_of_code.uid }}.html">подробнее</a>
+                                {% endif %}
+                                <ul class="hidden">
+                                    {% for output_dependency in unit_of_code.output_dependencies %}
+                                        <li class="{% if not output_dependency.is_allowed %}alert-danger{% endif %}">{{ output_dependency.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div id="input-deps-chart"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-borderless table-hover">
+                {% for dependent_module in dependent_modules %}
+                    {% for unit_of_code in dependent_module.units_of_code %}
+                        <tr class="hidden unit-of-code-row input-deps-chart {{ dependent_module.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                            <td>
+                                {{ unit_of_code.name }}
+                                {% if unit_of_code.uid is defined %}
+                                    <a href="{{ unit_of_code.uid }}.html">подробнее</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var container = document.getElementById('graph');
+
+        var nodes = new vis.DataSet({{ modules_graph.nodes|raw }});
+        var edges = new vis.DataSet({{ modules_graph.edges|raw }});
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {
+            nodes: {
+                shape: 'box'
+            },
+            edges: {
+                arrows: 'to'
+            }
+        };
+
+        var network = new vis.Network(container, data, options);
+    </script>
+{% endblock %}

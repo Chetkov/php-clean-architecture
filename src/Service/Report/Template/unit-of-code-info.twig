@@ -1,0 +1,130 @@
+{% extends "base.twig" %}
+
+{% block head %}
+    {{ parent() }}
+    <script type="text/javascript">
+        google.charts.load("current", {packages: ['corechart', 'bar']});
+        google.charts.setOnLoadCallback(drawCharts);
+
+        function drawCharts() {
+            drawCharacteristicsChart();
+        }
+
+        function drawCharacteristicsChart() {
+            var data = google.visualization.arrayToDataTable([
+                ['Характеристика', 'Значение'],
+                ['Примитивность', {{ primitiveness_rate }}],
+                ['Изменчивость', {{ variability_rate }}],
+            ]);
+
+            var options = {
+                title: 'Характеристики',
+                bars: 'horizontal',
+                legend: { position: 'none' }
+            };
+
+            var chart = new google.visualization.BarChart(document.getElementById('characteristics-chart'));
+
+            chart.draw(data, google.charts.Bar.convertOptions(options));
+        }
+    </script>
+    <style>
+        #graph {
+            border: 1px solid mediumpurple;
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    {{ name }}
+{% endblock %}
+
+{% block header_title %}
+    {{ name }}
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="index.html">Главная</a></li>
+    <li class="breadcrumb-item"><a href="{{ module.uid }}.html">{{ module.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ name }}</li>
+{% endblock %}
+
+{% block main_container %}
+    <div class="row">
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <ul style="margin-top: 10px;">
+                <li>Модуль: <a href="{{ module.uid }}.html">{{ module.name }}</a></li>
+                <li>Тип: {{ type }}</li>
+                <li>Публичный: {{ is_public }}</li>
+                <li>Абстрактный: {{ is_abstract }}</li>
+                <li>Примитивность: {{ primitiveness_rate }}</li>
+                <li>Изменчивость: {{ variability_rate }}</li>
+            </ul>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <div id="characteristics-chart"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <b>Граф зависимостей</b>
+            <div id="graph"></div>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <b>Исходящие зависимости</b>
+            <table class="table table-borderless table-hover">
+                {% for output_dependency in output_dependencies %}
+                    <tr class="{% if not output_dependency.is_allowed %}alert-danger{% endif %}">
+                        <td>
+                            {{ output_dependency.name }}
+                            {% if output_dependency.uid is defined %}
+                                <a href="{{ output_dependency.uid }}.html">подробнее</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <b>Входящие зависимости</b>
+            <table class="table table-borderless table-hover">
+                {% for input_dependency in input_dependencies %}
+                    <tr class="{% if not input_dependency.is_allowed %}alert-danger{% endif %}">
+                        <td>
+                            {{ input_dependency.name }}
+                            {% if input_dependency.uid is defined %}
+                                <a href="{{ input_dependency.uid }}.html">подробнее</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var container = document.getElementById('graph');
+
+        var nodes = new vis.DataSet({{ units_of_code_graph.nodes|raw }});
+        var edges = new vis.DataSet({{ units_of_code_graph.edges|raw }});
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {
+            nodes: {
+                shape: 'box'
+            },
+            edges: {
+                arrows: 'to'
+            }
+        };
+
+        var network = new vis.Network(container, data, options);
+    </script>
+{% endblock %}

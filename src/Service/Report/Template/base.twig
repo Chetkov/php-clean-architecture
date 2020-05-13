@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+        <meta charset="UTF-8">
+        <title>PHP Clean Architecture - {% block title %}Главная{% endblock %}</title>
+
+        <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script src="https://kit.fontawesome.com/a2c128da6b.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+              integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+              crossorigin="anonymous">
+        <style>
+            .header {
+                background: mediumpurple;
+                color: #ffffff;
+                font-size: 30px;
+            }
+
+            .home {
+                height: 50px;
+                padding: 0 10px;
+            }
+
+            .home:hover {
+                background: rebeccapurple;
+            }
+
+            .header a, .footer a {
+                color: #ffffff;
+            }
+
+            .header a:hover {
+                text-decoration: none;
+            }
+
+            .header a:hover, .footer a:hover {
+                color: #ffffff;
+            }
+
+            .content {
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+
+            .breadcrumb-container {
+                width: 100%;
+            }
+
+            .footer {
+                background: mediumpurple;
+                height: 50px;
+                color: #ffffff;
+                padding-top: 13px;
+                margin-top: 10px;
+            }
+
+            .footer i.fab {
+                font-size: 25px;
+                color: black;
+                margin: -2px 10px;
+            }
+
+            #to-top {
+                display: block;
+                position: fixed;
+                right: 20px;
+                bottom: 20px;
+                width: 50px;
+                height: 50px;
+                background: mediumpurple;
+                border: 2px solid rebeccapurple;
+                color: white;
+                padding: 0 13px;
+                font-size: 30px;
+            }
+
+            #to-top:hover {
+                cursor: pointer;
+                background: rebeccapurple;
+                border-color: mediumpurple;
+            }
+        </style>
+    {% endblock %}
+</head>
+<body>
+<div class="container-fluid header">
+    <div class="row">
+        <a href="index.html">
+            <div class="home">
+                {% block header_title %}PHP Clean Architecture {% endblock %}
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="container-fluid content">
+    <div class="row">
+        <nav aria-label="breadcrumb" class="breadcrumb-container">
+            <ol class="breadcrumb">
+                {% block breadcrumb %}
+                    <li class="breadcrumb-item active" aria-current="page">Главная</li>
+                {% endblock %}
+            </ol>
+        </nav>
+    </div>
+
+    {% block main_container %}
+    {% endblock %}
+</div>
+
+<div id="to-top" onclick="window.scrollTo(0, 0);">
+    <i class="fas fa-angle-up" aria-hidden="true"></i>
+</div>
+
+<div class="container-fluid footer">
+    <div class="container-fluid">
+        <div class="row">
+            <div><a href="index.html">PHP Clean Architecture</a></div>
+            <div><a href="https://github.com/Chetkov/Money"><i class="fab fa-github"></i></a></div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

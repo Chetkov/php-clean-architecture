@@ -1,0 +1,133 @@
+{% extends "base.twig" %}
+
+{% block head %}
+    {{ parent() }}
+    <script type="text/javascript">
+        google.charts.load("current", {packages: ['corechart', 'bar']});
+        google.charts.setOnLoadCallback(drawCharts);
+
+        function drawCharts() {
+            drawAIChart();
+            drawDChart();
+        }
+
+        function drawAIChart() {
+            var data = google.visualization.arrayToDataTable([
+                ['Имя', 'Изменчивость', 'Абстрактность', 'Тип', 'Зависимостей'],
+                {% for module in modules %}
+                ['{{ module.name }}', {{ module.variability_rate }}, {{ module.abstractness_rate }}, 'Модуль', {{ module.num_of_dependency }}],
+                {% endfor %}
+            ]);
+
+            var options = {
+                title: 'A/I',
+                hAxis: {title: 'Изменчивость', minValue: 0, maxValue: 1},
+                vAxis: {title: 'Абстрактность', minValue: 0, maxValue: 1},
+                legend: {
+                    position: 'none'
+                },
+                explorer: {},
+            };
+
+            var chart = new google.visualization.BubbleChart(document.getElementById('a-i-chart'));
+
+            chart.draw(data, options);
+        }
+
+        function drawDChart() {
+            let container = document.getElementById('d-chart');
+            let chartData = [
+                ['Модуль', 'Distance (norma)', 'Distance (overage)'],
+                {% for module in modules %}
+                    ['{{ module.name }}', {{ module.distance_norma }}, {{ module.distance_overage }}],
+                {% endfor %}
+            ];
+
+            chartData.sort(function (a, b) {
+                return a[2] < b[2] ? 1 : (a[2] > b[2] ? -1 : 0);
+            });
+
+            let containerHeight = 100 + (35 * chartData.length);
+            if (containerHeight > 500) {
+                container.style.height = containerHeight + 'px';
+            }
+
+            var data = google.visualization.arrayToDataTable(chartData);
+
+            var options = {
+                title: 'Расстояние до главной диагонали',
+                bars: 'horizontal',
+                legend: {position: 'none'},
+                isStacked: true,
+            };
+
+            var chart = new google.visualization.BarChart(container);
+
+            chart.draw(data, google.charts.Bar.convertOptions(options));
+        }
+    </script>
+    <style>
+        #graph {
+            border: 1px solid mediumpurple;
+            min-height: 300px;
+            width: 100%;
+            height: 95%;
+        }
+
+        #a-i-chart, #d-chart {
+            width: 100%;
+            height: 100%;
+            min-height: 500px;
+        }
+    </style>
+{% endblock %}
+
+{% block main_container %}
+    <div class="row">
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <div id="a-i-chart"></div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+            <div id="d-chart"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-2 col-md-4 col-sm-6 col-xs-12">
+            <b>Компоненты</b>
+            <table class="table table-borderless table-hover">
+                {% for module in modules %}
+                    <tr>
+                        <td>
+                            <a href="{{ module.uid }}.html">{{ module.name }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="col-lg-10 col-md-8 col-sm-6 col-xs-12">
+            <b>Граф зависимостей</b>
+            <div id="graph"></div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var container = document.getElementById('graph');
+
+        var nodes = new vis.DataSet({{ modules_graph.nodes|raw }});
+        var edges = new vis.DataSet({{ modules_graph.edges|raw }});
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {
+            nodes: {
+                shape: 'box'
+            },
+            edges: {
+                arrows: 'to'
+            }
+        };
+
+        var network = new vis.Network(container, data, options);
+    </script>
+{% endblock %}
