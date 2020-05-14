@@ -603,7 +603,9 @@ class Module
         $numOfUniqueOutputExternalDependencies = count($uniqueOutputExternalDependencies);
         $totalUniqueExternalDependencies = $numOfUniqueInputExternalDependencies + $numOfUniqueOutputExternalDependencies;
 
-        return round($numOfUniqueOutputExternalDependencies / $totalUniqueExternalDependencies, 3);
+        return $totalUniqueExternalDependencies ?
+            round($numOfUniqueOutputExternalDependencies / $totalUniqueExternalDependencies, 3)
+            : 0;
     }
 
     /**
