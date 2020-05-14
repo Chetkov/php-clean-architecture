@@ -46,13 +46,18 @@ class VendorBasedModulesCreationService
                 continue;
             }
 
+            $packageName = $composerData['name'] ?? null;
+            if (!$packageName) {
+                continue;
+            }
+
             $autoloadSection = $composerData['autoload'] ?? [];
             $rootPaths = $this->createPathsByAutoloadSection($autoloadSection, $composerFile->getPath());
 
             $autoloadDevSection = $composerData['autoload-dev'] ?? [];
             $excludedPaths = $this->createPathsByAutoloadSection($autoloadDevSection, $composerFile->getPath());
 
-            $modules[] = Module::create($composerData['name'], $rootPaths, $excludedPaths);
+            $modules[] = Module::create($packageName, $rootPaths, $excludedPaths);
         }
 
         return $modules;
