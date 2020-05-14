@@ -24,93 +24,50 @@ class Module
     /** @var Path[] */
     private $excludedPaths;
 
-    /** @var UnitOfCode[] */
-    private $publicUnitsOfCode = [];
-
-    /** @var UnitOfCode[] */
-    private $privateUnitsOfCode = [];
-
-    /** @var Module[] */
-    private $allowedDependencies = [];
-
-    /** @var Module[] */
-    private $forbiddenDependencies = [];
+    /** @var Restrictions */
+    private $restrictions;
 
     /** @var UnitOfCode[] */
     private $unitsOfCode = [];
-
-    /** @var float|null */
-    private $maxAllowableDistance;
 
     /**
      * Module constructor.
      * @param string $name
      * @param Path[] $rootPaths
      * @param Path[] $excludedPaths
-     * @param UnitOfCode[] $publicUnitsOfCode
-     * @param UnitOfCode[] $privateUnitsOfCode
-     * @param Module[] $allowedDependencies
-     * @param Module[] $forbiddenDependencies
-     * @param float|null $maxAllowableDistance
+     * @param Restrictions|null $restrictions
      */
     private function __construct(
         string $name,
         array $rootPaths,
         array $excludedPaths = [],
-        array $publicUnitsOfCode = [],
-        array $privateUnitsOfCode = [],
-        array $allowedDependencies = [],
-        array $forbiddenDependencies = [],
-        ?float $maxAllowableDistance = null
+        ?Restrictions $restrictions = null
     ) {
         $this->name = $name;
         $this->rootPaths = $rootPaths;
         $this->excludedPaths = $excludedPaths;
-        foreach ($publicUnitsOfCode as $unitOfCode) {
-            $this->addPublicUnitOfCode($unitOfCode);
-        }
-        foreach ($privateUnitsOfCode as $unitOfCode) {
-            $this->addPrivateUnitOfCode($unitOfCode);
-        }
-        foreach ($allowedDependencies as $allowedDependency) {
-            $this->addAllowedDependency($allowedDependency);
-        }
-        foreach ($forbiddenDependencies as $forbiddenDependency) {
-            $this->addForbiddenDependency($forbiddenDependency);
-        }
-        $this->maxAllowableDistance = $maxAllowableDistance;
+        $this->restrictions = $restrictions ?? new Restrictions();
     }
 
     /**
      * @param string $name
      * @param Path[] $rootPaths
      * @param Path[] $excludedPaths
-     * @param UnitOfCode[] $publicUnitsOfCode
-     * @param UnitOfCode[] $privateUnitsOfCode
-     * @param Module[] $allowedDependencies
-     * @param Module[] $forbiddenDependencies
-     * @param float|null $maxAllowableDistance
+     * @param Restrictions|null $restrictions
      * @return static
      */
     public static function create(
         string $name = self::UNDEFINED,
         array $rootPaths = [],
         array $excludedPaths = [],
-        array $publicUnitsOfCode = [],
-        array $privateUnitsOfCode = [],
-        array $allowedDependencies = [],
-        array $forbiddenDependencies = [],
-        ?float $maxAllowableDistance = null
+        ?Restrictions $restrictions = null
     ): self {
         if (!isset(self::$instances[$name])) {
             self::$instances[$name] = new static(
                 $name,
                 $rootPaths,
                 $excludedPaths,
-                $publicUnitsOfCode,
-                $privateUnitsOfCode,
-                $allowedDependencies,
-                $forbiddenDependencies
+                $restrictions
             );
         }
         $module = self::$instances[$name];
@@ -120,20 +77,8 @@ class Module
         foreach ($excludedPaths as $excludedPath) {
             $module->addExcludedPath($excludedPath);
         }
-        foreach ($publicUnitsOfCode as $unitOfCode) {
-            $module->addPublicUnitOfCode($unitOfCode);
-        }
-        foreach ($privateUnitsOfCode as $unitOfCode) {
-            $module->addPrivateUnitOfCode($unitOfCode);
-        }
-        foreach ($allowedDependencies as $allowedDependency) {
-            $module->addAllowedDependency($allowedDependency);
-        }
-        foreach ($forbiddenDependencies as $forbiddenDependency) {
-            $module->addForbiddenDependency($forbiddenDependency);
-        }
-        if ($module->maxAllowableDistance === null) {
-            $module->maxAllowableDistance = $maxAllowableDistance;
+        if ($restrictions) {
+            $module->restrictions = $restrictions;
         }
         return $module;
     }
@@ -203,7 +148,7 @@ class Module
     public function isExcluded(string $path): bool
     {
         foreach ($this->excludedPaths as $excludedPath) {
-            if (stripos($path, $excludedPath->path()) === 0) {
+            if ($excludedPath->isPartOf($path)) {
                 return true;
             }
         }
@@ -283,82 +228,12 @@ class Module
     }
 
     /**
-     * @param UnitOfCode $unitOfCode
-     * @return $this
-     */
-    public function addPublicUnitOfCode(UnitOfCode $unitOfCode): self
-    {
-        if (in_array($unitOfCode, $this->privateUnitsOfCode, true)) {
-            throw new \LogicException("UnitOfCode {$unitOfCode->name()} already added to private list!");
-        }
-        if (!in_array($unitOfCode, $this->publicUnitsOfCode, true)) {
-            $this->publicUnitsOfCode[] = $unitOfCode;
-        }
-        return $this;
-    }
-
-    /**
-     * @param UnitOfCode $unitOfCode
-     * @return $this
-     */
-    public function addPrivateUnitOfCode(UnitOfCode $unitOfCode): self
-    {
-        if (in_array($unitOfCode, $this->publicUnitsOfCode, true)) {
-            throw new \LogicException("UnitOfCode {$unitOfCode->name()} already added to public list!");
-        }
-        if (!in_array($unitOfCode, $this->privateUnitsOfCode, true)) {
-            $this->privateUnitsOfCode[] = $unitOfCode;
-        }
-        return $this;
-    }
-
-    /**
-     * @param Module $allowedDependency
-     * @return $this
-     */
-    public function addAllowedDependency(Module $allowedDependency): self
-    {
-        if (in_array($allowedDependency, $this->forbiddenDependencies, true)) {
-            throw new \LogicException("Allowed dependency {$allowedDependency->name()} already added to forbidden list!");
-        }
-        if (!in_array($allowedDependency, $this->allowedDependencies, true)) {
-            $this->allowedDependencies[] = $allowedDependency;
-        }
-        return $this;
-    }
-
-    /**
-     * @param Module $forbiddenDependency
-     * @return $this
-     */
-    public function addForbiddenDependency(Module $forbiddenDependency): self
-    {
-        if (in_array($forbiddenDependency, $this->allowedDependencies, true)) {
-            throw new \LogicException("Forbidden dependency {$forbiddenDependency->name()} already added to allowed list!");
-        }
-        if (!in_array($forbiddenDependency, $this->forbiddenDependencies, true)) {
-            $this->forbiddenDependencies[] = $forbiddenDependency;
-        }
-        return $this;
-    }
-
-    /**
      * @param Module $dependency
      * @return bool
      */
     public function isDependencyAllowed(Module $dependency): bool
     {
-        if ($dependency === $this || $dependency->isPrimitives() || $dependency->isGlobal()) {
-            return true;
-        }
-        if (empty($this->forbiddenDependencies)) {
-            return empty($this->allowedDependencies) || in_array($dependency, $this->allowedDependencies, true);
-        }
-        if (empty($this->allowedDependencies)) {
-            return empty($this->forbiddenDependencies) || !in_array($dependency, $this->forbiddenDependencies, true);
-        }
-        return in_array($dependency, $this->allowedDependencies, true)
-            && !in_array($dependency, $this->forbiddenDependencies, true);
+        return $this->restrictions->isDependencyAllowed($dependency, $this);
     }
 
     /**
@@ -367,20 +242,7 @@ class Module
      */
     public function isUnitOfCodeAccessibleFromOutside(UnitOfCode $unitOfCode): bool
     {
-        if ($unitOfCode->isPrimitive() || $unitOfCode->belongToGlobalNamespace()) {
-            return true;
-        }
-        if (!$unitOfCode->belongToModule($this)) {
-            throw new \InvalidArgumentException('$unitOfCode must belong to this module!');
-        }
-        if (empty($this->privateUnitsOfCode)) {
-            return empty($this->publicUnitsOfCode) || in_array($unitOfCode, $this->publicUnitsOfCode, true);
-        }
-        if (empty($this->publicUnitsOfCode)) {
-            return empty($this->privateUnitsOfCode) || !in_array($unitOfCode, $this->privateUnitsOfCode, true);
-        }
-        return in_array($unitOfCode, $this->publicUnitsOfCode, true)
-            && !in_array($unitOfCode, $this->privateUnitsOfCode, true);
+        return $this->restrictions->isUnitOfCodeAccessibleFromOutside($unitOfCode, $this);
     }
 
     /**
@@ -491,13 +353,7 @@ class Module
      */
     public function getIllegalDependencyModules(): array
     {
-        $uniqueIllegalDependencyModules = [];
-        foreach ($this->getDependencyModules() as $dependencyModule) {
-            if (!$this->isDependencyAllowed($dependencyModule)) {
-                $uniqueIllegalDependencyModules[spl_object_hash($dependencyModule)] = $dependencyModule;
-            }
-        }
-        return array_values($uniqueIllegalDependencyModules);
+        return $this->restrictions->getIllegalDependencyModules($this);
     }
 
     /**
@@ -506,30 +362,7 @@ class Module
      */
     public function getIllegalDependencyUnitsOfCode(bool $onlyFromAllowedModules = false): array
     {
-        $uniqueIllegalDependencies = [];
-        foreach ($this->unitsOfCode() as $unitOfCode) {
-            foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToModule($this)) {
-                    continue;
-                }
-
-                $isDependencyAllowed = $this->isDependencyAllowed($dependency->module());
-                $isDependencyAccessibleFromOutside = $dependency->isAccessibleFromOutside();
-                if ($onlyFromAllowedModules) {
-                    if (!$isDependencyAllowed) {
-                        continue;
-                    }
-                    if (!$isDependencyAccessibleFromOutside) {
-                        $uniqueIllegalDependencies[spl_object_hash($dependency)] = $dependency;
-                    }
-                } elseif (!$isDependencyAllowed) {
-                    $uniqueIllegalDependencies[spl_object_hash($dependency)] = $dependency;
-                } elseif (!$isDependencyAccessibleFromOutside) {
-                    $uniqueIllegalDependencies[spl_object_hash($dependency)] = $dependency;
-                }
-            }
-        }
-        return array_values($uniqueIllegalDependencies);
+        return $this->restrictions->getIllegalDependencyUnitsOfCode($this, $onlyFromAllowedModules);
     }
 
     /**
@@ -621,14 +454,7 @@ class Module
      */
     public function calculateDistanceRateOverage(): float
     {
-        if ($this->maxAllowableDistance === null) {
-            return 0;
-        }
-
-        $distanceRate = $this->calculateDistanceRate();
-        return $distanceRate > $this->maxAllowableDistance
-            ? $distanceRate - $this->maxAllowableDistance
-            : 0;
+        return $this->restrictions->calculateDistanceRateOverage($this);
     }
 
     /**

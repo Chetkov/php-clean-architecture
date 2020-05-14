@@ -49,4 +49,13 @@ class Path
     {
         return str_replace($this->path(), '', $realPath);
     }
+
+    /**
+     * @param string $fullPath
+     * @return bool
+     */
+    public function isPartOf(string $fullPath): bool
+    {
+        return stripos($fullPath, $this->path()) === 0;
+    }
 }
