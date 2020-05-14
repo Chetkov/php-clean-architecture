@@ -56,9 +56,10 @@ class UnitOfCode
     /**
      * @param string $fullName
      * @param Module|null $module
+     * @param string|null $path
      * @return static
      */
-    public static function create(string $fullName, ?Module $module = null): UnitOfCode
+    public static function create(string $fullName, ?Module $module = null, ?string $path = null): UnitOfCode
     {
         $unitOfCode = self::$instances[$fullName] ?? null;
         if (!$unitOfCode) {
@@ -72,11 +73,10 @@ class UnitOfCode
                 return $path;
             };
 
-            $path = null;
             switch (true) {
                 case TypeInterface::isThisType($fullName):
                     $type = TypeInterface::getInstance();
-                    $path = $getElementPath($fullName);
+                    $path = $path ?? $getElementPath($fullName);
                     break;
                 case TypeClass::isThisType($fullName):
                     try {
@@ -86,11 +86,11 @@ class UnitOfCode
                         $isAbstract = false;
                     }
                     $type = TypeClass::getInstance($isAbstract);
-                    $path = $getElementPath($fullName);
+                    $path = $path ?? $getElementPath($fullName);
                     break;
                 case TypeTrait::isThisType($fullName):
                     $type = TypeTrait::getInstance();
-                    $path = $getElementPath($fullName);
+                    $path = $path ?? $getElementPath($fullName);
                     break;
                 case TypePrimitive::isThisType($fullName):
                     $type = TypePrimitive::getInstance();
@@ -103,6 +103,9 @@ class UnitOfCode
         }
         if ($module) {
             $unitOfCode->setModule($module);
+        }
+        if ($path) {
+            $unitOfCode->path = $path;
         }
         return $unitOfCode;
     }

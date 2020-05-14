@@ -55,7 +55,7 @@ class ModuleAnalyzer
                     )
                 );
 
-                $unitOfCode = UnitOfCode::create($fullName, $module);
+                $unitOfCode = UnitOfCode::create($fullName, $module, $fullPath);
                 $dependencies = $this->dependenciesFinder->find($unitOfCode);
                 foreach ($dependencies as $dependency) {
                     $unitOfCode->addOutputDependency(UnitOfCode::create($dependency));
