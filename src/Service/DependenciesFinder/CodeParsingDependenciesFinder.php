@@ -25,6 +25,9 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 
         $content = file_get_contents($unitOfCode->path());
 
+        preg_match('/namespace +(?P<namespace>[\w\\\]+);/ium', $content, $matches);
+        $namespace = $matches['namespace'] ?? '';
+
         [$existingClasses, $importedNamespaceParts] = $this->parseUses($content);
         $dependencies[] = $existingClasses;
 
@@ -36,9 +39,16 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
             $tmp = explode('\\', $importedClassName);
             $startOfImportedClassName = trim(array_shift($tmp));
 
+            $dependency = PathHelper::removeDoubleBackslashes($namespace . '\\' . $importedClassName);
+            if ($this->isElementExists($dependency)) {
+                $dependencies[] = $dependency;
+                continue;
+            }
+
             foreach ($importedNamespaceParts as $importedNamespacePart) {
                 $tmp = explode('\\', $importedNamespacePart);
-                $endOfImportedNamespacePart = trim(end($tmp));
+                $endOfImportedNamespacePart = trim(array_pop($tmp));
+                $importedNamespacePart = implode('\\', $tmp);
 
                 if ($startOfImportedClassName !== $endOfImportedNamespacePart) {
                     continue;
@@ -100,6 +110,7 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
         $dependencies = [];
         $dependencies[] = $this->getClassesCreatedThroughNew($content);
         $dependencies[] = $this->getClassesCalledStatically($content);
+        $dependencies[] = $this->getClassesFromInstanceofConstruction($content);
         $dependencies[] = $this->getTypesFromVarAnnotation($content);
 
         $fullNames = [];
@@ -143,6 +154,17 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
         preg_match_all('/([\w\\\]*)\s*:{2}/um', $content, $matches);
         [, $result] = $matches;
         return array_unique($result);
+    }
+
+    /**
+     * Возвращает классы участвующие в конструкциях instanceof
+     * @param string $content
+     * @return string[]
+     */
+    private function getClassesFromInstanceofConstruction(string $content): array
+    {
+        preg_match_all('/(?P<variable>\$\w+) +instanceof +(?P<class>[\w\\\]+)/ium', $content, $matches);
+        return array_unique($matches['class']);
     }
 
     /**
