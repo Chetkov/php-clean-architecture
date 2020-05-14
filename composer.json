@@ -20,7 +20,7 @@
         }
     },
     "bin": [
-      "/bin/phpca-build-reports.php",
-      "/bin/phpca-check.php"
+      "/bin/phpca-build-reports",
+      "/bin/phpca-check"
     ]
 }
