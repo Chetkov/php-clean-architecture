@@ -8,6 +8,7 @@ use Chetkov\ConsoleLogger\StyledLogger\LoggerStyle;
 use Chetkov\ConsoleLogger\StyledLogger\StyledLoggerDecorator;
 use Chetkov\PHPCleanArchitecture\Model\Module;
 use Chetkov\PHPCleanArchitecture\Model\Path;
+use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\AggregationDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsingDependenciesFinder;
@@ -58,50 +59,34 @@ class PHPCleanArchitectureFacade
                 $excludedPaths[] = new Path($excludedPath, '');
             }
 
+            $restrictions = new Restrictions();
             $moduleRestrictionsConfig = $moduleConfig['restrictions'] ?? [];
 
-            $publicUnitsOfCode = [];
             foreach ($moduleRestrictionsConfig['public_elements'] ?? [] as $publicElement) {
-                $publicUnitsOfCode[] = UnitOfCode::create($publicElement);
+                $restrictions->addPublicUnitOfCode(UnitOfCode::create($publicElement));
             }
-
-            $privateUnitsOfCode = [];
             foreach ($moduleRestrictionsConfig['private_elements'] ?? [] as $privateElement) {
-                $privateUnitsOfCode[] = UnitOfCode::create($privateElement);
+                $restrictions->addPrivateUnitOfCode(UnitOfCode::create($privateElement));
             }
 
-            $allowedDependencies = [];
-            $allowedDependenciesConfig = array_merge(
-                $commonRestrictionsConfig['allowed_dependencies'] ?? [],
-                $moduleRestrictionsConfig['allowed_dependencies'] ?? []
-            );
-            foreach ($allowedDependenciesConfig as $allowedDependency) {
-                $allowedDependencies[] = Module::create($allowedDependency);
+            foreach ($moduleRestrictionsConfig['allowed_dependencies'] ?? [] as $allowedDependency) {
+                $restrictions->addAllowedDependencyModule(Module::create($allowedDependency));
             }
-
-            $forbiddenDependencies = [];
-            $forbiddenDependenciesConfig = array_merge(
-                $commonRestrictionsConfig['forbidden_dependencies'] ?? [],
-                $moduleRestrictionsConfig['forbidden_dependencies'] ?? []
-            );
-            foreach ($forbiddenDependenciesConfig as $forbiddenDependency) {
-                $forbiddenDependencies[] = Module::create($forbiddenDependency);
+            foreach ($moduleRestrictionsConfig['forbidden_dependencies'] ?? [] as $forbiddenDependency) {
+                $restrictions->addForbiddenDependencyModule(Module::create($forbiddenDependency));
             }
 
             $maxAllowableDistance = $moduleRestrictionsConfig['max_allowable_distance'] ?? null;
             if ($maxAllowableDistance === null) {
                 $maxAllowableDistance = $commonRestrictionsConfig['max_allowable_distance'] ?? null;
             }
+            $restrictions->setMaxAllowableDistance($maxAllowableDistance);
 
             $this->modules[] = Module::create(
                 $moduleConfig['name'],
                 $rootPaths,
                 $excludedPaths,
-                $publicUnitsOfCode,
-                $privateUnitsOfCode,
-                $allowedDependencies,
-                $forbiddenDependencies,
-                $maxAllowableDistance
+                $restrictions
             );
         }
 
