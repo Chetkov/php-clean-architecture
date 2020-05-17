@@ -9,16 +9,16 @@ namespace Chetkov\PHPCleanArchitecture\Model;
 class Restrictions
 {
     /** @var UnitOfCode[] */
-    private $publicUnitsOfCode;
+    private $publicUnitsOfCode = [];
 
     /** @var UnitOfCode[] */
-    private $privateUnitsOfCode;
+    private $privateUnitsOfCode = [];
 
     /** @var Module[] */
-    private $allowedDependencyModules;
+    private $allowedDependencyModules = [];
 
     /** @var Module[] */
-    private $forbiddenDependencyModules;
+    private $forbiddenDependencyModules = [];
 
     /** @var float|null */
     private $maxAllowableDistance;
