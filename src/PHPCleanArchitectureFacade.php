@@ -32,6 +32,9 @@ class PHPCleanArchitectureFacade
     /** @var bool */
     private $isAnalyzePerformed = false;
 
+    /** @var bool */
+    private $detectCyclicDependencies;
+
     /**
      * PHPCleanArchitectureFacade constructor.
      * @param array $config
@@ -48,6 +51,7 @@ class PHPCleanArchitectureFacade
 
         $this->modules = [];
         $commonRestrictionsConfig = $config['restrictions'] ?? [];
+        $this->detectCyclicDependencies = $commonRestrictionsConfig['detect_cyclic_dependencies'] ?? true;
         foreach ($config['modules'] as $moduleConfig) {
             $rootPaths = [];
             foreach ($moduleConfig['roots'] ?? [] as $rootPathConfig) {
@@ -134,10 +138,12 @@ class PHPCleanArchitectureFacade
 
         $errors = [];
         foreach ($this->modules as $module) {
-            foreach ($module->getCyclicDependencies() as $cyclicDependenciesPath) {
-                $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Module $module) {
-                    return $module->name();
-                }, $cyclicDependenciesPath));
+            if ($this->detectCyclicDependencies) {
+                foreach ($module->getCyclicDependencies() as $cyclicDependenciesPath) {
+                    $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Module $module) {
+                        return $module->name();
+                    }, $cyclicDependenciesPath));
+                }
             }
 
             foreach ($module->getIllegalDependencyModules() as $illegalDependencyModule) {
