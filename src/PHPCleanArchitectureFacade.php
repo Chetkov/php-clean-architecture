@@ -33,7 +33,10 @@ class PHPCleanArchitectureFacade
     private $isAnalyzePerformed = false;
 
     /** @var bool */
-    private $detectCyclicDependencies;
+    private $checkAcyclicDependenciesPrinciple;
+
+    /** @var bool */
+    private $checkStableDependenciesPrinciple;
 
     /**
      * PHPCleanArchitectureFacade constructor.
@@ -51,7 +54,8 @@ class PHPCleanArchitectureFacade
 
         $this->modules = [];
         $commonRestrictionsConfig = $config['restrictions'] ?? [];
-        $this->detectCyclicDependencies = $commonRestrictionsConfig['detect_cyclic_dependencies'] ?? true;
+        $this->checkAcyclicDependenciesPrinciple = $commonRestrictionsConfig['check_acyclic_dependencies_principle'] ?? true;
+        $this->checkStableDependenciesPrinciple = $commonRestrictionsConfig['check_stable_dependencies_principle'] ?? true;
         foreach ($config['modules'] as $moduleConfig) {
             $rootPaths = [];
             foreach ($moduleConfig['roots'] ?? [] as $rootPathConfig) {
@@ -138,11 +142,21 @@ class PHPCleanArchitectureFacade
 
         $errors = [];
         foreach ($this->modules as $module) {
-            if ($this->detectCyclicDependencies) {
+            if ($this->checkAcyclicDependenciesPrinciple) {
                 foreach ($module->getCyclicDependencies() as $cyclicDependenciesPath) {
                     $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Module $module) {
                         return $module->name();
-                    }, $cyclicDependenciesPath));
+                    }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
+                }
+            }
+
+            if ($this->checkStableDependenciesPrinciple) {
+                foreach ($module->getDependentModules() as $dependentModule) {
+                    $dependentModuleInstabilityRate = $dependentModule->calculateInstabilityRate();
+                    $moduleInstabilityRate = $module->calculateInstabilityRate();
+                    if ($dependentModuleInstabilityRate < $moduleInstabilityRate) {
+                        $errors[] = "Dependency {$dependentModule->name()}(instability: $dependentModuleInstabilityRate) -> {$module->name()}(instability: $moduleInstabilityRate) violates the SDP (stable dependencies principle)";
+                    }
                 }
             }
 
