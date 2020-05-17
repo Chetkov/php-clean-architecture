@@ -8,8 +8,19 @@ namespace Chetkov\PHPCleanArchitecture\Model;
  */
 class Module
 {
+    /**
+     * Название по умолчанию, если не передано другое
+     */
     private const UNDEFINED = '*undefined*';
+
+    /**
+     * Название модуля, в который будут сложены используемые примитивы и псевдотипы
+     */
     private const PRIMITIVES = '*primitives*';
+
+    /**
+     * Название модуля, в который будут сложены элементы относящиеся к глобальному namespace
+     */
     private const GLOBAL = '*global*';
 
     /** @var static[] */
@@ -423,12 +434,13 @@ class Module
                 }
             }
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->isPrimitive()) {
+                if ($dependency->belongToModule($this)
+                    || $dependency->belongToGlobalNamespace()
+                    || $dependency->isPrimitive()
+                ) {
                     continue;
                 }
-                if (!$dependency->belongToModule($this)) {
-                    $uniqueOutputExternalDependencies[$dependency->name()] = true;
-                }
+                $uniqueOutputExternalDependencies[$dependency->name()] = true;
             }
         }
         
