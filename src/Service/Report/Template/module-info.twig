@@ -73,7 +73,7 @@
                 ['Характеристика', 'Значение метрики'],
                 ['Примитивность', {{ primitiveness_rate }}],
                 ['Абстрактность', {{ abstractness_rate }}],
-                ['Изменчивость', {{ variability_rate }}],
+                ['Неустойчивость', {{ instability_rate }}],
                 ['Расстояние до главной диагонали', {{ distance_rate }}],
             ]);
 
@@ -90,13 +90,13 @@
 
         function drawAIChart() {
             var data = google.visualization.arrayToDataTable([
-                ['Имя', 'Изменчивость', 'Абстрактность'],
-                ['{{ name }}', {{ variability_rate }}, {{ abstractness_rate }}],
+                ['Имя', 'Неустойчивость', 'Абстрактность'],
+                ['{{ name }}', {{ instability_rate }}, {{ abstractness_rate }}],
             ]);
 
             var options = {
                 title: 'A/I',
-                hAxis: {title: 'Изменчивость', minValue: 0, maxValue: 1},
+                hAxis: {title: 'Неустойчивость', minValue: 0, maxValue: 1},
                 vAxis: {title: 'Абстрактность', minValue: 0, maxValue: 1},
                 legend: { position: 'none' }
             };

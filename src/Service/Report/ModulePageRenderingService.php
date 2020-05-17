@@ -70,7 +70,7 @@ class ModulePageRenderingService
             'name' => $module->name(),
             'primitiveness_rate' => $module->calculatePrimitivenessRate(),
             'abstractness_rate' => $module->calculateAbstractnessRate(),
-            'variability_rate' => $module->calculateVariabilityRate(),
+            'instability_rate' => $module->calculateInstabilityRate(),
             'distance_rate' => $module->calculateDistanceRate(),
             'dependent_modules' => $extractedDependentModulesData,
             'dependency_modules' => $extractedDependencyModulesData,

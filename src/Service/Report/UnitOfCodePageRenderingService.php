@@ -85,7 +85,7 @@ class UnitOfCodePageRenderingService
             'type' => $type,
             'is_public' => $unitOfCode->isAccessibleFromOutside() ? 'Да' : 'Нет',
             'is_abstract' => $unitOfCode->isAbstract() ? 'Да' : 'Нет',
-            'variability_rate' => $unitOfCode->calculateVariabilityRate(),
+            'instability_rate' => $unitOfCode->calculateInstabilityRate(),
             'primitiveness_rate' => $unitOfCode->calculatePrimitivenessRate(),
             'input_dependencies' => $extractedInputDependencies,
             'output_dependencies' => $extractedOutputDependencies,

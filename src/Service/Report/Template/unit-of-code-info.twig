@@ -14,7 +14,7 @@
             var data = google.visualization.arrayToDataTable([
                 ['Характеристика', 'Значение'],
                 ['Примитивность', {{ primitiveness_rate }}],
-                ['Изменчивость', {{ variability_rate }}],
+                ['Неустойчивость', {{ instability_rate }}],
             ]);
 
             var options = {
@@ -60,7 +60,7 @@
                 <li>Публичный: {{ is_public }}</li>
                 <li>Абстрактный: {{ is_abstract }}</li>
                 <li>Примитивность: {{ primitiveness_rate }}</li>
-                <li>Изменчивость: {{ variability_rate }}</li>
+                <li>Неустойчивость: {{ instability_rate }}</li>
             </ul>
         </div>
         <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">

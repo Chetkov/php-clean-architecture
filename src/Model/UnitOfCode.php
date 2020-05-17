@@ -273,7 +273,7 @@ class UnitOfCode
     /**
      * @return float
      */
-    public function calculateVariabilityRate(): float
+    public function calculateInstabilityRate(): float
     {
         $numOfOutputDependencies = count($this->outputDependencies);
         $numOfInputDependencies = count($this->inputDependencies);

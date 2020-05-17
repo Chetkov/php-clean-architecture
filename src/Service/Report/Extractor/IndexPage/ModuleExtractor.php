@@ -26,7 +26,7 @@ class ModuleExtractor
             'uid' => $this->generateUid($module->name()),
             'name' => $module->name(),
             'abstractness_rate' => $module->calculateAbstractnessRate(),
-            'variability_rate' => $module->calculateVariabilityRate(),
+            'instability_rate' => $module->calculateInstabilityRate(),
             'distance_rate' => $distanceRate,
             'distance_norma' => $distanceRateNorma,
             'distance_overage' => $distanceRateOverage,

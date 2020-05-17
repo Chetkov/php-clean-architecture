@@ -13,15 +13,15 @@
 
         function drawAIChart() {
             var data = google.visualization.arrayToDataTable([
-                ['Имя', 'Изменчивость', 'Абстрактность', 'Тип', 'Зависимостей'],
+                ['Имя', 'Неустойчивость', 'Абстрактность', 'Тип', 'Зависимостей'],
                 {% for module in modules %}
-                ['{{ module.name }}', {{ module.variability_rate }}, {{ module.abstractness_rate }}, 'Модуль', {{ module.num_of_dependency }}],
+                ['{{ module.name }}', {{ module.instability_rate }}, {{ module.abstractness_rate }}, 'Модуль', {{ module.num_of_dependency }}],
                 {% endfor %}
             ]);
 
             var options = {
                 title: 'A/I',
-                hAxis: {title: 'Изменчивость', minValue: 0, maxValue: 1},
+                hAxis: {title: 'Неустойчивость', minValue: 0, maxValue: 1},
                 vAxis: {title: 'Абстрактность', minValue: 0, maxValue: 1},
                 legend: {
                     position: 'none'

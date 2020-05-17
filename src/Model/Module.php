@@ -423,7 +423,7 @@ class Module
     /**
      * @return float
      */
-    public function calculateVariabilityRate(): float
+    public function calculateInstabilityRate(): float
     {
         $uniqueInputExternalDependencies = [];
         $uniqueOutputExternalDependencies = [];
@@ -458,7 +458,7 @@ class Module
      */
     public function calculateDistanceRate()
     {
-        return abs($this->calculateAbstractnessRate() + $this->calculateVariabilityRate() - 1);
+        return abs($this->calculateAbstractnessRate() + $this->calculateInstabilityRate() - 1);
     }
 
     /**
