@@ -58,6 +58,10 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
             }
         }
 
+        foreach ($dependencies as &$dependency) {
+            $dependency = trim($dependency, '\\');
+        }
+
         return array_unique($dependencies);
     }
 
@@ -112,6 +116,7 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
         $dependencies[] = $this->getClassesCalledStatically($content);
         $dependencies[] = $this->getClassesFromInstanceofConstruction($content);
         $dependencies[] = $this->getTypesFromVarAnnotation($content);
+        $dependencies[] = $this->getTypesFromThrowAnnotation($content);
 
         $fullNames = [];
         $importedClassNames = [];
@@ -185,6 +190,31 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
         $dependencies = [];
         foreach (array_merge(array_filter($group1, $filter), array_filter($group2, $filter)) as $one) {
             foreach (explode('|', str_replace('[]', '', StringHelper::removeSpaces($one))) as $type) {
+                $dependencies[$type] = true;
+            }
+        }
+
+        return array_keys($dependencies);
+    }
+
+    /**
+     * Возвращает классы найденные в аннотациях
+     * @param string $content
+     * @return string[]
+     */
+    private function getTypesFromThrowAnnotation(string $content): array
+    {
+        $filter = function (string $element) {
+            return !empty($element) && mb_stripos($element, '$') === false;
+        };
+
+        $groupPattern = '\s*([\w|\[\]\\\\\$]*)';
+        preg_match_all("/@throw{$groupPattern}{$groupPattern}/ium", $content, $matches);
+        [, $group1, $group2] = $matches;
+
+        $dependencies = [];
+        foreach (array_merge(array_filter($group1, $filter), array_filter($group2, $filter)) as $one) {
+            foreach (explode('|', StringHelper::removeSpaces($one)) as $type) {
                 $dependencies[$type] = true;
             }
         }
