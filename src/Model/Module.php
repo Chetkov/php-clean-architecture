@@ -314,7 +314,10 @@ class Module
         $uniqueDependencyModules = [];
         foreach ($this->unitsOfCode as $unitOfCode) {
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if (!$dependency->belongToModule($this)) {
+                if (!$dependency->belongToModule($this)
+                    && !$dependency->belongToGlobalNamespace()
+                    && !$dependency->isPrimitive()
+                ) {
                     $module = $dependency->module();
                     $uniqueDependencyModules[spl_object_hash($module)] = $module;
                 }
