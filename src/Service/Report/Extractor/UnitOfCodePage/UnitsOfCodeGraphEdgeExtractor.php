@@ -26,7 +26,7 @@ class UnitsOfCodeGraphEdgeExtractor
 
         if (!$from->module()->isDependencyAllowed($to->module())) {
             $extractedData['color'] = 'red';
-        } elseif (!$to->isAccessibleFromOutside()) {
+        } elseif (!$to->isAccessibleFromOutside() && !$to->belongToModule($from->module())) {
             $extractedData['color'] = 'orange';
         }
 
