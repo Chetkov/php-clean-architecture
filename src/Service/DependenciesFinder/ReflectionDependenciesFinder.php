@@ -47,8 +47,19 @@ class ReflectionDependenciesFinder implements DependenciesFinderInterface
                     }
                 }
             }
+
+            foreach ($class->getProperties() as $property) {
+                $propertyType = $property->getType();
+                if ($propertyType instanceof \ReflectionNamedType) {
+                    $dependencies[] = $propertyType->getName();
+                }
+            }
         } catch (\ReflectionException $e) {
             $dependencies = [];
+        }
+
+        foreach ($dependencies as &$dependency) {
+            $dependency = trim($dependency, '\\');
         }
 
         return array_filter(array_unique($dependencies), function (string $dependency) {
