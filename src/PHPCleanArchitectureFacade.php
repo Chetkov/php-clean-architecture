@@ -2,17 +2,10 @@
 
 namespace Chetkov\PHPCleanArchitecture;
 
-use Chetkov\ConsoleLogger\ConsoleLoggerFactory;
-use Chetkov\ConsoleLogger\LoggerConfig;
-use Chetkov\ConsoleLogger\StyledLogger\LoggerStyle;
-use Chetkov\ConsoleLogger\StyledLogger\StyledLoggerDecorator;
 use Chetkov\PHPCleanArchitecture\Model\Module;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\AggregationDependenciesFinder;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsingDependenciesFinder;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\ReflectionDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\ModuleAnalyzer;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingService;
 use Chetkov\PHPCleanArchitecture\Service\VendorBasedModulesCreationService;
@@ -41,9 +34,8 @@ class PHPCleanArchitectureFacade
     /**
      * PHPCleanArchitectureFacade constructor.
      * @param array $config
-     * @param ModuleAnalyzer|null $moduleAnalyzer
      */
-    public function __construct(array $config, ?ModuleAnalyzer $moduleAnalyzer = null)
+    public function __construct(array $config)
     {
         $vendorBasedModulesConfig = $config['vendor_based_modules'];
         if (!empty($vendorBasedModulesConfig['enabled']) && !empty($vendorBasedModulesConfig['vendor_path'])) {
@@ -98,28 +90,10 @@ class PHPCleanArchitectureFacade
             );
         }
 
-        if (!$moduleAnalyzer) {
-            $loggerConfig = new LoggerConfig();
-            $loggerConfig
-                ->setIsShowDateTime(true)
-                ->setIsShowLevel(false)
-                ->setIsShowData(false)
-                ->setDateTimeFormat('H:i:s')
-                ->setFieldDelimiter(' :: ');
-            $logger = new StyledLoggerDecorator(
-                ConsoleLoggerFactory::create($loggerConfig),
-                new LoggerStyle()
-            );
+        $loggerFactory = $config['factories']['logger'];
+        $dependenciesFinderFactory = $config['factories']['dependencies_finder'];
 
-            $moduleAnalyzer = new ModuleAnalyzer(
-                new AggregationDependenciesFinder(...[
-                    new ReflectionDependenciesFinder(),
-                    new CodeParsingDependenciesFinder(),
-                ]),
-                $logger
-            );
-        }
-        $this->moduleAnalyzer = $moduleAnalyzer;
+        $this->moduleAnalyzer = new ModuleAnalyzer($dependenciesFinderFactory(), $loggerFactory());
     }
 
     /**
@@ -145,8 +119,8 @@ class PHPCleanArchitectureFacade
             if ($this->checkAcyclicDependenciesPrinciple) {
                 foreach ($module->getCyclicDependencies() as $cyclicDependenciesPath) {
                     $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Module $module) {
-                        return $module->name();
-                    }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
+                            return $module->name();
+                        }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
                 }
             }
 
