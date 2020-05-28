@@ -1,13 +1,13 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report\Extractor\IndexPage;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\IndexPage;
 
 use Chetkov\PHPCleanArchitecture\Model\Module;
-use Chetkov\PHPCleanArchitecture\Service\Report\UidGenerator;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\UidGenerator;
 
 /**
  * Class ModuleExtractor
- * @package Chetkov\PHPCleanArchitecture\Service\Report
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport
  */
 class ModuleExtractor
 {

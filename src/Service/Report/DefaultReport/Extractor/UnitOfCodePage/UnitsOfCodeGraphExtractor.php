@@ -1,13 +1,13 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report\Extractor\UnitOfCodePage;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage;
 
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\Report\ObjectsGraphBuilder;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ObjectsGraphBuilder;
 
 /**
  * Class UnitsOfCodeGraphExtractor
- * @package Chetkov\PHPCleanArchitecture\Service\Report\Extractor\UnitOfCodePage
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage
  */
 class UnitsOfCodeGraphExtractor
 {

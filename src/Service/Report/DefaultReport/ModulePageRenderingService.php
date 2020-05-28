@@ -1,17 +1,17 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
 use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 use Chetkov\PHPCleanArchitecture\Model\Module;
-use Chetkov\PHPCleanArchitecture\Service\Report\Extractor\ModulePage\DependencyModuleExtractor;
-use Chetkov\PHPCleanArchitecture\Service\Report\Extractor\ModulesGraphExtractor;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ModulePage\DependencyModuleExtractor;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ModulesGraphExtractor;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
 /**
  * Class ModulePageRenderingService
- * @package Chetkov\PHPCleanArchitecture\Service\Report
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport
  */
 class ModulePageRenderingService
 {

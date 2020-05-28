@@ -1,17 +1,17 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
 use Chetkov\PHPCleanArchitecture\Model\Module;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\Report\Extractor\UnitOfCodePage\DependencyUnitOfCodeExtractor;
-use Chetkov\PHPCleanArchitecture\Service\Report\Extractor\UnitOfCodePage\UnitsOfCodeGraphExtractor;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\DependencyUnitOfCodeExtractor;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\UnitsOfCodeGraphExtractor;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
 /**
  * Class UnitOfCodePageRenderingService
- * @package Chetkov\PHPCleanArchitecture\Service\Report
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport
  */
 class UnitOfCodePageRenderingService
 {

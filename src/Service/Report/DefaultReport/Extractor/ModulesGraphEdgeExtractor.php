@@ -1,12 +1,12 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report\Extractor;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor;
 
 use Chetkov\PHPCleanArchitecture\Model\Module;
 
 /**
  * Class ModulesGraphEdgeExtractor
- * @package Chetkov\PHPCleanArchitecture\Service\Report\Extractor
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor
  */
 class ModulesGraphEdgeExtractor
 {
