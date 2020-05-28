@@ -6,8 +6,8 @@ namespace Chetkov\PHPCleanArchitecture\Service\Report;
 use Chetkov\PHPCleanArchitecture\Model\Module;
 
 /**
- * Class ReportRenderingService
- * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport
+ * Interface ReportRenderingServiceInterface
+ * @package Chetkov\PHPCleanArchitecture\Service\Report
  */
 interface ReportRenderingServiceInterface
 {
