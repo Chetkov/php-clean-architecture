@@ -1,10 +1,10 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
 /**
  * Class ObjectsGraphBuilder
- * @package Chetkov\PHPCleanArchitecture\Service\Report
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport
  */
 class ObjectsGraphBuilder
 {

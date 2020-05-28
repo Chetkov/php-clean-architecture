@@ -1,14 +1,15 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
 use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
 
 /**
  * Class ReportRenderingService
- * @package Chetkov\PHPCleanArchitecture\Service\Report
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport
  */
-class ReportRenderingService
+class ReportRenderingService implements ReportRenderingServiceInterface
 {
     /** @var IndexPageRenderingService */
     private $indexPageRenderingService;
@@ -27,8 +28,7 @@ class ReportRenderingService
     }
 
     /**
-     * @param string $reportPath
-     * @param Module ...$modules
+     * @inheritDoc
      */
     public function render(string $reportPath, Module ...$modules): void
     {

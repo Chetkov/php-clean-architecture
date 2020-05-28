@@ -1,13 +1,13 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\Report\Extractor;
+namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor;
 
 use Chetkov\PHPCleanArchitecture\Model\Module;
-use Chetkov\PHPCleanArchitecture\Service\Report\ObjectsGraphBuilder;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ObjectsGraphBuilder;
 
 /**
  * Class ModulesGraphExtractor
- * @package Chetkov\PHPCleanArchitecture\Service\Report\Extractor
+ * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor
  */
 class ModulesGraphExtractor
 {
