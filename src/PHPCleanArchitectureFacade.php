@@ -7,7 +7,7 @@ use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\ModuleAnalyzer;
-use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingService;
+use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
 use Chetkov\PHPCleanArchitecture\Service\VendorBasedModulesCreationService;
 
 /**
@@ -19,17 +19,20 @@ class PHPCleanArchitectureFacade
     /** @var ModuleAnalyzer */
     private $moduleAnalyzer;
 
-    /** @var Module[] */
-    private $modules;
-
-    /** @var bool */
-    private $isAnalyzePerformed = false;
+    /** @var callable */
+    private $reportRenderingServiceFactory;
 
     /** @var bool */
     private $checkAcyclicDependenciesPrinciple;
 
     /** @var bool */
     private $checkStableDependenciesPrinciple;
+
+    /** @var Module[] */
+    private $modules;
+
+    /** @var bool */
+    private $isAnalyzePerformed = false;
 
     /**
      * PHPCleanArchitectureFacade constructor.
@@ -92,8 +95,8 @@ class PHPCleanArchitectureFacade
 
         $loggerFactory = $config['factories']['logger'];
         $dependenciesFinderFactory = $config['factories']['dependencies_finder'];
-
         $this->moduleAnalyzer = new ModuleAnalyzer($dependenciesFinderFactory(), $loggerFactory());
+        $this->reportRenderingServiceFactory = $config['factories']['report_rendering_service'];
     }
 
     /**
@@ -103,8 +106,7 @@ class PHPCleanArchitectureFacade
     {
         $this->analyze();
 
-        $reportRenderingService = new ReportRenderingService();
-        $reportRenderingService->render($path, ...$this->modules);
+        $this->createReportRenderingService()->render($path, ...$this->modules);
     }
 
     /**
@@ -166,5 +168,14 @@ class PHPCleanArchitectureFacade
             }
             $this->isAnalyzePerformed = true;
         }
+    }
+
+    /**
+     * @return ReportRenderingServiceInterface
+     */
+    private function createReportRenderingService(): ReportRenderingServiceInterface
+    {
+        $reportRenderingServiceFactory = $this->reportRenderingServiceFactory;
+        return $reportRenderingServiceFactory();
     }
 }
