@@ -3,7 +3,7 @@
 
 Идея его создания была навеяна книгой "Чистая Архитектура" (Роберта Мартина). 
 Если еще не читал, можешь ознакомиться с её ключевыми мыслями и концепциями, 
-на которых базируется инструмент, вот тут: https://docs.google.com/document/d/1itb1gbFHIEtdNYeX7zLvkj-God4DoBke8V_JFLUVIC8/edit?usp=sharing
+на которых базируется инструмент, вот тут: https://habr.com/ru/post/504590/
 
 ## Установка
 ```shell script
@@ -17,7 +17,7 @@ cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config
 ```
 Здесь я не буду расписывать все возможные варианты настройки инструмента, т.к. каждый элемент в образце 
 конфига уже, и так, достаточно подробно описан. К тому же, этой теме почти полностью посвящена вторая часть статьи:
-https://docs.google.com/document/d/1itb1gbFHIEtdNYeX7zLvkj-God4DoBke8V_JFLUVIC8/edit#heading=h.yx0f07f20mw2
+https://habr.com/ru/post/504590/
 
 ## Использование
 Инструмент предлагает 2 варианта использования.
