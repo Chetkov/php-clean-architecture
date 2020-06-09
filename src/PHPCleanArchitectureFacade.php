@@ -29,7 +29,7 @@ class PHPCleanArchitectureFacade
     private $checkStableDependenciesPrinciple;
 
     /** @var Module[] */
-    private $modules;
+    private $analyzedModules;
 
     /** @var bool */
     private $isAnalyzePerformed = false;
@@ -47,7 +47,7 @@ class PHPCleanArchitectureFacade
             $vendorBasedModulesCreator->create($vendorBasedModulesConfig['vendor_path']);
         }
 
-        $this->modules = [];
+        $this->analyzedModules = [];
         $commonRestrictionsConfig = $config['restrictions'] ?? [];
         $this->checkAcyclicDependenciesPrinciple = $commonRestrictionsConfig['check_acyclic_dependencies_principle'] ?? true;
         $this->checkStableDependenciesPrinciple = $commonRestrictionsConfig['check_stable_dependencies_principle'] ?? true;
@@ -85,7 +85,7 @@ class PHPCleanArchitectureFacade
             }
             $restrictions->setMaxAllowableDistance($maxAllowableDistance);
 
-            $this->modules[] = Module::create(
+            $this->analyzedModules[] = Module::create(
                 $moduleConfig['name'],
                 $rootPaths,
                 $excludedPaths,
@@ -106,7 +106,7 @@ class PHPCleanArchitectureFacade
     {
         $this->analyze();
 
-        $this->createReportRenderingService()->render($path, ...$this->modules);
+        $this->createReportRenderingService()->render($path, ...$this->analyzedModules);
     }
 
     /**
@@ -117,7 +117,7 @@ class PHPCleanArchitectureFacade
         $this->analyze();
 
         $errors = [];
-        foreach ($this->modules as $module) {
+        foreach ($this->analyzedModules as $module) {
             if ($this->checkAcyclicDependenciesPrinciple) {
                 foreach ($module->getCyclicDependencies() as $cyclicDependenciesPath) {
                     $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Module $module) {
@@ -163,7 +163,7 @@ class PHPCleanArchitectureFacade
     private function analyze(): void
     {
         if (!$this->isAnalyzePerformed) {
-            foreach ($this->modules as $module) {
+            foreach ($this->analyzedModules as $module) {
                 $this->moduleAnalyzer->analyze($module);
             }
             $this->isAnalyzePerformed = true;
