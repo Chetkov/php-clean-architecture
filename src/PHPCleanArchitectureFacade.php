@@ -85,12 +85,16 @@ class PHPCleanArchitectureFacade
             }
             $restrictions->setMaxAllowableDistance($maxAllowableDistance);
 
-            $this->analyzedModules[] = Module::create(
+            $module = Module::create(
                 $moduleConfig['name'],
                 $rootPaths,
                 $excludedPaths,
                 $restrictions
             );
+
+            if ($moduleConfig['is_analyze_enabled'] ?? true) {
+                $this->analyzedModules[] = $module;
+            }
         }
 
         $loggerFactory = $config['factories']['logger'];
