@@ -124,11 +124,11 @@ class Module
             return false;
         };
 
-        foreach (self::$instances as $existingModules) {
-            if ($isLocatedInOneOfPaths($unitOfCode, ...$existingModules->rootPaths())
-                && !$isLocatedInOneOfPaths($unitOfCode, ...$existingModules->excludedPaths())
+        foreach (self::$instances as $existingModule) {
+            if ($isLocatedInOneOfPaths($unitOfCode, ...$existingModule->rootPaths())
+                && !$isLocatedInOneOfPaths($unitOfCode, ...$existingModule->excludedPaths())
             ) {
-                return $existingModules;
+                return $existingModule;
             }
         }
 
