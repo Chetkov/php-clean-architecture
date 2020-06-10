@@ -1,18 +1,33 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder;
+namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing;
 
 use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypePrimitive;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\CodeParsingStrategyInterface;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\DependenciesFinderInterface;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\ExclusionChecker;
 
 /**
  * Class CodeParsingDependenciesFinder
- * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder
+ * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsinge
  */
 class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 {
+    /** @var CodeParsingStrategyInterface[] */
+    private $codeParsingStrategies;
+
+    /**
+     * CodeParsingDependenciesFinder constructor.
+     * @param CodeParsingStrategyInterface ...$codeParsingStrategies
+     */
+    public function __construct(CodeParsingStrategyInterface ...$codeParsingStrategies)
+    {
+        $this->codeParsingStrategies = $codeParsingStrategies;
+    }
+
     /**
      * @inheritDoc
      */
@@ -112,11 +127,9 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
     private function parseCode(string $content): array
     {
         $dependencies = [];
-        $dependencies[] = $this->getClassesCreatedThroughNew($content);
-        $dependencies[] = $this->getClassesCalledStatically($content);
-        $dependencies[] = $this->getClassesFromInstanceofConstruction($content);
-        $dependencies[] = $this->getTypesFromVarAnnotation($content);
-        $dependencies[] = $this->getTypesFromThrowAnnotation($content);
+        foreach ($this->codeParsingStrategies as $codeParsingStrategy) {
+            $dependencies[] = $codeParsingStrategy->parse($content);
+        }
 
         $fullNames = [];
         $importedClassNames = [];
@@ -135,91 +148,6 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
         }
 
         return [$fullNames, $importedClassNames];
-    }
-
-    /**
-     * Возвращает классы, экземпляры которых создаются через new
-     * @param string $content
-     * @return string[]
-     */
-    private function getClassesCreatedThroughNew(string $content): array
-    {
-        preg_match_all('/new\s*([^(]*)/ium', $content, $matches);
-        [, $result] = $matches;
-        return array_unique($result);
-    }
-
-    /**
-     * Возвращает классы, к которым есть обращения через ::
-     * @param string $content
-     * @return string[]
-     */
-    private function getClassesCalledStatically(string $content): array
-    {
-        preg_match_all('/([\w\\\]*)\s*:{2}/um', $content, $matches);
-        [, $result] = $matches;
-        return array_unique($result);
-    }
-
-    /**
-     * Возвращает классы участвующие в конструкциях instanceof
-     * @param string $content
-     * @return string[]
-     */
-    private function getClassesFromInstanceofConstruction(string $content): array
-    {
-        preg_match_all('/(?P<variable>\$\w+) +instanceof +(?P<class>[\w\\\]+)/ium', $content, $matches);
-        return array_unique($matches['class']);
-    }
-
-    /**
-     * Возвращает классы найденные в аннотациях
-     * @param string $content
-     * @return string[]
-     */
-    private function getTypesFromVarAnnotation(string $content): array
-    {
-        $filter = function (string $element) {
-            return !empty($element) && mb_stripos($element, '$') === false;
-        };
-
-        $groupPattern = '\s*([\w|\[\]\\\\\$]*)';
-        preg_match_all("/@var{$groupPattern}{$groupPattern}/ium", $content, $matches);
-        [, $group1, $group2] = $matches;
-
-        $dependencies = [];
-        foreach (array_merge(array_filter($group1, $filter), array_filter($group2, $filter)) as $one) {
-            foreach (explode('|', str_replace('[]', '', StringHelper::removeSpaces($one))) as $type) {
-                $dependencies[$type] = true;
-            }
-        }
-
-        return array_keys($dependencies);
-    }
-
-    /**
-     * Возвращает классы найденные в аннотациях
-     * @param string $content
-     * @return string[]
-     */
-    private function getTypesFromThrowAnnotation(string $content): array
-    {
-        $filter = function (string $element) {
-            return !empty($element) && mb_stripos($element, '$') === false;
-        };
-
-        $groupPattern = '\s*([\w|\[\]\\\\\$]*)';
-        preg_match_all("/@throw{$groupPattern}{$groupPattern}/ium", $content, $matches);
-        [, $group1, $group2] = $matches;
-
-        $dependencies = [];
-        foreach (array_merge(array_filter($group1, $filter), array_filter($group2, $filter)) as $one) {
-            foreach (explode('|', StringHelper::removeSpaces($one)) as $type) {
-                $dependencies[$type] = true;
-            }
-        }
-
-        return array_keys($dependencies);
     }
 
     /**

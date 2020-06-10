@@ -5,7 +5,12 @@ use Chetkov\ConsoleLogger\LoggerConfig;
 use Chetkov\ConsoleLogger\StyledLogger\LoggerStyle;
 use Chetkov\ConsoleLogger\StyledLogger\StyledLoggerDecorator;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\AggregationDependenciesFinder;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsingDependenciesFinder;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\CodeParsingDependenciesFinder;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesCreatedThroughNewParsingStrategy;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesFromInstanceofConstructionParsingStrategy;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\TypesFromThrowAnnotationsParsingStrategy;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\TypesFromVarAnnotationsParsingStrategy;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\DependenciesFinderInterface;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\ReflectionDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ReportRenderingService;
@@ -119,7 +124,13 @@ return [
         'dependencies_finder' => function (): DependenciesFinderInterface {
             return new AggregationDependenciesFinder(...[
                 new ReflectionDependenciesFinder(),
-                new CodeParsingDependenciesFinder(),
+                new CodeParsingDependenciesFinder(...[
+                    new ClassesCreatedThroughNewParsingStrategy(),
+                    new ClassesCalledStaticallyParsingStrategy(),
+                    new ClassesFromInstanceofConstructionParsingStrategy(),
+                    new TypesFromVarAnnotationsParsingStrategy(),
+                    new TypesFromThrowAnnotationsParsingStrategy(),
+                ]),
             ]);
         },
         //Фабрика, собирающая сервис рендеринга отчетов
