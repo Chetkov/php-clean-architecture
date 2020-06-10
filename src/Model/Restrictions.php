@@ -63,8 +63,8 @@ class Restrictions
      */
     public function addPublicUnitOfCode(UnitOfCode $unitOfCode): self
     {
-        if (in_array($unitOfCode, $this->privateUnitsOfCode, true)) {
-            throw new \LogicException("UnitOfCode {$unitOfCode->name()} already added to private list!");
+        if (!empty($this->privateUnitsOfCode)) {
+            throw new \LogicException('Module cannot contains public and private elements at the same time!');
         }
         if (!in_array($unitOfCode, $this->publicUnitsOfCode, true)) {
             $this->publicUnitsOfCode[] = $unitOfCode;
@@ -90,8 +90,8 @@ class Restrictions
      */
     public function addPrivateUnitOfCode(UnitOfCode $unitOfCode): self
     {
-        if (in_array($unitOfCode, $this->publicUnitsOfCode, true)) {
-            throw new \LogicException("UnitOfCode {$unitOfCode->name()} already added to public list!");
+        if (!empty($this->publicUnitsOfCode)) {
+            throw new \LogicException('Module cannot contains public and private elements at the same time!');
         }
         if (!in_array($unitOfCode, $this->privateUnitsOfCode, true)) {
             $this->privateUnitsOfCode[] = $unitOfCode;
@@ -117,8 +117,8 @@ class Restrictions
      */
     public function addAllowedDependencyModule(Module $module): self
     {
-        if (in_array($module, $this->forbiddenDependencyModules, true)) {
-            throw new \LogicException("Allowed dependency {$module->name()} already added to forbidden list!");
+        if (!empty($this->forbiddenDependencyModules)) {
+            throw new \LogicException('Module cannot have allowed and forbidden dependencies at the same time!');
         }
         if (!in_array($module, $this->allowedDependencyModules, true)) {
             $this->allowedDependencyModules[] = $module;
@@ -144,8 +144,8 @@ class Restrictions
      */
     public function addForbiddenDependencyModule(Module $module): self
     {
-        if (in_array($module, $this->allowedDependencyModules, true)) {
-            throw new \LogicException("Forbidden dependency {$module->name()} already added to allowed list!");
+        if (!empty($this->allowedDependencyModules)) {
+            throw new \LogicException('Module cannot have allowed and forbidden dependencies at the same time!');
         }
         if (!in_array($module, $this->forbiddenDependencyModules, true)) {
             $this->forbiddenDependencyModules[] = $module;
@@ -187,14 +187,13 @@ class Restrictions
         if ($dependency === $thisModule || $dependency->isPrimitives() || $dependency->isGlobal()) {
             return true;
         }
-        if (empty($this->forbiddenDependencyModules)) {
-            return empty($this->allowedDependencyModules) || in_array($dependency, $this->allowedDependencyModules, true);
+        if (!empty($this->allowedDependencyModules)) {
+            return in_array($dependency, $this->allowedDependencyModules, true);
         }
-        if (empty($this->allowedDependencyModules)) {
-            return empty($this->forbiddenDependencyModules) || !in_array($dependency, $this->forbiddenDependencyModules, true);
+        if (!empty($this->forbiddenDependencyModules)) {
+            return !in_array($dependency, $this->forbiddenDependencyModules, true);
         }
-        return in_array($dependency, $this->allowedDependencyModules, true)
-            && !in_array($dependency, $this->forbiddenDependencyModules, true);
+        return true;
     }
 
     /**
@@ -210,14 +209,13 @@ class Restrictions
         if (!$unitOfCode->belongToModule($thisModule)) {
             throw new \InvalidArgumentException('$unitOfCode must belong to this module!');
         }
-        if (empty($this->privateUnitsOfCode)) {
-            return empty($this->publicUnitsOfCode) || in_array($unitOfCode, $this->publicUnitsOfCode, true);
+        if (!empty($this->publicUnitsOfCode)) {
+            return in_array($unitOfCode, $this->publicUnitsOfCode, true);
         }
-        if (empty($this->publicUnitsOfCode)) {
-            return empty($this->privateUnitsOfCode) || !in_array($unitOfCode, $this->privateUnitsOfCode, true);
+        if (!empty($this->privateUnitsOfCode)) {
+            return !in_array($unitOfCode, $this->privateUnitsOfCode, true);
         }
-        return in_array($unitOfCode, $this->publicUnitsOfCode, true)
-            && !in_array($unitOfCode, $this->privateUnitsOfCode, true);
+        return true;
     }
 
     /**
