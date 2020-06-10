@@ -92,8 +92,11 @@ class PHPCleanArchitectureFacade
                 $restrictions
             );
 
-            if ($moduleConfig['is_analyze_enabled'] ?? true) {
+            $isEnabledForAnalysis = $moduleConfig['is_analyze_enabled'] ?? true;
+            if ($isEnabledForAnalysis) {
                 $this->analyzedModules[] = $module;
+            } else {
+                $module->excludeFromAnalyze();
             }
         }
 

@@ -57,7 +57,8 @@ class VendorBasedModulesCreationService
             $autoloadDevSection = $composerData['autoload-dev'] ?? [];
             $excludedPaths = $this->createPathsByAutoloadSection($autoloadDevSection, $composerFile->getPath());
 
-            $modules[] = Module::create($packageName, $rootPaths, $excludedPaths);
+            $modules[] = Module::create($packageName, $rootPaths, $excludedPaths)
+                ->excludeFromAnalyze();
         }
 
         return $modules;

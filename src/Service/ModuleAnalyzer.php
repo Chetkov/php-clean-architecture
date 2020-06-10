@@ -33,10 +33,14 @@ class ModuleAnalyzer
 
     /**
      * @param Module $module
-     * @return Module
+     * @return void
      */
-    public function analyze(Module $module): Module
+    public function analyze(Module $module): void
     {
+        if (!$module->isEnabledForAnalysis()) {
+            return;
+        }
+
         $this->logger->info('MODULE: '. $module->name());
         foreach ($module->rootPaths() as $path) {
             $files = new \RegexIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path->path())), '/\.php$/i');
@@ -63,8 +67,6 @@ class ModuleAnalyzer
                 $this->logger->info("[OK] $fullPath");
             }
         }
-
-        return $module;
     }
 
 

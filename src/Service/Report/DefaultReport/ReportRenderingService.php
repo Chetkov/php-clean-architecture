@@ -34,6 +34,10 @@ class ReportRenderingService implements ReportRenderingServiceInterface
     {
         $this->indexPageRenderingService->render($reportPath, ...$modules);
         foreach ($modules as $module) {
+            if (!$module->isEnabledForAnalysis()) {
+                continue;
+            }
+
             $this->modulePageRenderingService->render($reportPath, $module, ...$modules);
             foreach ($module->unitsOfCode() as $unitOfCode) {
                 $this->unitOfCodePageRenderingService->render($reportPath, $unitOfCode, ...$modules);

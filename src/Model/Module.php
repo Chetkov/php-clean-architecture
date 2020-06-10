@@ -26,6 +26,9 @@ class Module
     /** @var static[] */
     private static $instances = [];
 
+    /** @var bool */
+    private $isEnabledForAnalysis = true;
+
     /** @var string */
     private $name;
 
@@ -150,6 +153,25 @@ class Module
     public static function findByName(string $name): ?Module
     {
         return self::$instances[$name] ?? null;
+    }
+
+    /**
+     * Проверяем, требуется-ли анализировать содержимое модуля?
+     * @return bool
+     */
+    public function isEnabledForAnalysis(): bool
+    {
+        return $this->isEnabledForAnalysis;
+    }
+
+    /**
+     * Исключает метод из процесса анализа содержимого
+     * @return $this
+     */
+    public function excludeFromAnalyze(): Module
+    {
+        $this->isEnabledForAnalysis = false;
+        return $this;
     }
 
     /**
