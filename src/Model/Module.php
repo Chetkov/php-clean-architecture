@@ -139,6 +139,7 @@ class Module
     }
 
     /**
+     * Возвращает все, созданные до текущего момента времени, объекты Module
      * @return Module[]
      */
     public static function getAll(): array
@@ -147,6 +148,7 @@ class Module
     }
 
     /**
+     * Выполняет поиск объекта Module по названию (среди всех ранее созданных)
      * @param string $name
      * @return Module|null
      */
@@ -156,7 +158,7 @@ class Module
     }
 
     /**
-     * Проверяем, требуется-ли анализировать содержимое модуля?
+     * Проверяет, требуется-ли анализировать содержимое модуля?
      * @return bool
      */
     public function isEnabledForAnalysis(): bool
@@ -175,6 +177,17 @@ class Module
     }
 
     /**
+     * Проверяет, является-ли переданный путь исключением?
+     * Пример:
+     *      если excludedPaths: ['/some/excluded/path'],
+     *      то для значений $path:
+     *          - '/some/excluded/path'
+     *          - '/some/excluded/path/'
+     *          - '/some/excluded/path/dir1/SomeClass.php'
+     *          - '/some/excluded/path/dir2/...'
+     *          - '/some/excluded/path/dir3/...'
+     *          - и т.д.
+     *      метод вернет true,
      * @param string $path
      * @return bool
      */
@@ -213,6 +226,7 @@ class Module
     }
 
     /**
+     * Возвращает название модуля
      * @return string
      */
     public function name(): string
@@ -221,6 +235,7 @@ class Module
     }
 
     /**
+     * Возвращает пути корневых директорий модуля
      * @return Path[]
      */
     public function rootPaths(): array
@@ -229,6 +244,7 @@ class Module
     }
 
     /**
+     * Добавляет путь корневой директории модуля
      * @param Path $rootPath
      * @return $this
      */
@@ -241,6 +257,7 @@ class Module
     }
 
     /**
+     * Возвращает пути исключения
      * @return Path[]
      */
     public function excludedPaths(): array
@@ -249,6 +266,7 @@ class Module
     }
 
     /**
+     * Добавляет путь исключение
      * @param Path $excludedPath
      * @return $this
      */
@@ -261,6 +279,7 @@ class Module
     }
 
     /**
+     * Проверяет, разрешена-ли текщему модулю зависимость от переданного?
      * @param Module $dependency
      * @return bool
      */
@@ -270,6 +289,8 @@ class Module
     }
 
     /**
+     * Проверяет, является-ли переданный элемент доступным из вне текущего компонента?
+     * Другими словами, является-ли переданный элемент публичным?
      * @param UnitOfCode $unitOfCode
      * @return bool
      */
@@ -279,7 +300,7 @@ class Module
     }
 
     /**
-     * Возвращает список элементов модуля.
+     * Возвращает список элементов модуля
      * @return UnitOfCode[]
      */
     public function unitsOfCode(): array
@@ -288,7 +309,7 @@ class Module
     }
 
     /**
-     * Добавляет элемент в модуль.
+     * Добавляет элемент модуля
      * @param UnitOfCode $unitOfCode
      * @return $this
      */
@@ -299,7 +320,7 @@ class Module
     }
 
     /**
-     * Удаляет элемент модуля.
+     * Удаляет элемент модуля
      * @param UnitOfCode $unitOfCode
      * @return $this
      */
@@ -385,6 +406,7 @@ class Module
     }
 
     /**
+     * Возвращает модули, от которых текущий зависеть не должен, но зависит
      * @return Module[]
      */
     public function getIllegalDependencyModules(): array
@@ -393,7 +415,11 @@ class Module
     }
 
     /**
-     * @param bool $onlyFromAllowedModules
+     * Возвращает элементы других модулей, от которых текущий зависеть не должен, но зависит
+     * @param bool $onlyFromAllowedModules Если false, метод вернёт все запрещенные для взаимодействия элементы-зависимости,
+     * т.е. элементы запрещенных для взаимодействия модулей и приватные элементы разрешенных для взаимодействия модулей.
+     * Если true, метод вернет только запрещенные элементы-зависимости из разрешенных для взаимодействия модулей,
+     * т.е. только приватные элементы разрешенных для взаимодействия модулей.
      * @return UnitOfCode[]
      */
     public function getIllegalDependencyUnitsOfCode(bool $onlyFromAllowedModules = false): array
@@ -402,9 +428,10 @@ class Module
     }
 
     /**
-     * @param array $path
-     * @param array $result
-     * @return array
+     * Возвращает найденные циклические зависимости модулей
+     * @param array $path Оставь пустым (используется в рекурсии)
+     * @param array $result Оставь пустым (используется в рекурсии)
+     * @return array [[Module, Module, Module], [Module, Module, Module], ...]
      */
     public function getCyclicDependencies(array $path = [], array $result = []): array
     {
@@ -422,7 +449,10 @@ class Module
     }
 
     /**
-     * @return float
+     * Рассчитывает абстрактность компонента <br>
+     * A = Na ÷ Nc <br>
+     * Где Na - число абстрактных элементов компонента, а Nc - общее число элементов компонента
+     * @return float 0..1 (0 - полное отсутствие абстрактных элементов в компоненте, 1 - все элементы компонента абстрактны)
      */
     public function calculateAbstractnessRate(): float
     {
@@ -446,7 +476,12 @@ class Module
     }
 
     /**
-     * @return float
+     * Рассчитывает неустойчивость компонента <br>
+     * I = Fan-out ÷ (Fan-in + Fan-out) <br>
+     * Где Fan-in - количество входящих зависимостей (классов вне данного компонента, которые зависят от классов внутри
+     * компонента), а Fan-out - количество исходящих зависимостей (классов внутри данного компонента, зависящих от
+     * классов за его пределами)
+     * @return float 0..1 (0 - компонент максимально устойчив, 1 - компонент максимально неустойчив)
      */
     public function calculateInstabilityRate(): float
     {
@@ -479,14 +514,20 @@ class Module
     }
 
     /**
-     * @return float|int
+     * Рассчитывает расстояние до главной последовательности на графике A/I <br>
+     * D = |A+I–1| <br>
+     * Где A - метрика абстрактности компонента, а I - метрика неустойчивости компонента
+     * @see calculateAbstractnessRate
+     * @see calculateInstabilityRate
+     * @return float
      */
-    public function calculateDistanceRate()
+    public function calculateDistanceRate(): float
     {
         return abs($this->calculateAbstractnessRate() + $this->calculateInstabilityRate() - 1);
     }
 
     /**
+     * Рассчитывает превышение метрикой D максимально допустимого значения (задаваемого в конфиге max_allowable_distance)
      * @return float
      */
     public function calculateDistanceRateOverage(): float
@@ -495,6 +536,7 @@ class Module
     }
 
     /**
+     * Рассчитывает примитивность компонента
      * @return float
      */
     public function calculatePrimitivenessRate(): float
