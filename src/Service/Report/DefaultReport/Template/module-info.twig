@@ -157,8 +157,8 @@
             <div id="output-deps-chart"></div>
         </div>
     </div>
-    <div>
-        <div class="col-12">
+    <div class="row">
+        <div class="col-6">
             <table class="table table-borderless table-hover">
                 {% for dependency_module in dependency_modules %}
                     {% for unit_of_code in dependency_module.units_of_code %}
@@ -169,8 +169,29 @@
                                     <a href="{{ unit_of_code.uid }}.html">подробнее</a>
                                 {% endif %}
                                 <ul class="hidden">
-                                    {% for output_dependency in unit_of_code.output_dependencies %}
-                                        <li class="{% if not output_dependency.is_allowed %}alert-danger{% endif %}">{{ output_dependency.name }}</li>
+                                    {% for dependency in unit_of_code.dependencies %}
+                                        <li class="{% if not dependency.is_allowed %}alert-danger{% endif %}">{{ dependency.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </table>
+        </div>
+        <div class="col-6">
+            <table class="table table-borderless table-hover">
+                {% for dependency_module in dependency_modules %}
+                    {% for unit_of_code in dependency_module.reverted_units_of_code %}
+                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_module.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                            <td>
+                                <span style="cursor:pointer;" onclick="this.parentElement.getElementsByTagName('ul')[0].classList.toggle('hidden')">{{ unit_of_code.name }}</span>
+                                {% if unit_of_code.uid is defined %}
+                                    <a href="{{ unit_of_code.uid }}.html">подробнее</a>
+                                {% endif %}
+                                <ul class="hidden">
+                                    {% for dependency in unit_of_code.dependencies %}
+                                        <li class="{% if not dependency.is_allowed %}alert-danger{% endif %}">{{ dependency.name }}</li>
                                     {% endfor %}
                                 </ul>
                             </td>
