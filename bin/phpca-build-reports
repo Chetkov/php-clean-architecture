@@ -9,11 +9,31 @@ $configPath = $argv[1] ?? dirname(__DIR__, 4) . '/phpca-config.php';
 $config = require $configPath;
 
 $reportsPath = $config['reports_dir'];
-if (!is_dir($reportsPath) && !mkdir($reportsPath) && !is_dir($reportsPath)) {
-    throw new \RuntimeException(sprintf('Directory "%s" was not created', $reportsPath));
-}
+recreateReportsDirectory($reportsPath);
 
 $analyzer = new PHPCleanArchitectureFacade($config);
 $analyzer->generateReport($reportsPath);
 
 echo PHP_EOL . 'Report: ' . $reportsPath . '/index.html' . PHP_EOL;
+
+
+
+
+// helpers
+
+function recreateReportsDirectory(string $path): void
+{
+    removeDirectory($path);
+    if (!mkdir($path) && !is_dir($path)) {
+        throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+    }
+}
+
+function removeDirectory(string $path): void
+{
+    $files = glob($path . '/*');
+    foreach ($files as $file) {
+        is_dir($file) ? removeDirectory($file) : unlink($file);
+    }
+    rmdir($path);
+}
