@@ -9,8 +9,8 @@ use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\CodePars
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesCreatedThroughNewParsingStrategy;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesFromInstanceofConstructionParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\TypesFromThrowsAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\TypesFromVarAnnotationsParsingStrategy;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ThrowsAnnotationsParsingStrategy;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\VarAnnotationsParsingStrategy;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\DependenciesFinderInterface;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\ReflectionDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ReportRenderingService;
@@ -128,8 +128,8 @@ return [
                     new ClassesCreatedThroughNewParsingStrategy(),
                     new ClassesCalledStaticallyParsingStrategy(),
                     new ClassesFromInstanceofConstructionParsingStrategy(),
-                    new TypesFromVarAnnotationsParsingStrategy(),
-                    new TypesFromThrowsAnnotationsParsingStrategy(),
+                    new VarAnnotationsParsingStrategy(),
+                    new ThrowsAnnotationsParsingStrategy(),
                 ]),
             ]);
         },

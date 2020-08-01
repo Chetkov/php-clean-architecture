@@ -5,10 +5,10 @@ namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\St
 use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 
 /**
- * Class TypesFromThrowsAnnotationsParsingStrategy
+ * Class ThrowsAnnotationsParsingStrategy
  * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy
  */
-class TypesFromThrowsAnnotationsParsingStrategy implements CodeParsingStrategyInterface
+class ThrowsAnnotationsParsingStrategy implements CodeParsingStrategyInterface
 {
     /**
      * Возвращает типы исключений найденные в аннотациях throws

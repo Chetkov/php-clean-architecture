@@ -5,10 +5,10 @@ namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\St
 use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 
 /**
- * Class TypesFromPropertyAnnotationsParsingStrategy
+ * Class ParamAnnotationsParsingStrategy
  * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy
  */
-class TypesFromPropertyAnnotationsParsingStrategy implements CodeParsingStrategyInterface
+class ParamAnnotationsParsingStrategy implements CodeParsingStrategyInterface
 {
     /**
      * Возвращает типы найденные в аннотациях param
@@ -16,7 +16,7 @@ class TypesFromPropertyAnnotationsParsingStrategy implements CodeParsingStrategy
      */
     public function parse(string $content): array
     {
-        $pattern = '/(@property|@property-read|@property-write)[\s]+(?P<types>[^$]*)/ium';
+        $pattern = '/@param[\s]+(?P<types>[^$]*)/ium';
         preg_match_all($pattern, $content, $matches);
 
         $dependencies = [];
