@@ -9,7 +9,7 @@ namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\St
 class ClassesCreatedThroughNewParsingStrategy implements CodeParsingStrategyInterface
 {
     /**
-     * Возвращает классы, экземпляры которых создаются через new
+     * Возвращает типы, экземпляры которых создаются через new
      * @inheritDoc
      */
     public function parse(string $content): array

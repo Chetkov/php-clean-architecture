@@ -11,12 +11,12 @@ use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 class TypesFromThrowAnnotationsParsingStrategy implements CodeParsingStrategyInterface
 {
     /**
-     * Возвращает классы найденные в аннотациях throw
+     * Возвращает типы найденные в аннотациях throw
      * @inheritDoc
      */
     public function parse(string $content): array
     {
-        $filter = function (string $element) {
+        $filter = static function (string $element) {
             return !empty($element) && mb_stripos($element, '$') === false;
         };
 

@@ -9,7 +9,7 @@ namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\St
 class ClassesCalledStaticallyParsingStrategy implements CodeParsingStrategyInterface
 {
     /**
-     * Возвращает классы, к которым есть обращения через ::
+     * Возвращает типы, к которым есть обращения через ::
      * @inheritDoc
      */
     public function parse(string $content): array
