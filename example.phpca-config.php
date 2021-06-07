@@ -23,9 +23,10 @@ use Psr\Log\LoggerInterface;
 
 return [
     // Директория в которую будут складываться файлы отчета
-    'reports_dir' => __DIR__,
+    'reports_dir' => __DIR__ . '/phpca-reports',
 
-    // Анализ с учетом пакетов подключенных через composer
+    // Анализ с учетом vendor пакетов (каждый подключенный пакет, за исключением перечисленных в excluded, будет
+    // определен как отдельный модуль
     'vendor_based_modules' => [
         'enabled' => true,
         'vendor_path' => '/path/to/vendor',
