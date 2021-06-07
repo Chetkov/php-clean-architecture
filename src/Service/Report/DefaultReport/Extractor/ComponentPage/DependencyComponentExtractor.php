@@ -34,9 +34,7 @@ class DependencyComponentExtractor
                 $isAllowed = true;
                 $dependencies = [];
                 foreach ($unitOfCode->inputDependencies() as $dependency) {
-                    if ($linkedComponentIsDependent && $dependency->component() !== $linkedComponent
-                        || !$linkedComponentIsDependent && $dependency->component() !== $component
-                    ) {
+                    if ($dependency->component() !== $linkedComponent) {
                         continue;
                     }
 
