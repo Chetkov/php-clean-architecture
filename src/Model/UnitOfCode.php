@@ -33,33 +33,33 @@ class UnitOfCode
     /** @var UnitOfCode[] */
     private $outputDependencies = [];
 
-    /** @var Module */
-    private $module;
+    /** @var Component */
+    private $component;
 
     /**
      * UnitOfCode constructor.
      * @param string $name
      * @param Type $type
      * @param string|null $path
-     * @param Module|null $module
+     * @param Component|null $component
      */
-    private function __construct(string $name, Type $type, ?string $path = null, ?Module $module = null)
+    private function __construct(string $name, Type $type, ?string $path = null, ?Component $component = null)
     {
         $this->name = $name;
         $this->type = $type;
         $this->path = $path;
 
-        $module = $module ?? Module::createByUnitOfCode($this);
-        $this->setModule($module);
+        $component = $component ?? Component::createByUnitOfCode($this);
+        $this->setComponent($component);
     }
 
     /**
      * @param string $fullName
-     * @param Module|null $module
+     * @param Component|null $component
      * @param string|null $path
      * @return static
      */
-    public static function create(string $fullName, ?Module $module = null, ?string $path = null): UnitOfCode
+    public static function create(string $fullName, ?Component $component = null, ?string $path = null): UnitOfCode
     {
         $unitOfCode = self::$instances[$fullName] ?? null;
         if (!$unitOfCode) {
@@ -98,11 +98,11 @@ class UnitOfCode
                 default:
                     $type = TypeUndefined::getInstance();
             }
-            $unitOfCode = new UnitOfCode($fullName, $type, $path, $module);
+            $unitOfCode = new UnitOfCode($fullName, $type, $path, $component);
             self::$instances[$fullName] = $unitOfCode;
         }
-        if ($module) {
-            $unitOfCode->setModule($module);
+        if ($component) {
+            $unitOfCode->setComponent($component);
         }
         if ($path) {
             $unitOfCode->path = $path;
@@ -129,29 +129,29 @@ class UnitOfCode
     }
 
     /**
-     * Устанавливает принадлежность элемента к переданному модулю
-     * @param Module $module
+     * Устанавливает принадлежность элемента к переданному компоненту
+     * @param Component $component
      * @return $this
      */
-    private function setModule(Module $module): self
+    private function setComponent(Component $component): self
     {
-        if ($this->module !== $module) {
-            if ($this->module) {
-                $this->module->removeUnitOfCode($this);
+        if ($this->component !== $component) {
+            if ($this->component) {
+                $this->component->removeUnitOfCode($this);
             }
-            $module->addUnitOfCode($this);
-            $this->module = $module;
+            $component->addUnitOfCode($this);
+            $this->component = $component;
         }
         return $this;
     }
 
     /**
-     * Возвращает модуль, которому элемент принадлежит
-     * @return Module
+     * Возвращает компонент, которому элемент принадлежит
+     * @return Component
      */
-    public function module(): Module
+    public function component(): Component
     {
-        return $this->module;
+        return $this->component;
     }
 
     /**
@@ -164,39 +164,39 @@ class UnitOfCode
     }
 
     /**
-     * Проверяет принадлежность элемента переланному модулю
-     * @param Module $module
+     * Проверяет принадлежность элемента переданному компоненту
+     * @param Component $component
      * @return bool
      */
-    public function belongToModule(Module $module): bool
+    public function belongToComponent(Component $component): bool
     {
-        return $this->module === $module;
+        return $this->component === $component;
     }
 
     /**
-     * Проверяет, является-ли элемент доступным для взаимодействия извне модуля, к которому он принадлежит
+     * Проверяет, является-ли элемент доступным для взаимодействия извне компонента, к которому он принадлежит
      * @return bool
      */
     public function isAccessibleFromOutside(): bool
     {
-        return $this->module->isUnitOfCodeAccessibleFromOutside($this);
+        return $this->component->isUnitOfCodeAccessibleFromOutside($this);
     }
 
     /**
      * Возвращает массив входящих зависимостей (элементов, которые каким-то образом зависят от текущего)
-     * @param Module|null $module Если передан, метод вернет только его зависимые элементы, иначе зависимые элементы
-     * всех модулей
+     * @param Component|null $component Если передан, метод вернет только его зависимые элементы, иначе зависимые элементы
+     * всех компонентов
      * @return UnitOfCode[]
      */
-    public function inputDependencies(?Module $module = null): array
+    public function inputDependencies(?Component $component = null): array
     {
-        if (!$module) {
+        if (!$component) {
             return $this->inputDependencies;
         }
 
         $inputDependencies = [];
         foreach ($this->inputDependencies as $dependency) {
-            if ($dependency->belongToModule($module)) {
+            if ($dependency->belongToComponent($component)) {
                 $inputDependencies[] = $dependency;
             }
         }
@@ -219,18 +219,18 @@ class UnitOfCode
 
     /**
      * Возвращает массив исходящих зависимостей (элементов, от которых каким-то образом зависит текущий)
-     * @param Module|null $module Если передан, метод вернет только его элементы, иначе элементы всех модулей
+     * @param Component|null $component Если передан, метод вернет только его элементы, иначе элементы всех компонентов
      * @return UnitOfCode[]
      */
-    public function outputDependencies(?Module $module = null): array
+    public function outputDependencies(?Component $component = null): array
     {
-        if (!$module) {
+        if (!$component) {
             return $this->outputDependencies;
         }
 
         $outputDependencies = [];
         foreach ($this->outputDependencies as $dependency) {
-            if ($dependency->belongToModule($module)) {
+            if ($dependency->belongToComponent($component)) {
                 $outputDependencies[] = $dependency;
             }
         }

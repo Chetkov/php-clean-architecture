@@ -25,9 +25,8 @@ return [
     // Директория в которую будут складываться файлы отчета
     'reports_dir' => __DIR__ . '/phpca-reports',
 
-    // Анализ с учетом vendor пакетов (каждый подключенный пакет, за исключением перечисленных в excluded, будет
-    // определен как отдельный модуль
-    'vendor_based_modules' => [
+    // Учет vendor пакетов (каждый подключенный пакет, за исключением перечисленных в excluded, будет представлен компонентом)
+    'vendor_based_components' => [
         'enabled' => true,
         'vendor_path' => '/path/to/vendor',
         'excluded' => [
@@ -35,7 +34,7 @@ return [
         ],
     ],
 
-    // Общие для всех модулей ограничения
+    // Общие для всех компонентов ограничения
     'restrictions' => [
         // Включение/отключение обнаружения нарушений принципа ацикличности зависимостей.
         // 'check_acyclic_dependencies_principle' => true,
@@ -48,78 +47,78 @@ return [
         // 'max_allowable_distance' => 0.1,
     ],
 
-    // Описание модулей и их ограничений
-    'modules' => [
+    // Описание компонентов и их ограничений
+    'components' => [
         [
             // Требуется-ли анализировать содержимое компонента, или он описан исключительно для возможности
             // сопоставления зависимости других компонентов от элементов текущего?
             // Значение по умолчанию true (в случае отсутствия его в конфиге).
             'is_analyze_enabled' => true,
-            'name' => 'FirstModule',
+            'name' => 'FirstComponent',
             'roots' => [
                 [
-                    'path' => '/path/to/First/Module',
-                    'namespace' => 'First\Module',
+                    'path' => '/path/to/First/Component',
+                    'namespace' => 'First\Component',
                 ],
-                // Иногда, особенно в старых проектах, код логически относимый к одному модулю, разбросан по разным частям
+                // Иногда, особенно в старых проектах, код логически относящийся к одному компоненту, разбросан по разным частям
                 // системы. В таком случае можно указать в конфиге несколько корневых директорий и, т.о. отнести их содержимое
-                // какому-то одному модулю.
+                // какому-то одному компоненту.
                 //
                 // [
-                //     'path' => '/path/to/module/first',
-                //     'namespace' => 'Module\First',
+                //     'path' => '/path/to/component/first',
+                //     'namespace' => 'Component\First',
                 // ],
             ],
             //Директории или файлы, которые будут пропущены в процессе анализа
             'excluded' => [
-                '/path/to/First/Module/dir1',
-                '/path/to/First/Module/dir2',
+                '/path/to/First/Component/dir1',
+                '/path/to/First/Component/dir2',
             ],
             'restrictions' => [
                 // Имеет приоритет над общей настройкой restrictions->max_allowable_distance
                 // 'max_allowable_distance' => 0.1,
 
-                // Список РАЗРЕШЕННЫХ исходящих зависимостей. Заполняется именами других модулей.
+                // Список РАЗРЕШЕННЫХ исходящих зависимостей. Заполняется именами других компонентов.
                 // Может отсутствовать, быть [] или null, в таком случае никакие ограничения накладываться не будут.
                 // Не должен использоваться совместно с forbidden_dependencies!
-                // 'allowed_dependencies' => ['SecondModule'],
+                // 'allowed_dependencies' => ['SecondComponent'],
 
-                // Список ЗАПРЕЩЕННЫХ исходящих зависимостей. Заполняется именами других модулей.
+                // Список ЗАПРЕЩЕННЫХ исходящих зависимостей. Заполняется именами других компонентов.
                 // Может отсутствовать, быть [] или null, в таком случае никакие ограничения накладываться не будут.
                 // Не должен использоваться совместно с allowed_dependencies!
-                // 'forbidden_dependencies' => ['ThirdModule'],
+                // 'forbidden_dependencies' => ['ThirdComponent'],
 
-                // Список публичных элементов модуля. Если отсутствует или пустой, все элементы считаются публичными.
+                // Список публичных элементов компонента. Если отсутствует или пустой, все элементы считаются публичными.
                 // Если не пустой, не перечисленные в списке элементы будут считаться приватными.
                 // Не должен использоваться совместно с private_elements!
                 // 'public_elements' => [
-                //     First\Module\FirstClass::class,
-                //     First\Module\SecondClass::class,
+                //     First\Component\FirstClass::class,
+                //     First\Component\SecondClass::class,
                 // ],
 
-                // Список приватных элементов модуля. Если отсутствует или пустой, все элементы считаются публичными.
+                // Список приватных элементов компонента. Если отсутствует или пустой, все элементы считаются публичными.
                 // Не должен использоваться совместно с public_elements!
                 // 'private_elements' => [
-                //     First\Module\FirstClass::class,
-                //     First\Module\SecondClass::class,
+                //     First\Component\FirstClass::class,
+                //     First\Component\SecondClass::class,
                 // ],
             ],
         ],
         [
-            'name' => 'SecondModule',
+            'name' => 'SecondComponent',
             'roots' => [
                 [
-                    'path' => '/path/to/Module/Second',
-                    'namespace' => 'Module\Second',
+                    'path' => '/path/to/Component/Second',
+                    'namespace' => 'Component\Second',
                 ],
             ],
         ],
         [
-            'name' => 'ThirdModule',
+            'name' => 'ThirdComponent',
             'roots' => [
                 [
-                    'path' => '/path/to/Module/Third',
-                    'namespace' => 'Module\Third',
+                    'path' => '/path/to/Component/Third',
+                    'namespace' => 'Component\Third',
                 ],
             ],
         ],

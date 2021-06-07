@@ -14,11 +14,11 @@ class Restrictions
     /** @var UnitOfCode[] */
     private $privateUnitsOfCode = [];
 
-    /** @var Module[] */
-    private $allowedDependencyModules = [];
+    /** @var Component[] */
+    private $allowedDependencyComponents = [];
 
-    /** @var Module[] */
-    private $forbiddenDependencyModules = [];
+    /** @var Component[] */
+    private $forbiddenDependencyComponents = [];
 
     /** @var float|null */
     private $maxAllowableDistance;
@@ -27,21 +27,21 @@ class Restrictions
      * Restrictions constructor.
      * @param UnitOfCode[] $publicUnitsOfCode
      * @param UnitOfCode[] $privateUnitsOfCode
-     * @param Module[] $allowedDependencyModules
-     * @param Module[] $forbiddenDependencyModules
+     * @param Component[] $allowedDependencyComponents
+     * @param Component[] $forbiddenDependencyComponents
      * @param float|null $maxAllowableDistance
      */
     public function __construct(
         array $publicUnitsOfCode = [],
         array $privateUnitsOfCode = [],
-        array $allowedDependencyModules = [],
-        array $forbiddenDependencyModules = [],
+        array $allowedDependencyComponents = [],
+        array $forbiddenDependencyComponents = [],
         ?float $maxAllowableDistance = null)
     {
         $this->setPublicUnitsOfCode(...$publicUnitsOfCode);
         $this->setPrivateUnitsOfCode(...$privateUnitsOfCode);
-        $this->setAllowedDependencyModules(...$allowedDependencyModules);
-        $this->setForbiddenDependencyModules(...$forbiddenDependencyModules);
+        $this->setAllowedDependencyComponents(...$allowedDependencyComponents);
+        $this->setForbiddenDependencyComponents(...$forbiddenDependencyComponents);
         $this->setMaxAllowableDistance($maxAllowableDistance);
     }
 
@@ -64,7 +64,7 @@ class Restrictions
     public function addPublicUnitOfCode(UnitOfCode $unitOfCode): self
     {
         if (!empty($this->privateUnitsOfCode)) {
-            throw new \LogicException('Module cannot contains public and private elements at the same time!');
+            throw new \LogicException('Component cannot contains public and private elements at the same time!');
         }
         if (!in_array($unitOfCode, $this->publicUnitsOfCode, true)) {
             $this->publicUnitsOfCode[] = $unitOfCode;
@@ -91,7 +91,7 @@ class Restrictions
     public function addPrivateUnitOfCode(UnitOfCode $unitOfCode): self
     {
         if (!empty($this->publicUnitsOfCode)) {
-            throw new \LogicException('Module cannot contains public and private elements at the same time!');
+            throw new \LogicException('Component cannot contains public and private elements at the same time!');
         }
         if (!in_array($unitOfCode, $this->privateUnitsOfCode, true)) {
             $this->privateUnitsOfCode[] = $unitOfCode;
@@ -100,55 +100,55 @@ class Restrictions
     }
 
     /**
-     * @param Module ...$modules
+     * @param Component ...$components
      * @return $this
      */
-    public function setAllowedDependencyModules(Module ...$modules): self
+    public function setAllowedDependencyComponents(Component ...$components): self
     {
-        foreach ($modules as $module) {
-            $this->addAllowedDependencyModule($module);
+        foreach ($components as $component) {
+            $this->addAllowedDependencyComponent($component);
         }
         return $this;
     }
 
     /**
-     * @param Module $module
+     * @param Component $component
      * @return $this
      */
-    public function addAllowedDependencyModule(Module $module): self
+    public function addAllowedDependencyComponent(Component $component): self
     {
-        if (!empty($this->forbiddenDependencyModules)) {
-            throw new \LogicException('Module cannot have allowed and forbidden dependencies at the same time!');
+        if (!empty($this->forbiddenDependencyComponents)) {
+            throw new \LogicException('Component cannot have allowed and forbidden dependencies at the same time!');
         }
-        if (!in_array($module, $this->allowedDependencyModules, true)) {
-            $this->allowedDependencyModules[] = $module;
+        if (!in_array($component, $this->allowedDependencyComponents, true)) {
+            $this->allowedDependencyComponents[] = $component;
         }
         return $this;
     }
 
     /**
-     * @param Module ...$modules
+     * @param Component ...$components
      * @return $this
      */
-    public function setForbiddenDependencyModules(Module ...$modules): self
+    public function setForbiddenDependencyComponents(Component ...$components): self
     {
-        foreach ($modules as $module) {
-            $this->addForbiddenDependencyModule($module);
+        foreach ($components as $component) {
+            $this->addForbiddenDependencyComponent($component);
         }
         return $this;
     }
 
     /**
-     * @param Module $module
+     * @param Component $component
      * @return $this
      */
-    public function addForbiddenDependencyModule(Module $module): self
+    public function addForbiddenDependencyComponent(Component $component): self
     {
-        if (!empty($this->allowedDependencyModules)) {
-            throw new \LogicException('Module cannot have allowed and forbidden dependencies at the same time!');
+        if (!empty($this->allowedDependencyComponents)) {
+            throw new \LogicException('Component cannot have allowed and forbidden dependencies at the same time!');
         }
-        if (!in_array($module, $this->forbiddenDependencyModules, true)) {
-            $this->forbiddenDependencyModules[] = $module;
+        if (!in_array($component, $this->forbiddenDependencyComponents, true)) {
+            $this->forbiddenDependencyComponents[] = $component;
         }
         return $this;
     }
@@ -162,52 +162,52 @@ class Restrictions
     }
 
     /**
-     * @param Module $thisModule
+     * @param Component $thisComponent
      * @return float
      */
-    public function calculateDistanceRateOverage(Module $thisModule): float
+    public function calculateDistanceRateOverage(Component $thisComponent): float
     {
         if ($this->maxAllowableDistance === null) {
             return 0;
         }
 
-        $distanceRate = $thisModule->calculateDistanceRate();
+        $distanceRate = $thisComponent->calculateDistanceRate();
         return $distanceRate > $this->maxAllowableDistance
             ? $distanceRate - $this->maxAllowableDistance
             : 0;
     }
 
     /**
-     * @param Module $dependency
-     * @param Module $thisModule
+     * @param Component $dependency
+     * @param Component $thisComponent
      * @return bool
      */
-    public function isDependencyAllowed(Module $dependency, Module $thisModule): bool
+    public function isDependencyAllowed(Component $dependency, Component $thisComponent): bool
     {
-        if ($dependency === $thisModule || $dependency->isPrimitives() || $dependency->isGlobal()) {
+        if ($dependency === $thisComponent || $dependency->isPrimitives() || $dependency->isGlobal()) {
             return true;
         }
-        if (!empty($this->allowedDependencyModules)) {
-            return in_array($dependency, $this->allowedDependencyModules, true);
+        if (!empty($this->allowedDependencyComponents)) {
+            return in_array($dependency, $this->allowedDependencyComponents, true);
         }
-        if (!empty($this->forbiddenDependencyModules)) {
-            return !in_array($dependency, $this->forbiddenDependencyModules, true);
+        if (!empty($this->forbiddenDependencyComponents)) {
+            return !in_array($dependency, $this->forbiddenDependencyComponents, true);
         }
         return true;
     }
 
     /**
      * @param UnitOfCode $unitOfCode
-     * @param Module $thisModule
+     * @param Component $thisComponent
      * @return bool
      */
-    public function isUnitOfCodeAccessibleFromOutside(UnitOfCode $unitOfCode, Module $thisModule): bool
+    public function isUnitOfCodeAccessibleFromOutside(UnitOfCode $unitOfCode, Component $thisComponent): bool
     {
         if ($unitOfCode->isPrimitive() || $unitOfCode->belongToGlobalNamespace()) {
             return true;
         }
-        if (!$unitOfCode->belongToModule($thisModule)) {
-            throw new \InvalidArgumentException('$unitOfCode must belong to this module!');
+        if (!$unitOfCode->belongToComponent($thisComponent)) {
+            throw new \InvalidArgumentException('$unitOfCode must belong to this component!');
         }
         if (!empty($this->publicUnitsOfCode)) {
             return in_array($unitOfCode, $this->publicUnitsOfCode, true);
@@ -219,37 +219,37 @@ class Restrictions
     }
 
     /**
-     * @param Module $thisModule
-     * @return Module[]
+     * @param Component $thisComponent
+     * @return Component[]
      */
-    public function getIllegalDependencyModules(Module $thisModule): array
+    public function getIllegalDependencyComponents(Component $thisComponent): array
     {
-        $uniqueIllegalDependencyModules = [];
-        foreach ($thisModule->getDependencyModules() as $dependencyModule) {
-            if (!$this->isDependencyAllowed($dependencyModule, $thisModule)) {
-                $uniqueIllegalDependencyModules[spl_object_hash($dependencyModule)] = $dependencyModule;
+        $uniqueIllegalDependencyComponents = [];
+        foreach ($thisComponent->getDependencyComponents() as $dependencyComponent) {
+            if (!$this->isDependencyAllowed($dependencyComponent, $thisComponent)) {
+                $uniqueIllegalDependencyComponents[spl_object_hash($dependencyComponent)] = $dependencyComponent;
             }
         }
-        return array_values($uniqueIllegalDependencyModules);
+        return array_values($uniqueIllegalDependencyComponents);
     }
 
     /**
-     * @param Module $thisModule
-     * @param bool $onlyFromAllowedModules
+     * @param Component $thisComponent
+     * @param bool $onlyFromAllowedComponents
      * @return UnitOfCode[]
      */
-    public function getIllegalDependencyUnitsOfCode(Module $thisModule, bool $onlyFromAllowedModules = false): array
+    public function getIllegalDependencyUnitsOfCode(Component $thisComponent, bool $onlyFromAllowedComponents = false): array
     {
         $uniqueIllegalDependencies = [];
-        foreach ($thisModule->unitsOfCode() as $unitOfCode) {
+        foreach ($thisComponent->unitsOfCode() as $unitOfCode) {
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToModule($thisModule)) {
+                if ($dependency->belongToComponent($thisComponent)) {
                     continue;
                 }
 
-                $isDependencyAllowed = $this->isDependencyAllowed($dependency->module(), $thisModule);
+                $isDependencyAllowed = $this->isDependencyAllowed($dependency->component(), $thisComponent);
                 $isDependencyAccessibleFromOutside = $dependency->isAccessibleFromOutside();
-                if ($onlyFromAllowedModules) {
+                if ($onlyFromAllowedComponents) {
                     if (!$isDependencyAllowed) {
                         continue;
                     }

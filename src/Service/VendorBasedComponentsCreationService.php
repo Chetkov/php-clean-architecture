@@ -3,20 +3,20 @@
 namespace Chetkov\PHPCleanArchitecture\Service;
 
 use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 
 /**
- * Class VendorBasedModulesCreationService
+ * Class VendorBasedComponentsCreationService
  * @package Chetkov\PHPCleanArchitecture\Service
  */
-class VendorBasedModulesCreationService
+class VendorBasedComponentsCreationService
 {
     /** @var string[] */
     private $excludedPaths;
 
     /**
-     * VendorBasedModulesCreationService constructor.
+     * VendorBasedComponentsCreationService constructor.
      * @param string[] $excludedPaths
      */
     public function __construct(array $excludedPaths = [])
@@ -26,11 +26,11 @@ class VendorBasedModulesCreationService
 
     /**
      * @param string $pathToVendor
-     * @return Module[]
+     * @return Component[]
      */
     public function create(string $pathToVendor): array
     {
-        $modules = [];
+        $components = [];
         $composerFiles = new \RegexIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($pathToVendor)), '/composer.json/i');
 
         /** @var \SplFileInfo $composerFile */
@@ -57,11 +57,11 @@ class VendorBasedModulesCreationService
             $autoloadDevSection = $composerData['autoload-dev'] ?? [];
             $excludedPaths = $this->createPathsByAutoloadSection($autoloadDevSection, $composerFile->getPath());
 
-            $modules[] = Module::create($packageName, $rootPaths, $excludedPaths)
+            $components[] = Component::create($packageName, $rootPaths, $excludedPaths)
                 ->excludeFromAnalyze();
         }
 
-        return $modules;
+        return $components;
     }
 
     /**

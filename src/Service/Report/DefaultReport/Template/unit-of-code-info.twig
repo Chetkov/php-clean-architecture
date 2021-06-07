@@ -47,7 +47,7 @@
 
 {% block breadcrumb %}
     <li class="breadcrumb-item"><a href="index.html">Главная</a></li>
-    <li class="breadcrumb-item"><a href="{{ module.uid }}.html">{{ module.name }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ component.uid }}.html">{{ component.name }}</a></li>
     <li class="breadcrumb-item active" aria-current="page">{{ name }}</li>
 {% endblock %}
 
@@ -55,7 +55,7 @@
     <div class="row">
         <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
             <ul style="margin-top: 10px;">
-                <li>Модуль: <a href="{{ module.uid }}.html">{{ module.name }}</a></li>
+                <li>Компонент: <a href="{{ component.uid }}.html">{{ component.name }}</a></li>
                 <li>Тип: {{ type }}</li>
                 <li>Публичный: {{ is_public }}</li>
                 <li>Абстрактный: {{ is_abstract }}</li>

@@ -2,28 +2,28 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor;
 
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ObjectsGraphBuilder;
 
 /**
- * Class ModulesGraphExtractor
+ * Class ComponentsGraphExtractor
  * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor
  */
-class ModulesGraphExtractor
+class ComponentsGraphExtractor
 {
-    /** @var ModulesGraphNodeExtractor */
+    /** @var ComponentsGraphNodeExtractor */
     private $nodeExtractor;
 
-    /** @var ModulesGraphEdgeExtractor */
+    /** @var ComponentsGraphEdgeExtractor */
     private $edgeExtractor;
 
     /**
-     * ModulesGraphExtractor constructor.
+     * ComponentsGraphExtractor constructor.
      */
     public function __construct()
     {
-        $this->nodeExtractor = new ModulesGraphNodeExtractor();
-        $this->edgeExtractor = new ModulesGraphEdgeExtractor();
+        $this->nodeExtractor = new ComponentsGraphNodeExtractor();
+        $this->edgeExtractor = new ComponentsGraphEdgeExtractor();
     }
 
     /**
@@ -33,7 +33,7 @@ class ModulesGraphExtractor
     public function extract(ObjectsGraphBuilder $graphBuilder): array
     {
         return [
-            'nodes' => json_encode(array_map(function (Module $node) {
+            'nodes' => json_encode(array_map(function (Component $node) {
                 return $this->nodeExtractor->extract($node);
             }, $graphBuilder->getNodes())),
             'edges' => json_encode(array_map(function (array $edge) {

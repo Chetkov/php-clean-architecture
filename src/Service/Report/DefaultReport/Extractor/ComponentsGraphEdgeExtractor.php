@@ -2,16 +2,16 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor;
 
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 
 /**
- * Class ModulesGraphEdgeExtractor
+ * Class ComponentsGraphEdgeExtractor
  * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor
  */
-class ModulesGraphEdgeExtractor
+class ComponentsGraphEdgeExtractor
 {
     /**
-     * @param Module[] $edge [$from, $to]
+     * @param Component[] $edge [$from, $to]
      * @return array
      */
     public function extract(array $edge): array

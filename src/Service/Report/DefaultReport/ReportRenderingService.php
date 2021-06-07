@@ -2,7 +2,7 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
 
 /**
@@ -14,8 +14,8 @@ class ReportRenderingService implements ReportRenderingServiceInterface
     /** @var IndexPageRenderingService */
     private $indexPageRenderingService;
 
-    /** @var ModulePageRenderingService */
-    private $modulePageRenderingService;
+    /** @var ComponentPageRenderingService */
+    private $componentPageRenderingService;
 
     /** @var UnitOfCodePageRenderingService */
     private $unitOfCodePageRenderingService;
@@ -23,24 +23,24 @@ class ReportRenderingService implements ReportRenderingServiceInterface
     public function __construct()
     {
         $this->indexPageRenderingService = new IndexPageRenderingService();
-        $this->modulePageRenderingService = new ModulePageRenderingService();
+        $this->componentPageRenderingService = new ComponentPageRenderingService();
         $this->unitOfCodePageRenderingService = new UnitOfCodePageRenderingService();
     }
 
     /**
      * @inheritDoc
      */
-    public function render(string $reportPath, Module ...$modules): void
+    public function render(string $reportPath, Component ...$components): void
     {
-        $this->indexPageRenderingService->render($reportPath, ...$modules);
-        foreach ($modules as $module) {
-            if (!$module->isEnabledForAnalysis()) {
+        $this->indexPageRenderingService->render($reportPath, ...$components);
+        foreach ($components as $component) {
+            if (!$component->isEnabledForAnalysis()) {
                 continue;
             }
 
-            $this->modulePageRenderingService->render($reportPath, $module, ...$modules);
-            foreach ($module->unitsOfCode() as $unitOfCode) {
-                $this->unitOfCodePageRenderingService->render($reportPath, $unitOfCode, ...$modules);
+            $this->componentPageRenderingService->render($reportPath, $component, ...$components);
+            foreach ($component->unitsOfCode() as $unitOfCode) {
+                $this->unitOfCodePageRenderingService->render($reportPath, $unitOfCode, ...$components);
             }
         }
     }

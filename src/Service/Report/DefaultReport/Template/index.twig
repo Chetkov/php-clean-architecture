@@ -14,8 +14,8 @@
         function drawAIChart() {
             var data = google.visualization.arrayToDataTable([
                 ['Имя', 'Неустойчивость', 'Абстрактность', 'Тип', 'Зависимостей'],
-                {% for module in modules %}
-                ['{{ module.name }}', {{ module.instability_rate }}, {{ module.abstractness_rate }}, 'Модуль', {{ module.num_of_dependency }}],
+                {% for component in components %}
+                ['{{ component.name }}', {{ component.instability_rate }}, {{ component.abstractness_rate }}, 'Компонент', {{ component.num_of_dependency }}],
                 {% endfor %}
             ]);
 
@@ -37,9 +37,9 @@
         function drawDChart() {
             let container = document.getElementById('d-chart');
             let chartData = [
-                ['Модуль', 'Distance (norma)', 'Distance (overage)'],
-                {% for module in modules %}
-                    ['{{ module.name }}', {{ module.distance_norma }}, {{ module.distance_overage }}],
+                ['Компонент', 'Distance (norma)', 'Distance (overage)'],
+                {% for component in components %}
+                    ['{{ component.name }}', {{ component.distance_norma }}, {{ component.distance_overage }}],
                 {% endfor %}
             ];
 
@@ -95,10 +95,10 @@
         <div class="col-lg-2 col-md-4 col-sm-6 col-xs-12">
             <b>Компоненты</b>
             <table class="table table-borderless table-hover">
-                {% for module in modules %}
+                {% for component in components %}
                     <tr>
                         <td>
-                            <a href="{{ module.uid }}.html">{{ module.name }}</a>
+                            <a href="{{ component.uid }}.html">{{ component.name }}</a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -113,8 +113,8 @@
     <script type="text/javascript">
         var container = document.getElementById('graph');
 
-        var nodes = new vis.DataSet({{ modules_graph.nodes|raw }});
-        var edges = new vis.DataSet({{ modules_graph.edges|raw }});
+        var nodes = new vis.DataSet({{ components_graph.nodes|raw }});
+        var edges = new vis.DataSet({{ components_graph.edges|raw }});
         var data = {
             nodes: nodes,
             edges: edges

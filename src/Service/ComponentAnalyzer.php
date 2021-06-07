@@ -3,16 +3,16 @@
 namespace Chetkov\PHPCleanArchitecture\Service;
 
 use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\DependenciesFinderInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class ModuleAnalyzer
+ * Class ComponentAnalyzer
  * @package Chetkov\PHPCleanArchitecture\Service
  */
-class ModuleAnalyzer
+class ComponentAnalyzer
 {
     /** @var DependenciesFinderInterface */
     private $dependenciesFinder;
@@ -21,7 +21,7 @@ class ModuleAnalyzer
     private $logger;
 
     /**
-     * ModuleAnalyzer constructor.
+     * ComponentAnalyzer constructor.
      * @param DependenciesFinderInterface $dependenciesFinder
      * @param LoggerInterface $logger
      */
@@ -32,23 +32,23 @@ class ModuleAnalyzer
     }
 
     /**
-     * @param Module $module
+     * @param Component $component
      * @return void
      */
-    public function analyze(Module $module): void
+    public function analyze(Component $component): void
     {
-        if (!$module->isEnabledForAnalysis()) {
+        if (!$component->isEnabledForAnalysis()) {
             return;
         }
 
-        $this->logger->info('MODULE: '. $module->name());
-        foreach ($module->rootPaths() as $path) {
+        $this->logger->info('COMPONENT: '. $component->name());
+        foreach ($component->rootPaths() as $path) {
             $files = new \RegexIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path->path())), '/\.php$/i');
 
             /** @var \SplFileInfo $file */
             foreach ($files as $file) {
                 $fullPath = $file->getRealPath();
-                if ($module->isExcluded($fullPath)) {
+                if ($component->isExcluded($fullPath)) {
                     $this->logger->warning("[SKIPPED] $fullPath");
                     continue;
                 }
@@ -59,7 +59,7 @@ class ModuleAnalyzer
                     )
                 );
 
-                $unitOfCode = UnitOfCode::create($fullName, $module, $fullPath);
+                $unitOfCode = UnitOfCode::create($fullName, $component, $fullPath);
                 $dependencies = $this->dependenciesFinder->find($unitOfCode);
                 foreach ($dependencies as $dependency) {
                     $unitOfCode->addOutputDependency(UnitOfCode::create($dependency));

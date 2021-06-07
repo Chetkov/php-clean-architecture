@@ -3,8 +3,8 @@
 {% block head %}
     {{ parent() }}
     <script type="text/javascript">
-        let dependentModules = JSON.parse('{{ dependent_modules_json|raw }}');
-        let dependencyModules = JSON.parse('{{ dependency_modules_json|raw }}');
+        let dependentComponents = JSON.parse('{{ dependent_components_json|raw }}');
+        let dependencyComponents = JSON.parse('{{ dependency_components_json|raw }}');
 
         google.charts.load("current", {packages: ['corechart', 'bar']});
         google.charts.setOnLoadCallback(drawCharts);
@@ -12,22 +12,22 @@
         function drawCharts() {
             drawCharacteristicsChart();
             drawAIChart();
-            if (dependentModules.length > 0) {
-                drawDependenciesChart('Входящие зависимости', 'Кол-во файлов в других модулях, зависящих от этого модуля', 'input-deps-chart', dependentModules);
+            if (dependentComponents.length > 0) {
+                drawDependenciesChart('Входящие зависимости', 'Кол-во файлов в других компонентах, зависящих от этого компонента', 'input-deps-chart', dependentComponents);
             }
-            if (dependencyModules.length > 0) {
-                drawDependenciesChart('Исходящие зависимости', 'Кол-во файлов в этом модуле, зависящих от других модулей', 'output-deps-chart', dependencyModules);
+            if (dependencyComponents.length > 0) {
+                drawDependenciesChart('Исходящие зависимости', 'Кол-во файлов в этом компоненте, зависящих от других компонентов', 'output-deps-chart', dependencyComponents);
             }
         }
 
-        function drawDependenciesChart(title, description, chartType, modules) {
+        function drawDependenciesChart(title, description, chartType, components) {
             let container = document.getElementById(chartType);
             var chart = new google.charts.Bar(container);
-            let chartData = [['Модуль', 'Кол-во файлов']];
-            for (let moduleName in modules) {
-                if (modules.hasOwnProperty(moduleName)) {
-                    let module = modules[moduleName];
-                    chartData.push([module.name, module.units_of_code.length]);
+            let chartData = [['Компонент', 'Кол-во файлов']];
+            for (let componentName in components) {
+                if (components.hasOwnProperty(componentName)) {
+                    let component = components[componentName];
+                    chartData.push([component.name, component.units_of_code.length]);
                 }
             }
             chartData.sort(function (a, b) {
@@ -160,9 +160,9 @@
     <div class="row">
         <div class="col-6">
             <table class="table table-borderless table-hover">
-                {% for dependency_module in dependency_modules %}
-                    {% for unit_of_code in dependency_module.units_of_code %}
-                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_module.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                {% for dependency_component in dependency_components %}
+                    {% for unit_of_code in dependency_component.units_of_code %}
+                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_component.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
                             <td>
                                 <span style="cursor:pointer;" onclick="this.parentElement.getElementsByTagName('ul')[0].classList.toggle('hidden')">{{ unit_of_code.name }}</span>
                                 {% if unit_of_code.uid is defined %}
@@ -181,9 +181,9 @@
         </div>
         <div class="col-6">
             <table class="table table-borderless table-hover">
-                {% for dependency_module in dependency_modules %}
-                    {% for unit_of_code in dependency_module.reverted_units_of_code %}
-                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_module.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                {% for dependency_component in dependency_components %}
+                    {% for unit_of_code in dependency_component.reverted_units_of_code %}
+                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_component.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
                             <td>
                                 <span style="cursor:pointer;" onclick="this.parentElement.getElementsByTagName('ul')[0].classList.toggle('hidden')">{{ unit_of_code.name }}</span>
                                 {% if unit_of_code.uid is defined %}
@@ -209,9 +209,9 @@
     <div class="row">
         <div class="col-12">
             <table class="table table-borderless table-hover">
-                {% for dependent_module in dependent_modules %}
-                    {% for unit_of_code in dependent_module.units_of_code %}
-                        <tr class="hidden unit-of-code-row input-deps-chart {{ dependent_module.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                {% for dependent_component in dependent_components %}
+                    {% for unit_of_code in dependent_component.units_of_code %}
+                        <tr class="hidden unit-of-code-row input-deps-chart {{ dependent_component.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
                             <td>
                                 {{ unit_of_code.name }}
                                 {% if unit_of_code.uid is defined %}
@@ -228,8 +228,8 @@
     <script type="text/javascript">
         var container = document.getElementById('graph');
 
-        var nodes = new vis.DataSet({{ modules_graph.nodes|raw }});
-        var edges = new vis.DataSet({{ modules_graph.edges|raw }});
+        var nodes = new vis.DataSet({{ components_graph.nodes|raw }});
+        var edges = new vis.DataSet({{ components_graph.edges|raw }});
         var data = {
             nodes: nodes,
             edges: edges

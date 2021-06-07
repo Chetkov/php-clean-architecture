@@ -2,9 +2,9 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
-use Chetkov\PHPCleanArchitecture\Model\Module;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\IndexPage\ModuleExtractor;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ModulesGraphExtractor;
+use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\IndexPage\ComponentExtractor;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentsGraphExtractor;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
@@ -18,48 +18,48 @@ class IndexPageRenderingService
     private $twig;
 
     /** @var ObjectsGraphBuilder */
-    private $modulesGraphBuilder;
+    private $componentsGraphBuilder;
 
-    /** @var ModuleExtractor */
-    private $moduleExtractor;
+    /** @var ComponentExtractor */
+    private $componentExtractor;
 
-    /** @var ModulesGraphExtractor */
-    private $modulesGraphExtractor;
+    /** @var ComponentsGraphExtractor */
+    private $componentsGraphExtractor;
 
     public function __construct()
     {
         $templatesLoader = new FilesystemLoader(__DIR__ . '/Template/');
         $this->twig = new Environment($templatesLoader);
-        $this->modulesGraphBuilder = new ObjectsGraphBuilder();
-        $this->moduleExtractor = new ModuleExtractor();
-        $this->modulesGraphExtractor = new ModulesGraphExtractor();
+        $this->componentsGraphBuilder = new ObjectsGraphBuilder();
+        $this->componentExtractor = new ComponentExtractor();
+        $this->componentsGraphExtractor = new ComponentsGraphExtractor();
     }
 
     /**
      * @param string $reportsPath
-     * @param Module ...$modules
+     * @param Component ...$components
      */
-    public function render(string $reportsPath, Module ...$modules): void
+    public function render(string $reportsPath, Component ...$components): void
     {
-        $extractedModulesData = [];
-        $this->modulesGraphBuilder->reset();
+        $extractedComponentsData = [];
+        $this->componentsGraphBuilder->reset();
 
-        foreach ($modules as $module) {
-            $extractedModulesData[] = $this->moduleExtractor->extract($module);
-            foreach ($module->getDependentModules() as $dependentModule) {
-                $this->modulesGraphBuilder->addEdge($dependentModule, $module);
+        foreach ($components as $component) {
+            $extractedComponentsData[] = $this->componentExtractor->extract($component);
+            foreach ($component->getDependentComponents() as $dependentComponent) {
+                $this->componentsGraphBuilder->addEdge($dependentComponent, $component);
             }
-            foreach ($module->getDependencyModules() as $dependencyModule) {
-                if ($dependencyModule->isPrimitives() || $dependencyModule->isGlobal()) {
+            foreach ($component->getDependencyComponents() as $dependencyComponent) {
+                if ($dependencyComponent->isPrimitives() || $dependencyComponent->isGlobal()) {
                     continue;
                 }
-                $this->modulesGraphBuilder->addEdge($module, $dependencyModule);
+                $this->componentsGraphBuilder->addEdge($component, $dependencyComponent);
             }
         }
 
         file_put_contents($reportsPath . '/' . 'index.html', $this->twig->render('index.twig', [
-            'modules_graph' => $this->modulesGraphExtractor->extract($this->modulesGraphBuilder),
-            'modules' => $extractedModulesData,
+            'components_graph' => $this->componentsGraphExtractor->extract($this->componentsGraphBuilder),
+            'components' => $extractedComponentsData,
         ]));
     }
 }

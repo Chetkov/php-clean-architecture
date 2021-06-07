@@ -3,7 +3,7 @@
 namespace Chetkov\PHPCleanArchitecture\Service\Report;
 
 
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 
 /**
  * Interface ReportRenderingServiceInterface
@@ -13,7 +13,7 @@ interface ReportRenderingServiceInterface
 {
     /**
      * @param string $reportPath
-     * @param Module ...$modules
+     * @param Component ...$components
      */
-    public function render(string $reportPath, Module ...$modules): void;
+    public function render(string $reportPath, Component ...$components): void;
 }

@@ -2,13 +2,13 @@
 
 namespace Chetkov\PHPCleanArchitecture;
 
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\ModuleAnalyzer;
+use Chetkov\PHPCleanArchitecture\Service\ComponentAnalyzer;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
-use Chetkov\PHPCleanArchitecture\Service\VendorBasedModulesCreationService;
+use Chetkov\PHPCleanArchitecture\Service\VendorBasedComponentsCreationService;
 
 /**
  * Class PHPCleanArchitectureFacade
@@ -16,8 +16,8 @@ use Chetkov\PHPCleanArchitecture\Service\VendorBasedModulesCreationService;
  */
 class PHPCleanArchitectureFacade
 {
-    /** @var ModuleAnalyzer */
-    private $moduleAnalyzer;
+    /** @var ComponentAnalyzer */
+    private $componentAnalyzer;
 
     /** @var callable */
     private $reportRenderingServiceFactory;
@@ -28,8 +28,8 @@ class PHPCleanArchitectureFacade
     /** @var bool */
     private $checkStableDependenciesPrinciple;
 
-    /** @var Module[] */
-    private $analyzedModules;
+    /** @var Component[] */
+    private $analyzedComponents;
 
     /** @var bool */
     private $isAnalyzePerformed = false;
@@ -40,69 +40,69 @@ class PHPCleanArchitectureFacade
      */
     public function __construct(array $config)
     {
-        $vendorBasedModulesConfig = $config['vendor_based_modules'];
-        if (!empty($vendorBasedModulesConfig['enabled']) && !empty($vendorBasedModulesConfig['vendor_path'])) {
-            $excludedVendorPaths = $vendorBasedModulesConfig['excluded'] ?? [];
-            $vendorBasedModulesCreator = new VendorBasedModulesCreationService($excludedVendorPaths);
-            $vendorBasedModulesCreator->create($vendorBasedModulesConfig['vendor_path']);
+        $vendorBasedComponentsConfig = $config['vendor_based_components'];
+        if (!empty($vendorBasedComponentsConfig['enabled']) && !empty($vendorBasedComponentsConfig['vendor_path'])) {
+            $excludedVendorPaths = $vendorBasedComponentsConfig['excluded'] ?? [];
+            $vendorBasedComponentsCreator = new VendorBasedComponentsCreationService($excludedVendorPaths);
+            $vendorBasedComponentsCreator->create($vendorBasedComponentsConfig['vendor_path']);
         }
 
-        $this->analyzedModules = [];
+        $this->analyzedComponents = [];
         $commonRestrictionsConfig = $config['restrictions'] ?? [];
         $this->checkAcyclicDependenciesPrinciple = $commonRestrictionsConfig['check_acyclic_dependencies_principle'] ?? true;
         $this->checkStableDependenciesPrinciple = $commonRestrictionsConfig['check_stable_dependencies_principle'] ?? true;
-        foreach ($config['modules'] as $moduleConfig) {
+        foreach ($config['components'] as $componentConfig) {
             $rootPaths = [];
-            foreach ($moduleConfig['roots'] ?? [] as $rootPathConfig) {
+            foreach ($componentConfig['roots'] ?? [] as $rootPathConfig) {
                 $rootPaths[] = new Path($rootPathConfig['path'], $rootPathConfig['namespace']);
             }
 
             $excludedPaths = [];
-            foreach ($moduleConfig['excluded'] ?? [] as $excludedPath) {
+            foreach ($componentConfig['excluded'] ?? [] as $excludedPath) {
                 $excludedPaths[] = new Path($excludedPath, '');
             }
 
             $restrictions = new Restrictions();
-            $moduleRestrictionsConfig = $moduleConfig['restrictions'] ?? [];
+            $componentRestrictionsConfig = $componentConfig['restrictions'] ?? [];
 
-            foreach ($moduleRestrictionsConfig['public_elements'] ?? [] as $publicElement) {
+            foreach ($componentRestrictionsConfig['public_elements'] ?? [] as $publicElement) {
                 $restrictions->addPublicUnitOfCode(UnitOfCode::create($publicElement));
             }
-            foreach ($moduleRestrictionsConfig['private_elements'] ?? [] as $privateElement) {
+            foreach ($componentRestrictionsConfig['private_elements'] ?? [] as $privateElement) {
                 $restrictions->addPrivateUnitOfCode(UnitOfCode::create($privateElement));
             }
 
-            foreach ($moduleRestrictionsConfig['allowed_dependencies'] ?? [] as $allowedDependency) {
-                $restrictions->addAllowedDependencyModule(Module::create($allowedDependency));
+            foreach ($componentRestrictionsConfig['allowed_dependencies'] ?? [] as $allowedDependency) {
+                $restrictions->addAllowedDependencyComponent(Component::create($allowedDependency));
             }
-            foreach ($moduleRestrictionsConfig['forbidden_dependencies'] ?? [] as $forbiddenDependency) {
-                $restrictions->addForbiddenDependencyModule(Module::create($forbiddenDependency));
+            foreach ($componentRestrictionsConfig['forbidden_dependencies'] ?? [] as $forbiddenDependency) {
+                $restrictions->addForbiddenDependencyComponent(Component::create($forbiddenDependency));
             }
 
-            $maxAllowableDistance = $moduleRestrictionsConfig['max_allowable_distance'] ?? null;
+            $maxAllowableDistance = $componentRestrictionsConfig['max_allowable_distance'] ?? null;
             if ($maxAllowableDistance === null) {
                 $maxAllowableDistance = $commonRestrictionsConfig['max_allowable_distance'] ?? null;
             }
             $restrictions->setMaxAllowableDistance($maxAllowableDistance);
 
-            $module = Module::create(
-                $moduleConfig['name'],
+            $component = Component::create(
+                $componentConfig['name'],
                 $rootPaths,
                 $excludedPaths,
                 $restrictions
             );
 
-            $isEnabledForAnalysis = $moduleConfig['is_analyze_enabled'] ?? true;
+            $isEnabledForAnalysis = $componentConfig['is_analyze_enabled'] ?? true;
             if ($isEnabledForAnalysis) {
-                $this->analyzedModules[] = $module;
+                $this->analyzedComponents[] = $component;
             } else {
-                $module->excludeFromAnalyze();
+                $component->excludeFromAnalyze();
             }
         }
 
         $loggerFactory = $config['factories']['logger'];
         $dependenciesFinderFactory = $config['factories']['dependencies_finder'];
-        $this->moduleAnalyzer = new ModuleAnalyzer($dependenciesFinderFactory(), $loggerFactory());
+        $this->componentAnalyzer = new ComponentAnalyzer($dependenciesFinderFactory(), $loggerFactory());
         $this->reportRenderingServiceFactory = $config['factories']['report_rendering_service'];
     }
 
@@ -113,7 +113,7 @@ class PHPCleanArchitectureFacade
     {
         $this->analyze();
 
-        $this->createReportRenderingService()->render($path, ...$this->analyzedModules);
+        $this->createReportRenderingService()->render($path, ...$this->analyzedComponents);
     }
 
     /**
@@ -124,43 +124,43 @@ class PHPCleanArchitectureFacade
         $this->analyze();
 
         $errors = [];
-        foreach ($this->analyzedModules as $module) {
+        foreach ($this->analyzedComponents as $component) {
             if ($this->checkAcyclicDependenciesPrinciple) {
-                foreach ($module->getCyclicDependencies() as $cyclicDependenciesPath) {
-                    $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Module $module) {
-                            return $module->name();
+                foreach ($component->getCyclicDependencies() as $cyclicDependenciesPath) {
+                    $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Component $component) {
+                            return $component->name();
                         }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
                 }
             }
 
             if ($this->checkStableDependenciesPrinciple) {
-                foreach ($module->getDependentModules() as $dependentModule) {
-                    $dependentModuleInstabilityRate = $dependentModule->calculateInstabilityRate();
-                    $moduleInstabilityRate = $module->calculateInstabilityRate();
-                    if ($dependentModuleInstabilityRate < $moduleInstabilityRate) {
-                        $errors[] = "Dependency {$dependentModule->name()}(instability: $dependentModuleInstabilityRate) -> {$module->name()}(instability: $moduleInstabilityRate) violates the SDP (stable dependencies principle)";
+                foreach ($component->getDependentComponents() as $dependentComponent) {
+                    $dependentComponentInstabilityRate = $dependentComponent->calculateInstabilityRate();
+                    $componentInstabilityRate = $component->calculateInstabilityRate();
+                    if ($dependentComponentInstabilityRate < $componentInstabilityRate) {
+                        $errors[] = "Dependency {$dependentComponent->name()}(instability: $dependentComponentInstabilityRate) -> {$component->name()}(instability: $componentInstabilityRate) violates the SDP (stable dependencies principle)";
                     }
                 }
             }
 
-            foreach ($module->getIllegalDependencyModules() as $illegalDependencyModule) {
-                $errorMessage = "\"{$module->name()}\" can not depend on \"{$illegalDependencyModule->name()}\"! Dependent elements:" . PHP_EOL;
-                foreach ($module->getDependentUnitsOfCode($illegalDependencyModule) as $dependentUnitOfCode) {
+            foreach ($component->getIllegalDependencyComponents() as $illegalDependencyComponent) {
+                $errorMessage = "\"{$component->name()}\" can not depend on \"{$illegalDependencyComponent->name()}\"! Dependent elements:" . PHP_EOL;
+                foreach ($component->getDependentUnitsOfCode($illegalDependencyComponent) as $dependentUnitOfCode) {
                     $errorMessage .= $dependentUnitOfCode->name() . PHP_EOL;
                 }
                 $errors[] = $errorMessage;
             }
 
-            foreach ($module->getIllegalDependencyUnitsOfCode(true) as $illegalDependency) {
-                $errorMessage = "\"{$module->name()}\" can not depend on NON PUBLIC \"{$illegalDependency->name()}\"! Dependent elements:" . PHP_EOL;
-                foreach ($illegalDependency->inputDependencies($module) as $dependentUnitOfCode) {
+            foreach ($component->getIllegalDependencyUnitsOfCode(true) as $illegalDependency) {
+                $errorMessage = "\"{$component->name()}\" can not depend on NON PUBLIC \"{$illegalDependency->name()}\"! Dependent elements:" . PHP_EOL;
+                foreach ($illegalDependency->inputDependencies($component) as $dependentUnitOfCode) {
                     $errorMessage .= $dependentUnitOfCode->name() . PHP_EOL;
                 }
                 $errors[] = $errorMessage;
             }
 
-            if ($distanceRateOverage = $module->calculateDistanceRateOverage()) {
-                $errors[] = "\"{$module->name()}\" exceeded the maximum allowable distance by $distanceRateOverage. Current value {$module->calculateDistanceRate()}";
+            if ($distanceRateOverage = $component->calculateDistanceRateOverage()) {
+                $errors[] = "\"{$component->name()}\" exceeded the maximum allowable distance by $distanceRateOverage. Current value {$component->calculateDistanceRate()}";
             }
         }
 
@@ -170,8 +170,8 @@ class PHPCleanArchitectureFacade
     private function analyze(): void
     {
         if (!$this->isAnalyzePerformed) {
-            foreach ($this->analyzedModules as $module) {
-                $this->moduleAnalyzer->analyze($module);
+            foreach ($this->analyzedComponents as $component) {
+                $this->componentAnalyzer->analyze($component);
             }
             $this->isAnalyzePerformed = true;
         }

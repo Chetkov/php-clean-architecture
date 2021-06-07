@@ -3,10 +3,10 @@
 namespace Chetkov\PHPCleanArchitecture\Model;
 
 /**
- * Class Module
+ * Class Component
  * @package Chetkov\PHPCleanArchitecture\Model
  */
-class Module
+class Component
 {
     /**
      * Название по умолчанию, если не передано другое
@@ -14,12 +14,12 @@ class Module
     private const UNDEFINED = '*undefined*';
 
     /**
-     * Название модуля, в который будут сложены используемые примитивы и псевдотипы
+     * Название компонента, в который будут сложены используемые примитивы и псевдотипы
      */
     private const PRIMITIVES = '*primitives*';
 
     /**
-     * Название модуля, в который будут сложены элементы относящиеся к глобальному namespace
+     * Название компонента, в который будут сложены элементы относящиеся к глобальному namespace
      */
     private const GLOBAL = '*global*';
 
@@ -45,7 +45,7 @@ class Module
     private $unitsOfCode = [];
 
     /**
-     * Module constructor.
+     * Component constructor.
      * @param string $name
      * @param Path[] $rootPaths
      * @param Path[] $excludedPaths
@@ -84,17 +84,17 @@ class Module
                 $restrictions
             );
         }
-        $module = self::$instances[$name];
+        $component = self::$instances[$name];
         foreach ($rootPaths as $rootPath) {
-            $module->addRootPath($rootPath);
+            $component->addRootPath($rootPath);
         }
         foreach ($excludedPaths as $excludedPath) {
-            $module->addExcludedPath($excludedPath);
+            $component->addExcludedPath($excludedPath);
         }
         if ($restrictions) {
-            $module->restrictions = $restrictions;
+            $component->restrictions = $restrictions;
         }
-        return $module;
+        return $component;
     }
 
     /**
@@ -127,11 +127,11 @@ class Module
             return false;
         };
 
-        foreach (self::$instances as $existingModule) {
-            if ($isLocatedInOneOfPaths($unitOfCode, ...$existingModule->rootPaths())
-                && !$isLocatedInOneOfPaths($unitOfCode, ...$existingModule->excludedPaths())
+        foreach (self::$instances as $existingComponent) {
+            if ($isLocatedInOneOfPaths($unitOfCode, ...$existingComponent->rootPaths())
+                && !$isLocatedInOneOfPaths($unitOfCode, ...$existingComponent->excludedPaths())
             ) {
-                return $existingModule;
+                return $existingComponent;
             }
         }
 
@@ -139,8 +139,8 @@ class Module
     }
 
     /**
-     * Возвращает все, созданные до текущего момента времени, объекты Module
-     * @return Module[]
+     * Возвращает все, созданные до текущего момента времени, объекты Component
+     * @return Component[]
      */
     public static function getAll(): array
     {
@@ -148,17 +148,17 @@ class Module
     }
 
     /**
-     * Выполняет поиск объекта Module по названию (среди всех ранее созданных)
+     * Выполняет поиск объекта Component по названию (среди всех ранее созданных)
      * @param string $name
-     * @return Module|null
+     * @return Component|null
      */
-    public static function findByName(string $name): ?Module
+    public static function findByName(string $name): ?Component
     {
         return self::$instances[$name] ?? null;
     }
 
     /**
-     * Проверяет, требуется-ли анализировать содержимое модуля?
+     * Проверяет, требуется-ли анализировать содержимое компонента?
      * @return bool
      */
     public function isEnabledForAnalysis(): bool
@@ -170,7 +170,7 @@ class Module
      * Исключает метод из процесса анализа содержимого
      * @return $this
      */
-    public function excludeFromAnalyze(): Module
+    public function excludeFromAnalyze(): Component
     {
         $this->isEnabledForAnalysis = false;
         return $this;
@@ -226,7 +226,7 @@ class Module
     }
 
     /**
-     * Возвращает название модуля
+     * Возвращает название компонента
      * @return string
      */
     public function name(): string
@@ -235,7 +235,7 @@ class Module
     }
 
     /**
-     * Возвращает пути корневых директорий модуля
+     * Возвращает пути корневых директорий компонента
      * @return Path[]
      */
     public function rootPaths(): array
@@ -244,7 +244,7 @@ class Module
     }
 
     /**
-     * Добавляет путь корневой директории модуля
+     * Добавляет путь корневой директории компонента
      * @param Path $rootPath
      * @return $this
      */
@@ -279,11 +279,11 @@ class Module
     }
 
     /**
-     * Проверяет, разрешена-ли текщему модулю зависимость от переданного?
-     * @param Module $dependency
+     * Проверяет, разрешена ли текщему компоненту зависимость от переданного?
+     * @param Component $dependency
      * @return bool
      */
-    public function isDependencyAllowed(Module $dependency): bool
+    public function isDependencyAllowed(Component $dependency): bool
     {
         return $this->restrictions->isDependencyAllowed($dependency, $this);
     }
@@ -300,7 +300,7 @@ class Module
     }
 
     /**
-     * Возвращает список элементов модуля
+     * Возвращает список элементов компонента
      * @return UnitOfCode[]
      */
     public function unitsOfCode(): array
@@ -309,7 +309,7 @@ class Module
     }
 
     /**
-     * Добавляет элемент модуля
+     * Добавляет элемент компонента
      * @param UnitOfCode $unitOfCode
      * @return $this
      */
@@ -320,7 +320,7 @@ class Module
     }
 
     /**
-     * Удаляет элемент модуля
+     * Удаляет элемент компонента
      * @param UnitOfCode $unitOfCode
      * @return $this
      */
@@ -331,55 +331,55 @@ class Module
     }
 
     /**
-     * Возвращает список модулей, которые зависят от этого модуля.
-     * @return Module[]
+     * Возвращает список компонентов, которые зависят от этого компонента.
+     * @return Component[]
      */
-    public function getDependentModules(): array
+    public function getDependentComponents(): array
     {
-        $uniqueDependentModules = [];
+        $uniqueDependentComponents = [];
         foreach ($this->unitsOfCode as $unitOfCode) {
             foreach ($unitOfCode->inputDependencies() as $dependentUnitOfCode) {
-                if (!$dependentUnitOfCode->belongToModule($this)) {
-                    $module = $dependentUnitOfCode->module();
-                    $uniqueDependentModules[spl_object_hash($module)] = $module;
+                if (!$dependentUnitOfCode->belongToComponent($this)) {
+                    $component = $dependentUnitOfCode->component();
+                    $uniqueDependentComponents[spl_object_hash($component)] = $component;
                 }
             }
         }
-        return array_values($uniqueDependentModules);
+        return array_values($uniqueDependentComponents);
     }
 
     /**
-     * Возвращает список модулей, от которых зависит этот модуль.
-     * @return Module[]
+     * Возвращает список компонентов, от которых зависит этот компонент.
+     * @return Component[]
      */
-    public function getDependencyModules(): array
+    public function getDependencyComponents(): array
     {
-        $uniqueDependencyModules = [];
+        $uniqueDependencyComponents = [];
         foreach ($this->unitsOfCode as $unitOfCode) {
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if (!$dependency->belongToModule($this)
+                if (!$dependency->belongToComponent($this)
                     && !$dependency->belongToGlobalNamespace()
                     && !$dependency->isPrimitive()
                 ) {
-                    $module = $dependency->module();
-                    $uniqueDependencyModules[spl_object_hash($module)] = $module;
+                    $component = $dependency->component();
+                    $uniqueDependencyComponents[spl_object_hash($component)] = $component;
                 }
             }
         }
-        return array_values($uniqueDependencyModules);
+        return array_values($uniqueDependencyComponents);
     }
 
     /**
-     * Возвращает список элементов этого модуля, которые зависят от элементов полученного модуля.
-     * @param Module $dependencyModule
+     * Возвращает список элементов этого компонента, которые зависят от элементов полученного компонента.
+     * @param Component $dependencyComponent
      * @return UnitOfCode[]
      */
-    public function getDependentUnitsOfCode(Module $dependencyModule): array
+    public function getDependentUnitsOfCode(Component $dependencyComponent): array
     {
         $uniqueDependentUnitsOfCode = [];
         foreach ($this->unitsOfCode as $unitOfCode) {
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToModule($dependencyModule)) {
+                if ($dependency->belongToComponent($dependencyComponent)) {
                     $uniqueDependentUnitsOfCode[spl_object_hash($unitOfCode)] = $unitOfCode;
                 }
             }
@@ -388,16 +388,16 @@ class Module
     }
 
     /**
-     * Возвращает список элементов полученного модуля, от которых зависят элементы этого модуля.
-     * @param Module $dependencyModule
+     * Возвращает список элементов полученного компонента, от которых зависят элементы этого компонента.
+     * @param Component $dependencyComponent
      * @return UnitOfCode[]
      */
-    public function getDependencyUnitsOfCode(Module $dependencyModule): array
+    public function getDependencyUnitsOfCode(Component $dependencyComponent): array
     {
         $uniqueDependencyUnitsOfCode = [];
         foreach ($this->unitsOfCode as $unitOfCode) {
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToModule($dependencyModule)) {
+                if ($dependency->belongToComponent($dependencyComponent)) {
                     $uniqueDependencyUnitsOfCode[spl_object_hash($dependency)] = $dependency;
                 }
             }
@@ -406,43 +406,43 @@ class Module
     }
 
     /**
-     * Возвращает модули, от которых текущий зависеть не должен, но зависит
-     * @return Module[]
+     * Возвращает компоненты, от которых текущий зависеть не должен, но зависит
+     * @return Component[]
      */
-    public function getIllegalDependencyModules(): array
+    public function getIllegalDependencyComponents(): array
     {
-        return $this->restrictions->getIllegalDependencyModules($this);
+        return $this->restrictions->getIllegalDependencyComponents($this);
     }
 
     /**
-     * Возвращает элементы других модулей, от которых текущий зависеть не должен, но зависит
-     * @param bool $onlyFromAllowedModules Если false, метод вернёт все запрещенные для взаимодействия элементы-зависимости,
-     * т.е. элементы запрещенных для взаимодействия модулей и приватные элементы разрешенных для взаимодействия модулей.
-     * Если true, метод вернет только запрещенные элементы-зависимости из разрешенных для взаимодействия модулей,
-     * т.е. только приватные элементы разрешенных для взаимодействия модулей.
+     * Возвращает элементы других компонентов, от которых текущий зависеть не должен, но зависит
+     * @param bool $onlyFromAllowedComponents Если false, метод вернёт все запрещенные для взаимодействия элементы-зависимости,
+     * т.е. элементы запрещенных для взаимодействия компонентов и приватные элементы разрешенных для взаимодействия компонентов.
+     * Если true, метод вернет только запрещенные элементы-зависимости из разрешенных для взаимодействия компонентов,
+     * т.е. только приватные элементы разрешенных для взаимодействия компонентов.
      * @return UnitOfCode[]
      */
-    public function getIllegalDependencyUnitsOfCode(bool $onlyFromAllowedModules = false): array
+    public function getIllegalDependencyUnitsOfCode(bool $onlyFromAllowedComponents = false): array
     {
-        return $this->restrictions->getIllegalDependencyUnitsOfCode($this, $onlyFromAllowedModules);
+        return $this->restrictions->getIllegalDependencyUnitsOfCode($this, $onlyFromAllowedComponents);
     }
 
     /**
-     * Возвращает найденные циклические зависимости модулей
+     * Возвращает найденные циклические зависимости компонентов
      * @param array $path Оставь пустым (используется в рекурсии)
      * @param array $result Оставь пустым (используется в рекурсии)
-     * @return array [[Module, Module, Module], [Module, Module, Module], ...]
+     * @return array [[Component, Component, Component], [Component, Component, Component], ...]
      */
     public function getCyclicDependencies(array $path = [], array $result = []): array
     {
         $path[] = $this;
-        foreach ($this->getDependencyModules() as $dependencyModule) {
-            if (in_array($dependencyModule, $path, true)) {
-                if (isset($path[0]) && $path[0] === $dependencyModule) {
-                    $result[] = array_merge($path, [$dependencyModule]);
+        foreach ($this->getDependencyComponents() as $dependencyComponent) {
+            if (in_array($dependencyComponent, $path, true)) {
+                if (isset($path[0]) && $path[0] === $dependencyComponent) {
+                    $result[] = array_merge($path, [$dependencyComponent]);
                 }
             } else {
-                $result = $dependencyModule->getCyclicDependencies($path, $result);
+                $result = $dependencyComponent->getCyclicDependencies($path, $result);
             }
         }
         return $result;
@@ -489,12 +489,12 @@ class Module
         $uniqueOutputExternalDependencies = [];
         foreach ($this->unitsOfCode as $unitOfCode) {
             foreach ($unitOfCode->inputDependencies() as $dependency) {
-                if (!$dependency->belongToModule($this)) {
+                if (!$dependency->belongToComponent($this)) {
                     $uniqueInputExternalDependencies[$dependency->name()] = true;
                 }
             }
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToModule($this)
+                if ($dependency->belongToComponent($this)
                     || $dependency->belongToGlobalNamespace()
                     || $dependency->isPrimitive()
                 ) {

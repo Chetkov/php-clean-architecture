@@ -2,7 +2,7 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
-use Chetkov\PHPCleanArchitecture\Model\Module;
+use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\DependencyUnitOfCodeExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\UnitsOfCodeGraphExtractor;
@@ -41,22 +41,22 @@ class UnitOfCodePageRenderingService
     /**
      * @param string $reportsPath
      * @param UnitOfCode $unitOfCode
-     * @param Module ...$processedModules
+     * @param Component ...$processedComponents
      */
-    public function render(string $reportsPath, UnitOfCode $unitOfCode, Module ...$processedModules): void
+    public function render(string $reportsPath, UnitOfCode $unitOfCode, Component ...$processedComponents): void
     {
         $this->unitsOfCodeGraphBuilder->reset();
 
         $extractedInputDependencies = [];
         foreach ($unitOfCode->inputDependencies() as $inputDependency) {
             $this->unitsOfCodeGraphBuilder->addEdge($inputDependency, $unitOfCode);
-            $extractedInputDependencies[] = $this->dependencyUnitOfCodeExtractor->extract($unitOfCode, $inputDependency, $processedModules);
+            $extractedInputDependencies[] = $this->dependencyUnitOfCodeExtractor->extract($unitOfCode, $inputDependency, $processedComponents);
         }
 
         $extractedOutputDependencies = [];
         foreach ($unitOfCode->outputDependencies() as $outputDependency) {
             $this->unitsOfCodeGraphBuilder->addEdge($unitOfCode, $outputDependency);
-            $extractedOutputDependencies[] = $this->dependencyUnitOfCodeExtractor->extract($unitOfCode, $outputDependency, $processedModules, false);
+            $extractedOutputDependencies[] = $this->dependencyUnitOfCodeExtractor->extract($unitOfCode, $outputDependency, $processedComponents, false);
         }
 
         switch (true) {
@@ -78,9 +78,9 @@ class UnitOfCodePageRenderingService
 
         file_put_contents($reportsPath . '/' . $this->generateUid($unitOfCode->name()) . '.html', $this->twig->render('unit-of-code-info.twig', [
             'name' => $unitOfCode->name(),
-            'module' => [
-                'uid' => $this->generateUid($unitOfCode->module()->name()),
-                'name' => $unitOfCode->module()->name(),
+            'component' => [
+                'uid' => $this->generateUid($unitOfCode->component()->name()),
+                'name' => $unitOfCode->component()->name(),
             ],
             'type' => $type,
             'is_public' => $unitOfCode->isAccessibleFromOutside() ? 'Да' : 'Нет',

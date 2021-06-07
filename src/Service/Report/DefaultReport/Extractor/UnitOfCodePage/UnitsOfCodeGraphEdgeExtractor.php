@@ -24,9 +24,9 @@ class UnitsOfCodeGraphEdgeExtractor
             'to' => spl_object_hash($to),
         ];
 
-        if (!$from->module()->isDependencyAllowed($to->module())) {
+        if (!$from->component()->isDependencyAllowed($to->component())) {
             $extractedData['color'] = 'red';
-        } elseif (!$to->isAccessibleFromOutside() && !$to->belongToModule($from->module())) {
+        } elseif (!$to->isAccessibleFromOutside() && !$to->belongToComponent($from->component())) {
             $extractedData['color'] = 'orange';
         }
 
