@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+use Chetkov\PHPCleanArchitecture\PHPCleanArchitectureFacade;
+
+require_once dirname(__DIR__, 3) . '/autoload.php';
+
+$configPath = $argv[1] ?? dirname(__DIR__, 4) . '/phpca-config.php';
+$config = require $configPath;
+
+$analyzer = new PHPCleanArchitectureFacade($config);
+$stateStorage = $config['exclusions']['allowed_state']['storage'] ?? null;
+if (!$stateStorage) {
+    echo 'Config "exclusions.allowed_state.storage" must not be empty!' . PHP_EOL;
+    exit(1);
+}
+
+$analyzer->allowCurrentState($stateStorage);
+
+echo PHP_EOL . 'The current state is saved to ' . $stateStorage . PHP_EOL;

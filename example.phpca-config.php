@@ -123,6 +123,15 @@ return [
             ],
         ],
     ],
+
+    // Исключения
+    'exclusions' => [
+        'allowed_state' => [
+            'enabled' => false,
+            'storage' => __DIR__ . '/phpca-allowed-state.php',
+        ],
+    ],
+
     'factories' => [
         //Фабрика, собирающая DependenciesFinder
         'dependencies_finder' => function (): DependenciesFinderInterface {

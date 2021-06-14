@@ -289,14 +289,21 @@ class Component
     }
 
     /**
-     * Проверяет, является-ли переданный элемент доступным извне текущего компонента?
-     * Другими словами, является-ли переданный элемент публичным?
-     * @param UnitOfCode $unitOfCode
+     * Проверяет, существует ли зависимость в конфиге разрешенного состояния
+     * @param Component $dependency
      * @return bool
      */
-    public function isUnitOfCodeAccessibleFromOutside(UnitOfCode $unitOfCode): bool
+    public function isDependencyInAllowedState(Component $dependency): bool
     {
-        return $this->restrictions->isUnitOfCodeAccessibleFromOutside($unitOfCode, $this);
+        return $this->restrictions->isComponentDependencyInAllowedState($dependency, $this);
+    }
+
+    /**
+     * @return Restrictions
+     */
+    public function restrictions(): Restrictions
+    {
+        return $this->restrictions;
     }
 
     /**

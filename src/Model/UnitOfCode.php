@@ -174,12 +174,22 @@ class UnitOfCode
     }
 
     /**
-     * Проверяет, является-ли элемент доступным для взаимодействия извне компонента, к которому он принадлежит
+     * Проверяет, является ли элемент доступным для взаимодействия извне компонента, к которому он принадлежит
      * @return bool
      */
     public function isAccessibleFromOutside(): bool
     {
-        return $this->component->isUnitOfCodeAccessibleFromOutside($this);
+        return $this->component->restrictions()->isUnitOfCodeAccessibleFromOutside($this);
+    }
+
+    /**
+     * Проверяет, существует ли зависимость в конфиге разрешенного состояния
+     * @param UnitOfCode $dependency
+     * @return bool
+     */
+    public function isDependencyInAllowedState(UnitOfCode $dependency): bool
+    {
+        return $this->component->restrictions()->isUnitOfCodeDependencyInAllowedState($dependency, $this);
     }
 
     /**
