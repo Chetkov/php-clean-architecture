@@ -24,10 +24,12 @@ class UnitsOfCodeGraphEdgeExtractor
             'to' => spl_object_hash($to),
         ];
 
+        $isRelationInAllowedState = $from->component()->isUnitsOfCodeRelationInAllowedState($to, $from);
+
         if (!$from->component()->isDependencyAllowed($to->component())) {
-            $extractedData['color'] = 'red';
+            $extractedData['color'] = $isRelationInAllowedState ? 'yellow' : 'red';
         } elseif (!$to->isAccessibleFromOutside() && !$to->belongToComponent($from->component())) {
-            $extractedData['color'] = 'orange';
+            $extractedData['color'] = $isRelationInAllowedState ? 'yellow' : 'orange';
         }
 
         return $extractedData;

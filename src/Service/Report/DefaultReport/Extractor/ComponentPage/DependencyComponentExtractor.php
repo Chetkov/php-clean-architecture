@@ -38,8 +38,9 @@ class DependencyComponentExtractor
                         continue;
                     }
 
-                    $dependencyIsAllowed = $unitOfCode->isAccessibleFromOutside()
-                        && $dependency->component()->isDependencyAllowed($unitOfCode->component());
+                    $dependencyIsAllowed = $dependency->component()->isUnitsOfCodeRelationInAllowedState($unitOfCode, $dependency)
+                        || ($unitOfCode->isAccessibleFromOutside()
+                            && $dependency->component()->isDependencyAllowed($unitOfCode->component()));
                     if (!$dependencyIsAllowed) {
                         $isAllowed = false;
                     }
@@ -75,8 +76,9 @@ class DependencyComponentExtractor
             $isAllowed = true;
             $dependencies = [];
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                $outputDependencyIsAllowed = $dependency->isAccessibleFromOutside()
-                    && $unitOfCode->component()->isDependencyAllowed($dependency->component());
+                $outputDependencyIsAllowed = $unitOfCode->component()->isUnitsOfCodeRelationInAllowedState($dependency, $unitOfCode)
+                    || ($dependency->isAccessibleFromOutside()
+                        && $unitOfCode->component()->isDependencyAllowed($dependency->component()));
                 if (!$outputDependencyIsAllowed) {
                     $isAllowed = false;
                 }

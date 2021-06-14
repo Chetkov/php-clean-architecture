@@ -23,12 +23,16 @@ class Restrictions
     /** @var float|null */
     private $maxAllowableDistance;
 
+    /** @var array */
+    private $allowedState;
+
     /**
      * Restrictions constructor.
      * @param UnitOfCode[] $publicUnitsOfCode
      * @param UnitOfCode[] $privateUnitsOfCode
      * @param Component[] $allowedDependencyComponents
      * @param Component[] $forbiddenDependencyComponents
+     * @param array $allowedState
      * @param float|null $maxAllowableDistance
      */
     public function __construct(
@@ -36,12 +40,14 @@ class Restrictions
         array $privateUnitsOfCode = [],
         array $allowedDependencyComponents = [],
         array $forbiddenDependencyComponents = [],
+        array $allowedState = [],
         ?float $maxAllowableDistance = null)
     {
         $this->setPublicUnitsOfCode(...$publicUnitsOfCode);
         $this->setPrivateUnitsOfCode(...$privateUnitsOfCode);
         $this->setAllowedDependencyComponents(...$allowedDependencyComponents);
         $this->setForbiddenDependencyComponents(...$forbiddenDependencyComponents);
+        $this->setAllowedState($allowedState);
         $this->setMaxAllowableDistance($maxAllowableDistance);
     }
 
@@ -154,6 +160,16 @@ class Restrictions
     }
 
     /**
+     * @param array $allowedState
+     * @return Restrictions
+     */
+    public function setAllowedState(array $allowedState): Restrictions
+    {
+        $this->allowedState = $allowedState;
+        return $this;
+    }
+
+    /**
      * @param float|null $maxAllowableDistance
      */
     public function setMaxAllowableDistance(?float $maxAllowableDistance): void
@@ -226,9 +242,15 @@ class Restrictions
     {
         $uniqueIllegalDependencyComponents = [];
         foreach ($thisComponent->getDependencyComponents() as $dependencyComponent) {
-            if (!$this->isDependencyAllowed($dependencyComponent, $thisComponent)) {
-                $uniqueIllegalDependencyComponents[spl_object_hash($dependencyComponent)] = $dependencyComponent;
+            if ($this->isDependencyAllowed($dependencyComponent, $thisComponent)) {
+                continue;
             }
+
+            if ($this->isComponentsRelationInAllowedState($dependencyComponent, $thisComponent)) {
+                continue;
+            }
+
+            $uniqueIllegalDependencyComponents[spl_object_hash($dependencyComponent)] = $dependencyComponent;
         }
         return array_values($uniqueIllegalDependencyComponents);
     }
@@ -244,6 +266,10 @@ class Restrictions
         foreach ($thisComponent->unitsOfCode() as $unitOfCode) {
             foreach ($unitOfCode->outputDependencies() as $dependency) {
                 if ($dependency->belongToComponent($thisComponent)) {
+                    continue;
+                }
+
+                if ($this->isUnitsOfCodeRelationInAllowedState($dependency, $unitOfCode)) {
                     continue;
                 }
 
@@ -264,5 +290,41 @@ class Restrictions
             }
         }
         return array_values($uniqueIllegalDependencies);
+    }
+
+    /**
+     * @param Component $dependencyComponent
+     * @param Component $thisComponent
+     * @return bool
+     */
+    public function isComponentsRelationInAllowedState(Component $dependencyComponent, Component $thisComponent): bool
+    {
+        if (!$this->allowedState) {
+            return false;
+        }
+
+        foreach ($thisComponent->getDependentUnitsOfCode($dependencyComponent) as $dependentUnitOfCode) {
+            foreach ($dependentUnitOfCode->outputDependencies($dependencyComponent) as $dependencyUnitOfCode) {
+                if (!isset($this->allowedState[$dependencyComponent->name()][$dependentUnitOfCode->name()][$dependencyUnitOfCode->name()])) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param UnitOfCode $dependencyUnitOfCode
+     * @param UnitOfCode $thisUnitOfCode
+     * @return bool
+     */
+    public function isUnitsOfCodeRelationInAllowedState(UnitOfCode $dependencyUnitOfCode, UnitOfCode $thisUnitOfCode): bool
+    {
+        if (!$this->allowedState) {
+            return false;
+        }
+
+        return isset($this->allowedState[$dependencyUnitOfCode->component()->name()][$thisUnitOfCode->name()][$dependencyUnitOfCode->name()]);
     }
 }

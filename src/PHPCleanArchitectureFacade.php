@@ -47,6 +47,15 @@ class PHPCleanArchitectureFacade
             $vendorBasedComponentsCreator->create($vendorBasedComponentsConfig['vendor_path']);
         }
 
+        $allowedState = [];
+        $commonExclusionsConfig = $config['exclusions'] ?? [];
+        if (!empty($commonExclusionsConfig['allowed_state']['enabled'])
+            && !empty($commonExclusionsConfig['allowed_state']['storage'])
+            && file_exists($commonExclusionsConfig['allowed_state']['storage'])
+        ) {
+            $allowedState = require $commonExclusionsConfig['allowed_state']['storage'];
+        }
+
         $this->analyzedComponents = [];
         $commonRestrictionsConfig = $config['restrictions'] ?? [];
         $this->checkAcyclicDependenciesPrinciple = $commonRestrictionsConfig['check_acyclic_dependencies_principle'] ?? true;
@@ -79,6 +88,10 @@ class PHPCleanArchitectureFacade
                 $restrictions->addForbiddenDependencyComponent(Component::create($forbiddenDependency));
             }
 
+            if (isset($allowedState[$componentConfig['name']])) {
+                $restrictions->setAllowedState($allowedState[$componentConfig['name']]);
+            }
+
             $maxAllowableDistance = $componentRestrictionsConfig['max_allowable_distance'] ?? null;
             if ($maxAllowableDistance === null) {
                 $maxAllowableDistance = $commonRestrictionsConfig['max_allowable_distance'] ?? null;
@@ -107,13 +120,51 @@ class PHPCleanArchitectureFacade
     }
 
     /**
+     * @param string $storageFile
+     */
+    public function allowCurrentState(string $storageFile): void
+    {
+        $this->analyze();
+
+        $currentState = [];
+        foreach ($this->analyzedComponents as $component) {
+            foreach ($component->getDependencyComponents() as $dependencyComponent) {
+                foreach ($component->getDependentUnitsOfCode($dependencyComponent) as $dependentUnitOfCode) {
+                    foreach ($dependentUnitOfCode->outputDependencies($dependencyComponent) as $dependencyUnitOfCode) {
+                        $currentState
+                        [$component->name()]
+                        [$dependencyComponent->name()]
+                        [$dependentUnitOfCode->name()]
+                        [$dependencyUnitOfCode->name()] = true;
+                    }
+                }
+            }
+        }
+
+        $asCode = '<?php' . PHP_EOL . PHP_EOL . 'return ' . var_export($currentState, true) . ';' . PHP_EOL;
+        file_put_contents($storageFile, $asCode);
+    }
+    
+    /**
      * @param string $path
      */
     public function generateReport(string $path): void
     {
+        $startTime = microtime(true);
+        $startMem = memory_get_usage();
+        $startRealMem = memory_get_usage(true);
         $this->analyze();
 
+        echo 'time: ' . (microtime(true) - $startTime) . 's' . PHP_EOL;
+        echo 'mem: ' . ((memory_get_usage() - $startMem)/1024/1024) . PHP_EOL;
+        echo 'real_mem: ' . ((memory_get_usage(true) - $startRealMem)/1024/1024) . PHP_EOL;
+
         $this->createReportRenderingService()->render($path, ...$this->analyzedComponents);
+
+
+        echo 'time: ' . (microtime(true) - $startTime) . 's' . PHP_EOL;
+        echo 'mem: ' . ((memory_get_usage() - $startMem)/1024/1024) . PHP_EOL;
+        echo 'real_mem: ' . ((memory_get_usage(true) - $startRealMem)/1024/1024) . PHP_EOL;
     }
 
     /**
@@ -127,7 +178,7 @@ class PHPCleanArchitectureFacade
         foreach ($this->analyzedComponents as $component) {
             if ($this->checkAcyclicDependenciesPrinciple) {
                 foreach ($component->getCyclicDependencies() as $cyclicDependenciesPath) {
-                    $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(function (Component $component) {
+                    $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(static function (Component $component) {
                             return $component->name();
                         }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
                 }
@@ -146,7 +197,11 @@ class PHPCleanArchitectureFacade
             foreach ($component->getIllegalDependencyComponents() as $illegalDependencyComponent) {
                 $errorMessage = "\"{$component->name()}\" can not depend on \"{$illegalDependencyComponent->name()}\"! Dependent elements:" . PHP_EOL;
                 foreach ($component->getDependentUnitsOfCode($illegalDependencyComponent) as $dependentUnitOfCode) {
-                    $errorMessage .= $dependentUnitOfCode->name() . PHP_EOL;
+                    foreach ($dependentUnitOfCode->outputDependencies($illegalDependencyComponent) as $dependencyUnitOfCode) {
+                        if (!$component->isUnitsOfCodeRelationInAllowedState($dependencyUnitOfCode, $dependentUnitOfCode)) {
+                            $errorMessage .= $dependentUnitOfCode->name() . PHP_EOL;
+                        }
+                    }
                 }
                 $errors[] = $errorMessage;
             }

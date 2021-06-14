@@ -26,12 +26,17 @@ class ComponentsGraphEdgeExtractor
         ];
 
         if (!$from->isDependencyAllowed($to)) {
-            $extractedData['color'] = 'red';
+            $extractedData['color'] = $from->isComponentsRelationInAllowedState($to) ? 'yellow' : 'red';
         } else {
             foreach ($from->getDependencyUnitsOfCode($to) as $dependency) {
                 if (!$dependency->isAccessibleFromOutside()) {
-                    $extractedData['color'] = 'orange';
-                    break;
+                    foreach ($dependency->inputDependencies($from) as $dependent) {
+                        if (!$from->isUnitsOfCodeRelationInAllowedState($dependency, $dependent)) {
+                            $extractedData['color'] = 'orange';
+                            break 2;
+                        }
+                        $extractedData['color'] = 'yellow';
+                    }
                 }
             }
         }
