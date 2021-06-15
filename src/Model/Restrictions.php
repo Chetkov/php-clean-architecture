@@ -278,7 +278,7 @@ class Restrictions
                 continue;
             }
 
-            if ($this->isComponentDependencyInAllowedState($dependencyComponent, $thisComponent)) {
+            if ($thisComponent->isDependencyInAllowedState($dependencyComponent)) {
                 continue;
             }
 
@@ -301,7 +301,7 @@ class Restrictions
                     continue;
                 }
 
-                if ($this->isUnitOfCodeDependencyInAllowedState($dependency, $unitOfCode)) {
+                if ($unitOfCode->isDependencyInAllowedState($dependency)) {
                     continue;
                 }
 
