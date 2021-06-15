@@ -144,7 +144,7 @@ class PHPCleanArchitectureFacade
         $asCode = '<?php' . PHP_EOL . PHP_EOL . 'return ' . var_export($currentState, true) . ';' . PHP_EOL;
         file_put_contents($storageFile, $asCode);
     }
-    
+
     /**
      * @param string $path
      */
