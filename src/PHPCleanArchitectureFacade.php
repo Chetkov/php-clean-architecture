@@ -159,21 +159,9 @@ class PHPCleanArchitectureFacade
      */
     public function generateReport(string $path): void
     {
-        $startTime = microtime(true);
-        $startMem = memory_get_usage();
-        $startRealMem = memory_get_usage(true);
         $this->analyze();
 
-        echo 'time: ' . (microtime(true) - $startTime) . 's' . PHP_EOL;
-        echo 'mem: ' . ((memory_get_usage() - $startMem)/1024/1024) . PHP_EOL;
-        echo 'real_mem: ' . ((memory_get_usage(true) - $startRealMem)/1024/1024) . PHP_EOL;
-
         $this->createReportRenderingService()->render($path, ...$this->analyzedComponents);
-
-
-        echo 'time: ' . (microtime(true) - $startTime) . 's' . PHP_EOL;
-        echo 'mem: ' . ((memory_get_usage() - $startMem)/1024/1024) . PHP_EOL;
-        echo 'real_mem: ' . ((memory_get_usage(true) - $startRealMem)/1024/1024) . PHP_EOL;
     }
 
     /**
