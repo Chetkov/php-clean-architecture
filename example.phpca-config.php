@@ -5,7 +5,7 @@ use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Event\Listener\AnalysisEventListener;
 use Chetkov\PHPCleanArchitecture\Model\Event\Listener\ComponentAnalysisEventListener;
 use Chetkov\PHPCleanArchitecture\Model\Event\Listener\FileAnalyzedEventListener;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\AggregationDependenciesFinder;
+use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CompositeDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\CodeParsingDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesCreatedThroughNewParsingStrategy;
@@ -136,7 +136,7 @@ return [
     'factories' => [
         //Фабрика, собирающая DependenciesFinder
         'dependencies_finder' => static function (): DependenciesFinderInterface {
-            return new AggregationDependenciesFinder(...[
+            return new CompositeDependenciesFinder(...[
                 new ReflectionDependenciesFinder(),
                 new CodeParsingDependenciesFinder(...[
                     new ClassesCreatedThroughNewParsingStrategy(),

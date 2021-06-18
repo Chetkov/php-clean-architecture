@@ -5,16 +5,16 @@ namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 
 /**
- * Class AggregationDependenciesFinder
+ * Class CompositeDependenciesFinder
  * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder
  */
-class AggregationDependenciesFinder implements DependenciesFinderInterface
+class CompositeDependenciesFinder implements DependenciesFinderInterface
 {
     /** @var DependenciesFinderInterface[] */
     private $strategies;
 
     /**
-     * AggregationDependenciesFinder constructor.
+     * CompositeDependenciesFinder constructor.
      * @param DependenciesFinderInterface ...$strategies
      */
     public function __construct(DependenciesFinderInterface ...$strategies)
