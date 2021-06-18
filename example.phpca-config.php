@@ -1,9 +1,10 @@
 <?php
 
-use Chetkov\ConsoleLogger\ConsoleLoggerFactory;
-use Chetkov\ConsoleLogger\LoggerConfig;
-use Chetkov\ConsoleLogger\StyledLogger\LoggerStyle;
-use Chetkov\ConsoleLogger\StyledLogger\StyledLoggerDecorator;
+use Chetkov\PHPCleanArchitecture\Model\Event\EventManager;
+use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
+use Chetkov\PHPCleanArchitecture\Model\Event\Listener\AnalysisEventListener;
+use Chetkov\PHPCleanArchitecture\Model\Event\Listener\ComponentAnalysisEventListener;
+use Chetkov\PHPCleanArchitecture\Model\Event\Listener\FileAnalyzedEventListener;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\AggregationDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\CodeParsingDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;
@@ -134,7 +135,7 @@ return [
 
     'factories' => [
         //Фабрика, собирающая DependenciesFinder
-        'dependencies_finder' => function (): DependenciesFinderInterface {
+        'dependencies_finder' => static function (): DependenciesFinderInterface {
             return new AggregationDependenciesFinder(...[
                 new ReflectionDependenciesFinder(),
                 new CodeParsingDependenciesFinder(...[
@@ -151,22 +152,16 @@ return [
             ]);
         },
         //Фабрика, собирающая сервис рендеринга отчетов
-        'report_rendering_service' => function (): ReportRenderingServiceInterface {
+        'report_rendering_service' => static function (): ReportRenderingServiceInterface {
             return new ReportRenderingService();
         },
-        //Фабрика, собирающая Logger
-        'logger' => function (): LoggerInterface {
-            $loggerConfig = new LoggerConfig();
-            $loggerConfig
-                ->setIsShowDateTime(true)
-                ->setIsShowLevel(false)
-                ->setIsShowData(false)
-                ->setDateTimeFormat('H:i:s')
-                ->setFieldDelimiter(' :: ');
-            return new StyledLoggerDecorator(
-                ConsoleLoggerFactory::create($loggerConfig),
-                new LoggerStyle()
-            );
+        //Фабрика, собирающая и настраивающая EventManager
+        'event_manager' => static function (): EventManagerInterface {
+            return new EventManager([
+                new FileAnalyzedEventListener(),
+                new ComponentAnalysisEventListener(),
+                new AnalysisEventListener(),
+            ]);
         }
     ],
 ];

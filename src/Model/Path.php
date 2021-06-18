@@ -21,7 +21,7 @@ class Path
      */
     public function __construct(string $path, string $namespace = '')
     {
-        $this->path = realpath($path);
+        $this->path = (string) realpath($path);
         $this->namespace = $namespace;
     }
 

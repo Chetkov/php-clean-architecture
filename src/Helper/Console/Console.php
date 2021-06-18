@@ -6,41 +6,21 @@ namespace Chetkov\PHPCleanArchitecture\Helper\Console;
 
 class Console
 {
-    public static function progress(float $percentage, string $text): void
+    /**
+     * @return int
+     */
+    public static function getTerminalWidth(): int
     {
-        $percentagePart = str_pad(number_format($percentage) . '%', 4, ' ', STR_PAD_LEFT);
-
-        $terminalWidth = (int) `tput cols`;
-        $barWidth = (int) ($terminalWidth / 4) - 3;
-        $textWidth = $terminalWidth - $barWidth - strlen($percentagePart) - 4;
-
-        $textLength = strlen($text);
-        if ($textLength > $textWidth) {
-            $partLength = (int) (($textWidth - 3) / 2);
-            $firstPart = substr($text, 0, $partLength);
-            $lastPart = substr($text, -$partLength, $partLength);
-            $text = $firstPart . '...' . $lastPart;
-        }
-
-        $numBars = (int) round($percentage / 100 * $barWidth);
-        $numEmptyBars = $barWidth - $numBars;
-
-        $barsPart = sprintf(
-            "[%s%s] %s",
-            str_repeat('|', $numBars),
-            str_repeat(' ', $numEmptyBars),
-            $percentagePart
-        );
-
-        echo str_pad("$barsPart $text", $terminalWidth) . "\r";
+        return (int) shell_exec("tput cols");
     }
 
     /**
      * @param string $message
+     * @param bool $rewrite
      */
-    public static function write(string $message = ''): void
+    public static function write(string $message = '', bool $rewrite = false): void
     {
-        echo $message;
+        echo $rewrite ? str_pad($message, self::getTerminalWidth()) : $message;
     }
 
     /**

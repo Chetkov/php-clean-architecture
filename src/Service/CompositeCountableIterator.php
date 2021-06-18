@@ -6,7 +6,7 @@ namespace Chetkov\PHPCleanArchitecture\Service;
 
 class CompositeCountableIterator implements \Iterator, \Countable
 {
-    /** @var array<\Iterator> */
+    /** @var \Iterator[] */
     private $iterators;
 
     /** @var \Iterator|null */

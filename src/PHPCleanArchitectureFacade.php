@@ -3,6 +3,11 @@
 namespace Chetkov\PHPCleanArchitecture;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\Event\Event\AnalysisFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Model\Event\Event\AnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
@@ -18,6 +23,9 @@ class PHPCleanArchitectureFacade
 {
     /** @var ComponentAnalyzer */
     private $componentAnalyzer;
+
+    /** @var EventManagerInterface */
+    private $eventManager;
 
     /** @var callable */
     private $reportRenderingServiceFactory;
@@ -113,9 +121,10 @@ class PHPCleanArchitectureFacade
             }
         }
 
-        $loggerFactory = $config['factories']['logger'];
+        $eventManagerFactory = $config['factories']['event_manager'];
         $dependenciesFinderFactory = $config['factories']['dependencies_finder'];
-        $this->componentAnalyzer = new ComponentAnalyzer($dependenciesFinderFactory(), $loggerFactory());
+        $this->eventManager = $eventManagerFactory();
+        $this->componentAnalyzer = new ComponentAnalyzer($dependenciesFinderFactory(), $this->eventManager);
         $this->reportRenderingServiceFactory = $config['factories']['report_rendering_service'];
     }
 
@@ -225,10 +234,15 @@ class PHPCleanArchitectureFacade
     private function analyze(): void
     {
         if (!$this->isAnalyzePerformed) {
-            foreach ($this->analyzedComponents as $component) {
+            $this->eventManager->notify(new AnalysisStartedEvent());
+            $totalComponents = count($this->analyzedComponents);
+            foreach ($this->analyzedComponents as $index => $component) {
+                $this->eventManager->notify(new ComponentAnalysisStartedEvent($index, $totalComponents, $component));
                 $this->componentAnalyzer->analyze($component);
+                $this->eventManager->notify(new ComponentAnalysisFinishedEvent($index, $totalComponents, $component));
             }
             $this->isAnalyzePerformed = true;
+            $this->eventManager->notify(new AnalysisFinishedEvent());
         }
     }
 
