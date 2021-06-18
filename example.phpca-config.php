@@ -158,9 +158,9 @@ return [
         //Фабрика, собирающая и настраивающая EventManager
         'event_manager' => static function (): EventManagerInterface {
             return new EventManager([
-                new FileAnalyzedEventListener(),
-                new ComponentAnalysisEventListener(),
                 new AnalysisEventListener(),
+                new ComponentAnalysisEventListener(),
+                new FileAnalyzedEventListener(),
             ]);
         }
     ],
