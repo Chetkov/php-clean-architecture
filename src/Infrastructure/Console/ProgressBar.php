@@ -30,7 +30,7 @@ class ProgressBar
     /** @var int */
     private $barWidth;
 
-    /** @var self[] */
+    /** @var array<self> */
     private static $instances = [];
 
     /**

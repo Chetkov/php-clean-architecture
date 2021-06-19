@@ -11,7 +11,7 @@ namespace Chetkov\PHPCleanArchitecture\Model\Type;
 abstract class Type
 {
     /**
-     * @var self[]
+     * @var array<self>
      */
     protected static $instances = [];
 

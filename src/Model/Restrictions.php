@@ -10,16 +10,16 @@ namespace Chetkov\PHPCleanArchitecture\Model;
  */
 class Restrictions
 {
-    /** @var UnitOfCode[] */
+    /** @var array<UnitOfCode> */
     private $publicUnitsOfCode = [];
 
-    /** @var UnitOfCode[] */
+    /** @var array<UnitOfCode> */
     private $privateUnitsOfCode = [];
 
-    /** @var Component[] */
+    /** @var array<Component> */
     private $allowedDependencyComponents = [];
 
-    /** @var Component[] */
+    /** @var array<Component> */
     private $forbiddenDependencyComponents = [];
 
     /** @var float|null */
@@ -29,10 +29,10 @@ class Restrictions
     private $allowedState;
 
     /**
-     * @param UnitOfCode[] $publicUnitsOfCode
-     * @param UnitOfCode[] $privateUnitsOfCode
-     * @param Component[] $allowedDependencyComponents
-     * @param Component[] $forbiddenDependencyComponents
+     * @param array<UnitOfCode> $publicUnitsOfCode
+     * @param array<UnitOfCode> $privateUnitsOfCode
+     * @param array<Component> $allowedDependencyComponents
+     * @param array<Component> $forbiddenDependencyComponents
      * @param array<string, array<string, array<string, array<string, bool>>>> $allowedState
      * @param float|null $maxAllowableDistance
      */
@@ -269,7 +269,7 @@ class Restrictions
 
     /**
      * @param Component $thisComponent
-     * @return Component[]
+     * @return array<Component>
      */
     public function getIllegalDependencyComponents(Component $thisComponent): array
     {
@@ -291,7 +291,7 @@ class Restrictions
     /**
      * @param Component $thisComponent
      * @param bool $onlyFromAllowedComponents
-     * @return UnitOfCode[]
+     * @return array<UnitOfCode>
      */
     public function getIllegalDependencyUnitsOfCode(Component $thisComponent, bool $onlyFromAllowedComponents = false): array
     {

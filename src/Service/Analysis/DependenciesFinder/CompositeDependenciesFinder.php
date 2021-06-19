@@ -12,7 +12,7 @@ use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
  */
 class CompositeDependenciesFinder implements DependenciesFinderInterface
 {
-    /** @var DependenciesFinderInterface[] */
+    /** @var array<DependenciesFinderInterface> */
     private $strategies;
 
     /**

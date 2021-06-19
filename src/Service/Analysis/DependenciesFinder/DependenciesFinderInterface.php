@@ -14,7 +14,7 @@ interface DependenciesFinderInterface
 {
     /**
      * @param UnitOfCode $unitOfCode
-     * @return string[]
+     * @return array<string>
      */
     public function find(UnitOfCode $unitOfCode): array;
 }

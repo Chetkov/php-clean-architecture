@@ -19,7 +19,7 @@ class DependencyUnitOfCodeExtractor
     /**
      * @param UnitOfCode $unitOfCode
      * @param UnitOfCode $dependency
-     * @param Component[] $processedComponents
+     * @param array<Component> $processedComponents
      * @param bool $isInputDependency
      * @return array<string, mixed>
      */

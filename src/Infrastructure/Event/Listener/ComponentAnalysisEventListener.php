@@ -13,7 +13,7 @@ use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
 
 class ComponentAnalysisEventListener implements EventListenerInterface
 {
-    /** @var float[] */
+    /** @var array<float> */
     private $startedAt = [];
 
     /**

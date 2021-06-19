@@ -38,7 +38,7 @@ class PHPCleanArchitectureFacade
     /** @var bool */
     private $checkStableDependenciesPrinciple;
 
-    /** @var Component[] */
+    /** @var array<Component> */
     private $analyzedComponents;
 
     /** @var bool */
@@ -166,7 +166,7 @@ class PHPCleanArchitectureFacade
     }
 
     /**
-     * @return string[]
+     * @return array<string>
      */
     public function check(): array
     {

@@ -18,7 +18,7 @@ class DependencyComponentExtractor
     /**
      * @param Component $component
      * @param Component $linkedComponent
-     * @param Component[] $processedComponents
+     * @param array<Component> $processedComponents
      * @param bool $linkedComponentIsDependent
      * @return array<string, mixed>
      */
