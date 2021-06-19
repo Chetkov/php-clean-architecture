@@ -18,11 +18,12 @@ class ComponentsGraphEdgeExtractor
     {
         $from = $edge['from'];
         $to = $edge['to'];
+        $label = count($from->getDependentUnitsOfCode($to)) . '->' . count($from->getDependencyUnitsOfCode($to));
 
         $extractedData = [
             'from' => spl_object_hash($from),
             'to' => spl_object_hash($to),
-            'label' => (string)count($from->getDependencyUnitsOfCode($to)),
+            'label' => $label,
         ];
 
         if (!$from->isDependencyAllowed($to)) {
