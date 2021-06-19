@@ -27,5 +27,17 @@
     "bin": [
       "/bin/phpca-build-reports",
       "/bin/phpca-check"
-    ]
+    ],
+    "scripts": {
+        "php-linter": "php -l bin && php -l src",
+        "code-sniffer": "vendor/bin/phpcs bin src",
+        "phpstan": "vendor/bin/phpstan analyse -l 8 bin src",
+        "php-clean-architecture": "bin/phpca-check ./phpca-config.php",
+        "quality-checker": [
+            "@php-linter",
+            "@code-sniffer",
+            "@phpstan",
+            "@php-clean-architecture"
+        ]
+    }
 }
