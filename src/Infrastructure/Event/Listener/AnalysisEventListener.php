@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Model\Event\Listener;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener;
 
-use Chetkov\PHPCleanArchitecture\Helper\Console\Console;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\AnalysisFinishedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\AnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
-use Chetkov\PHPCleanArchitecture\Model\Event\EventListenerInterface;
+use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
 
 class AnalysisEventListener implements EventListenerInterface
 {

@@ -4,8 +4,8 @@ namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
 use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\FileAnalyzedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\FileAnalyzedEvent;
+use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\DependenciesFinderInterface;
@@ -19,13 +19,13 @@ class ComponentAnalyzer
     /** @var DependenciesFinderInterface */
     private $dependenciesFinder;
 
-    /** @var EventManagerInterface */
+    /** @var \Chetkov\PHPCleanArchitecture\Service\EventManagerInterface */
     private $eventManager;
 
     /**
      * ComponentAnalyzer constructor.
      * @param DependenciesFinderInterface $dependenciesFinder
-     * @param EventManagerInterface $eventManager
+     * @param \Chetkov\PHPCleanArchitecture\Service\EventManagerInterface $eventManager
      */
     public function __construct(DependenciesFinderInterface $dependenciesFinder, EventManagerInterface $eventManager)
     {

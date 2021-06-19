@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Helper\Console;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Console;
 
 class Console
 {
