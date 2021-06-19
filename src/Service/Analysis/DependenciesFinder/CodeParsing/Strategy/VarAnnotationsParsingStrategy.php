@@ -2,7 +2,7 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy;
 
-use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
+use Chetkov\PHPCleanArchitecture\Service\Helper\StringHelper;
 
 /**
  * Class VarAnnotationsParsingStrategy

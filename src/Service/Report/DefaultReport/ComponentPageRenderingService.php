@@ -2,7 +2,7 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
-use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
+use Chetkov\PHPCleanArchitecture\Service\Helper\StringHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentPage\DependencyComponentExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentsGraphExtractor;
