@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Chetkov\PHPCleanArchitecture\Service;
 
 use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
