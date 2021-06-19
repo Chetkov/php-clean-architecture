@@ -121,7 +121,10 @@ class Component
                         return true;
                     }
                 }
-                if ($path->path() && stripos($unitOfCode->path(), $path->path()) === 0) {
+                if ($unitOfCode->path() !== null
+                    && !empty($path->path())
+                    && stripos($unitOfCode->path(), $path->path()) === 0
+                ) {
                     return true;
                 }
             }

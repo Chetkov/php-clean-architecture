@@ -35,7 +35,7 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
     public function find(UnitOfCode $unitOfCode): array
     {
         $dependencies = [];
-        if (!$unitOfCode->path()
+        if ($unitOfCode->path() === null
             || !$content = file_get_contents($unitOfCode->path())
         ) {
             return $dependencies;

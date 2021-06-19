@@ -16,7 +16,7 @@ class PathHelper
      */
     public static function removeDoubleSlashes(string $subject): string
     {
-        return preg_replace("/\/{2,}/u", '/', $subject);
+        return (string) preg_replace("/\/{2,}/u", '/', $subject);
     }
 
     /**
@@ -25,7 +25,7 @@ class PathHelper
      */
     public static function removeDoubleBackslashes(string $subject): string
     {
-        return preg_replace("/\\\{2,}/u", '\\', $subject);
+        return (string) preg_replace("/\\\{2,}/u", '\\', $subject);
     }
 
     /**
