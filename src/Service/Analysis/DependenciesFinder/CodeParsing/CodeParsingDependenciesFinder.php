@@ -35,11 +35,11 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
     public function find(UnitOfCode $unitOfCode): array
     {
         $dependencies = [];
-        if (!$unitOfCode->path()) {
+        if (!$unitOfCode->path()
+            || !$content = file_get_contents($unitOfCode->path())
+        ) {
             return $dependencies;
         }
-
-        $content = file_get_contents($unitOfCode->path());
 
         preg_match('/namespace +(?P<namespace>[\w\\\]+);/ium', $content, $matches);
         $namespace = $matches['namespace'] ?? '';
@@ -83,7 +83,7 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 
     /**
      * @param string $content
-     * @return array<array<int>|array<string>>
+     * @return array<array<string>>
      */
     private function parseUses(string $content): array
     {

@@ -48,6 +48,7 @@ class ComponentAnalyzer
         $totalFiles = $this->getFiles($component->rootPaths())->count();
 
         foreach ($component->rootPaths() as $path) {
+            /** @var \SplFileInfo $file */
             foreach ($this->getFiles([$path]) as $file) {
                 $analyzedFileIndex++;
 
@@ -81,7 +82,7 @@ class ComponentAnalyzer
     /**
      * @param array<Path> $paths
      * @param string $pattern
-     * @return CompositeCountableIterator<\Iterator<\SplFileInfo>>|iterable<\SplFileInfo>
+     * @return CompositeCountableIterator<\SplFileInfo>
      */
     private function getFiles(array $paths, string $pattern = '/\.php$/i'): CompositeCountableIterator
     {
