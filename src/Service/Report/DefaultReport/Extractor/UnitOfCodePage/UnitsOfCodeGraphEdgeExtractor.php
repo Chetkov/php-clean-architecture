@@ -14,7 +14,7 @@ class UnitsOfCodeGraphEdgeExtractor
 {
     /**
      * @param UnitOfCode[] $edge [$from, $to]
-     * @return array
+     * @return array<string, mixed>
      */
     public function extract(array $edge): array
     {

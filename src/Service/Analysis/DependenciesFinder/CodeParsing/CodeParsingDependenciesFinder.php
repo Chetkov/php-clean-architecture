@@ -83,7 +83,7 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 
     /**
      * @param string $content
-     * @return array
+     * @return array<array<int>|array<string>>
      */
     private function parseUses(string $content): array
     {

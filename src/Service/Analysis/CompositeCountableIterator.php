@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
+/**
+ * @template T
+ * @implements \Iterator<\Iterator<mixed, T>>
+ */
 class CompositeCountableIterator implements \Iterator, \Countable
 {
-    /** @var \Iterator[] */
+    /** @var array<\Iterator<mixed, T>> */
     private $iterators;
 
-    /** @var \Iterator|null */
+    /** @var \Iterator<mixed, T>|null */
     private $currentIterator;
 
     /**
-     * @param \Iterator ...$iterators
+     * @param \Iterator<mixed, T> ...$iterators
      */
     public function __construct(\Iterator ...$iterators)
     {
@@ -21,7 +25,7 @@ class CompositeCountableIterator implements \Iterator, \Countable
     }
 
     /**
-     * @return mixed
+     * @return T
      */
     public function current()
     {
@@ -64,7 +68,7 @@ class CompositeCountableIterator implements \Iterator, \Countable
     }
 
     /**
-     * @return \Iterator
+     * @return \Iterator<mixed, T>
      */
     private function getCurrentIterator(): \Iterator
     {
@@ -75,7 +79,7 @@ class CompositeCountableIterator implements \Iterator, \Countable
     }
 
     /**
-     * @param \Iterator $iterator
+     * @param \Iterator<mixed, T> $iterator
      * @return $this
      */
     public function addIterator(\Iterator $iterator): self

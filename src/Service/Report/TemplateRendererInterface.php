@@ -8,7 +8,7 @@ interface TemplateRendererInterface
 {
     /**
      * @param string $name Template name
-     * @param array $variables Template variables
+     * @param array<string, mixed> $variables Template variables
      * @return string
      */
     public function render(string $name, array $variables = []): string;

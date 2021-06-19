@@ -14,7 +14,7 @@ class ComponentsGraphEdgeExtractor
 {
     /**
      * @param Component[] $edge [$from, $to]
-     * @return array
+     * @return array<string, mixed>
      */
     public function extract(array $edge): array
     {

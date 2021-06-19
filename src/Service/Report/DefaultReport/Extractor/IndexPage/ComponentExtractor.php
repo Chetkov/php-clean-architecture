@@ -17,7 +17,7 @@ class ComponentExtractor
 
     /**
      * @param Component $component
-     * @return array
+     * @return array<string, mixed>
      */
     public function extract(Component $component): array
     {
