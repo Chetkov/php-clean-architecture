@@ -16,7 +16,6 @@ class VendorBasedComponentsCreationService
     private $excludedPaths;
 
     /**
-     * VendorBasedComponentsCreationService constructor.
      * @param string[] $excludedPaths
      */
     public function __construct(array $excludedPaths = [])

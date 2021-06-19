@@ -27,7 +27,6 @@ class Restrictions
     private $allowedState;
 
     /**
-     * Restrictions constructor.
      * @param UnitOfCode[] $publicUnitsOfCode
      * @param UnitOfCode[] $privateUnitsOfCode
      * @param Component[] $allowedDependencyComponents

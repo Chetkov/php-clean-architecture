@@ -17,9 +17,6 @@ class ComponentsGraphExtractor
     /** @var ComponentsGraphEdgeExtractor */
     private $edgeExtractor;
 
-    /**
-     * ComponentsGraphExtractor constructor.
-     */
     public function __construct()
     {
         $this->nodeExtractor = new ComponentsGraphNodeExtractor();

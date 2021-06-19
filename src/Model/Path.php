@@ -15,7 +15,6 @@ class Path
     private $namespace;
 
     /**
-     * Path constructor.
      * @param string $path
      * @param string $namespace
      */

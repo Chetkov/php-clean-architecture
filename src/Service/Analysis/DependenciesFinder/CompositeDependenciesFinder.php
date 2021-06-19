@@ -14,7 +14,6 @@ class CompositeDependenciesFinder implements DependenciesFinderInterface
     private $strategies;
 
     /**
-     * CompositeDependenciesFinder constructor.
      * @param DependenciesFinderInterface ...$strategies
      */
     public function __construct(DependenciesFinderInterface ...$strategies)

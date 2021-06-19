@@ -45,7 +45,6 @@ class Component
     private $unitsOfCode = [];
 
     /**
-     * Component constructor.
      * @param string $name
      * @param Path[] $rootPaths
      * @param Path[] $excludedPaths

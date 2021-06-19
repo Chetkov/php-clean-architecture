@@ -17,9 +17,6 @@ class UnitsOfCodeGraphExtractor
     /** @var UnitsOfCodeGraphEdgeExtractor */
     private $edgeExtractor;
 
-    /**
-     * UnitsOfCodeGraphExtractor constructor.
-     */
     public function __construct()
     {
         $this->nodeExtractor = new UnitsOfCodeGraphNodeExtractor();

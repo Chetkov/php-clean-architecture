@@ -37,7 +37,6 @@ class UnitOfCode
     private $component;
 
     /**
-     * UnitOfCode constructor.
      * @param string $name
      * @param Type $type
      * @param string|null $path
