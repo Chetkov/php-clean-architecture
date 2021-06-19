@@ -15,6 +15,9 @@
         "ext-json": "*",
         "ext-mbstring": "*"
     },
+    "require-dev": {
+        "phpstan/phpstan": "^0.12.90"
+    },
     "autoload": {
         "psr-4": {
             "Chetkov\\PHPCleanArchitecture\\": "src/"

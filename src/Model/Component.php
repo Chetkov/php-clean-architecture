@@ -78,7 +78,7 @@ class Component
         ?Restrictions $restrictions = null
     ): self {
         if (!isset(self::$instances[$name])) {
-            self::$instances[$name] = new static(
+            self::$instances[$name] = new self(
                 $name,
                 $rootPaths,
                 $excludedPaths,

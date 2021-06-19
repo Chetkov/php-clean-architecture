@@ -38,13 +38,13 @@ class ReflectionDependenciesFinder implements DependenciesFinderInterface
             $methods = array_filter(array_merge($class->getMethods(), [$class->getConstructor()]));
             foreach ($methods as $method) {
                 $returnType = $method->getReturnType();
-                if ($returnType) {
+                if ($returnType && method_exists($returnType, 'getName')) {
                     $dependencies[] = $returnType->getName();
                 }
 
                 foreach ($method->getParameters() as $parameter) {
                     $type = $parameter->getType();
-                    if ($type) {
+                    if ($type && method_exists($type, 'getName')) {
                         $dependencies[] = $type->getName();
                     }
                 }
