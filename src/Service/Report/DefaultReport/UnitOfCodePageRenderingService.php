@@ -6,8 +6,7 @@ use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\DependencyUnitOfCodeExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\UnitsOfCodeGraphExtractor;
-use Twig\Environment;
-use Twig\Loader\FilesystemLoader;
+use Chetkov\PHPCleanArchitecture\Service\Report\TemplateRendererInterface;
 
 /**
  * Class UnitOfCodePageRenderingService
@@ -17,8 +16,8 @@ class UnitOfCodePageRenderingService
 {
     use UidGenerator;
 
-    /** @var Environment */
-    private $twig;
+    /** @var TemplateRendererInterface */
+    private $templateRenderer;
 
     /** @var ObjectsGraphBuilder */
     private $unitsOfCodeGraphBuilder;
@@ -29,10 +28,12 @@ class UnitOfCodePageRenderingService
     /** @var UnitsOfCodeGraphExtractor */
     private $unitsOfCodeGraphExtractor;
 
-    public function __construct()
+    /**
+     * @param TemplateRendererInterface $templateRenderer
+     */
+    public function __construct(TemplateRendererInterface $templateRenderer)
     {
-        $templatesLoader = new FilesystemLoader(__DIR__ . '/Template/');
-        $this->twig = new Environment($templatesLoader);
+        $this->templateRenderer = $templateRenderer;
         $this->unitsOfCodeGraphBuilder = new ObjectsGraphBuilder();
         $this->dependencyUnitOfCodeExtractor = new DependencyUnitOfCodeExtractor();
         $this->unitsOfCodeGraphExtractor = new UnitsOfCodeGraphExtractor();
@@ -76,7 +77,7 @@ class UnitOfCodePageRenderingService
                 $type = 'Неопределен';
         }
 
-        file_put_contents($reportsPath . '/' . $this->generateUid($unitOfCode->name()) . '.html', $this->twig->render('unit-of-code-info.twig', [
+        $reportContent = $this->templateRenderer->render('unit-of-code-info.twig', [
             'name' => $unitOfCode->name(),
             'component' => [
                 'uid' => $this->generateUid($unitOfCode->component()->name()),
@@ -90,6 +91,8 @@ class UnitOfCodePageRenderingService
             'input_dependencies' => $extractedInputDependencies,
             'output_dependencies' => $extractedOutputDependencies,
             'units_of_code_graph' => $this->unitsOfCodeGraphExtractor->extract($this->unitsOfCodeGraphBuilder),
-        ]));
+        ]);
+
+        file_put_contents($reportsPath . '/' . $this->generateUid($unitOfCode->name()) . '.html', $reportContent);
     }
 }

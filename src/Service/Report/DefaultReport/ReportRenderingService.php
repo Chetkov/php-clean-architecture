@@ -4,6 +4,7 @@ namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
+use Chetkov\PHPCleanArchitecture\Service\Report\TemplateRendererInterface;
 
 /**
  * Class ReportRenderingService
@@ -20,11 +21,14 @@ class ReportRenderingService implements ReportRenderingServiceInterface
     /** @var UnitOfCodePageRenderingService */
     private $unitOfCodePageRenderingService;
 
-    public function __construct()
+    /**
+     * @param TemplateRendererInterface $templateRenderer
+     */
+    public function __construct(TemplateRendererInterface $templateRenderer)
     {
-        $this->indexPageRenderingService = new IndexPageRenderingService();
-        $this->componentPageRenderingService = new ComponentPageRenderingService();
-        $this->unitOfCodePageRenderingService = new UnitOfCodePageRenderingService();
+        $this->indexPageRenderingService = new IndexPageRenderingService($templateRenderer);
+        $this->componentPageRenderingService = new ComponentPageRenderingService($templateRenderer);
+        $this->unitOfCodePageRenderingService = new UnitOfCodePageRenderingService($templateRenderer);
     }
 
     /**

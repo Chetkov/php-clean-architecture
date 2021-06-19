@@ -5,8 +5,7 @@ namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\IndexPage\ComponentExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentsGraphExtractor;
-use Twig\Environment;
-use Twig\Loader\FilesystemLoader;
+use Chetkov\PHPCleanArchitecture\Service\Report\TemplateRendererInterface;
 
 /**
  * Class IndexPageRenderingService
@@ -14,8 +13,8 @@ use Twig\Loader\FilesystemLoader;
  */
 class IndexPageRenderingService
 {
-    /** @var Environment */
-    private $twig;
+    /** @var TemplateRendererInterface */
+    private $templateRenderer;
 
     /** @var ObjectsGraphBuilder */
     private $componentsGraphBuilder;
@@ -26,10 +25,12 @@ class IndexPageRenderingService
     /** @var ComponentsGraphExtractor */
     private $componentsGraphExtractor;
 
-    public function __construct()
+    /**
+     * @param TemplateRendererInterface $templateRenderer
+     */
+    public function __construct(TemplateRendererInterface $templateRenderer)
     {
-        $templatesLoader = new FilesystemLoader(__DIR__ . '/Template/');
-        $this->twig = new Environment($templatesLoader);
+        $this->templateRenderer = $templateRenderer;
         $this->componentsGraphBuilder = new ObjectsGraphBuilder();
         $this->componentExtractor = new ComponentExtractor();
         $this->componentsGraphExtractor = new ComponentsGraphExtractor();
@@ -57,9 +58,11 @@ class IndexPageRenderingService
             }
         }
 
-        file_put_contents($reportsPath . '/' . 'index.html', $this->twig->render('index.twig', [
+        $reportContent = $this->templateRenderer->render('index.twig', [
             'components_graph' => $this->componentsGraphExtractor->extract($this->componentsGraphBuilder),
             'components' => $extractedComponentsData,
-        ]));
+        ]);
+
+        file_put_contents($reportsPath . '/' . 'index.html', $reportContent);
     }
 }

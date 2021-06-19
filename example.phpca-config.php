@@ -1,6 +1,7 @@
 <?php
 
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\EventManager;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Render\TwigToTemplateRendererInterfaceAdapter;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\AnalysisEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\ComponentAnalysisEventListener;
@@ -20,6 +21,8 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\Dependencie
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\ReflectionDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ReportRenderingService;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
+use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
 
 return [
     // Директория в которую будут складываться файлы отчета
@@ -152,7 +155,10 @@ return [
         },
         //Фабрика, собирающая сервис рендеринга отчетов
         'report_rendering_service' => static function (): ReportRenderingServiceInterface {
-            return new ReportRenderingService();
+            $templatesLoader = new FilesystemLoader(__DIR__ . '/src/Service/Report/DefaultReport/Template');
+            $twigRenderer = new Environment($templatesLoader);
+            $twigAdapter = new TwigToTemplateRendererInterfaceAdapter($twigRenderer);
+            return new ReportRenderingService($twigAdapter);
         },
         //Фабрика, собирающая и настраивающая EventManager
         'event_manager' => static function (): EventManagerInterface {
