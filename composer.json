@@ -16,7 +16,8 @@
         "ext-mbstring": "*"
     },
     "require-dev": {
-        "phpstan/phpstan": "^0.12.90"
+        "phpstan/phpstan": "^0.12.90",
+        "squizlabs/php_codesniffer": "^3.6"
     },
     "autoload": {
         "psr-4": {
