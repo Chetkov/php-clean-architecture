@@ -19,13 +19,13 @@ class ComponentAnalyzer
     /** @var DependenciesFinderInterface */
     private $dependenciesFinder;
 
-    /** @var \Chetkov\PHPCleanArchitecture\Service\EventManagerInterface */
+    /** @var EventManagerInterface */
     private $eventManager;
 
     /**
      * ComponentAnalyzer constructor.
      * @param DependenciesFinderInterface $dependenciesFinder
-     * @param \Chetkov\PHPCleanArchitecture\Service\EventManagerInterface $eventManager
+     * @param EventManagerInterface $eventManager
      */
     public function __construct(DependenciesFinderInterface $dependenciesFinder, EventManagerInterface $eventManager)
     {
