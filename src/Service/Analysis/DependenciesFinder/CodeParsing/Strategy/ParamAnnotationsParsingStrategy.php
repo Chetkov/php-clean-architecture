@@ -1,12 +1,12 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy;
 
 use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 
 /**
  * Class ParamAnnotationsParsingStrategy
- * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy
+ * @package Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy
  */
 class ParamAnnotationsParsingStrategy implements CodeParsingStrategyInterface
 {

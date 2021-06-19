@@ -1,22 +1,22 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy;
 
 use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 
 /**
- * Class ReturnAnnotationsParsingStrategy
- * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy
+ * Class PropertyAnnotationsParsingStrategy
+ * @package Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy
  */
-class ReturnAnnotationsParsingStrategy implements CodeParsingStrategyInterface
+class PropertyAnnotationsParsingStrategy implements CodeParsingStrategyInterface
 {
     /**
-     * Возвращает типы найденные в аннотациях return
+     * Возвращает типы найденные в аннотациях param
      * @inheritDoc
      */
     public function parse(string $content): array
     {
-        $pattern = '/@return\s+(?P<types>[\w|\[\]\\\\\$]*)/ium';
+        $pattern = '/(@property|@property-read|@property-write)[\s]+(?P<types>[^$]*)/ium';
         preg_match_all($pattern, $content, $matches);
 
         $dependencies = [];

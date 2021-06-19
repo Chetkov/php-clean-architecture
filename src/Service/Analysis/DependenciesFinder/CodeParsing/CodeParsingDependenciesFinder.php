@@ -1,18 +1,18 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing;
 
 use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypePrimitive;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy\CodeParsingStrategyInterface;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\DependenciesFinderInterface;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\ExclusionChecker;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\CodeParsingStrategyInterface;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\DependenciesFinderInterface;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\ExclusionChecker;
 
 /**
  * Class CodeParsingDependenciesFinder
- * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsinge
+ * @package Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsinge
  */
 class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 {

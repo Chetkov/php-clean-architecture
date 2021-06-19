@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Service;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
 class CompositeCountableIterator implements \Iterator, \Countable
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
 use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
@@ -8,11 +8,11 @@ use Chetkov\PHPCleanArchitecture\Model\Event\Event\FileAnalyzedEvent;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\DependenciesFinderInterface;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\DependenciesFinderInterface;
 
 /**
  * Class ComponentAnalyzer
- * @package Chetkov\PHPCleanArchitecture\Service
+ * @package Chetkov\PHPCleanArchitecture\Service\Analysis
  */
 class ComponentAnalyzer
 {

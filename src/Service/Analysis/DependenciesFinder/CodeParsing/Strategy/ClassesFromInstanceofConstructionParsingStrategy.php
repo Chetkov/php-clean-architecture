@@ -1,10 +1,10 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy;
 
 /**
  * Class ClassesFromInstanceofConstructionParsingStrategy
- * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder\CodeParsing\Strategy
+ * @package Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy
  */
 class ClassesFromInstanceofConstructionParsingStrategy implements CodeParsingStrategyInterface
 {

@@ -13,7 +13,8 @@
         "v.chetkov/console-logger": "^0.0.3",
         "psr/log": "*",
         "twig/twig": "*",
-        "ext-json": "*"
+        "ext-json": "*",
+        "ext-mbstring": "*"
     },
     "autoload": {
         "psr-4": {

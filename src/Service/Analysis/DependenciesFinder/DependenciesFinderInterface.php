@@ -1,12 +1,12 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Service\DependenciesFinder;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder;
 
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 
 /**
  * Interface DependenciesFinderInterface
- * @package Chetkov\PHPCleanArchitecture\Service\DependenciesFinder
+ * @package Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder
  */
 interface DependenciesFinderInterface
 {

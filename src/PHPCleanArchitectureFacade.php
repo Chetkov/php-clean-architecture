@@ -11,7 +11,7 @@ use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\ComponentAnalyzer;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\ComponentAnalyzer;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
 use Chetkov\PHPCleanArchitecture\Service\VendorBasedComponentsCreationService;
 
