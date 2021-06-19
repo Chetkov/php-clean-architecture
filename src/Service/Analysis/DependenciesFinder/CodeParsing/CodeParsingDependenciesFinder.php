@@ -123,7 +123,7 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 
     /**
      * @param string $content
-     * @return string[]
+     * @return string[][]
      */
     private function parseCode(string $content): array
     {

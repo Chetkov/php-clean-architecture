@@ -17,7 +17,7 @@ use Chetkov\PHPCleanArchitecture\Model\Type\TypeUndefined;
  */
 class UnitOfCode
 {
-    /** @var static[] */
+    /** @var self[] */
     private static $instances = [];
 
     /** @var string */
@@ -58,9 +58,9 @@ class UnitOfCode
      * @param string $fullName
      * @param Component|null $component
      * @param string|null $path
-     * @return static
+     * @return self
      */
-    public static function create(string $fullName, ?Component $component = null, ?string $path = null): UnitOfCode
+    public static function create(string $fullName, ?Component $component = null, ?string $path = null): self
     {
         $unitOfCode = self::$instances[$fullName] ?? null;
         if (!$unitOfCode) {

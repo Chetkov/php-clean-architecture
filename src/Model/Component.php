@@ -25,7 +25,7 @@ class Component
      */
     private const GLOBAL = '*global*';
 
-    /** @var static[] */
+    /** @var self[] */
     private static $instances = [];
 
     /** @var bool */
@@ -69,7 +69,7 @@ class Component
      * @param Path[] $rootPaths
      * @param Path[] $excludedPaths
      * @param Restrictions|null $restrictions
-     * @return static
+     * @return self
      */
     public static function create(
         string $name = self::UNDEFINED,
@@ -100,7 +100,7 @@ class Component
 
     /**
      * @param UnitOfCode $unitOfCode
-     * @return static
+     * @return self
      */
     public static function createByUnitOfCode(UnitOfCode $unitOfCode): self
     {

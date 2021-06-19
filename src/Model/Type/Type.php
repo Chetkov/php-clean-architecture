@@ -11,12 +11,12 @@ namespace Chetkov\PHPCleanArchitecture\Model\Type;
 abstract class Type
 {
     /**
-     * @var static[]
+     * @var self[]
      */
     protected static $instances = [];
 
     /**
-     * @return static
+     * @return self
      */
     public static function getInstance(): self
     {
