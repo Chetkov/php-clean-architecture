@@ -6,8 +6,7 @@ use Chetkov\PHPCleanArchitecture\Service\Helper\StringHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentPage\DependencyComponentExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentsGraphExtractor;
-use Twig\Environment;
-use Twig\Loader\FilesystemLoader;
+use Chetkov\PHPCleanArchitecture\Service\Report\TemplateRendererInterface;
 
 /**
  * Class ComponentPageRenderingService
@@ -17,8 +16,8 @@ class ComponentPageRenderingService
 {
     use UidGenerator;
 
-    /** @var Environment */
-    private $twig;
+    /** @var TemplateRendererInterface */
+    private $templateRenderer;
 
     /** @var ObjectsGraphBuilder */
     private $componentsGraphBuilder;
@@ -30,12 +29,11 @@ class ComponentPageRenderingService
     private $componentsGraphExtractor;
 
     /**
-     * ComponentPageRenderingService constructor.
+     * @param TemplateRendererInterface $templateRenderer
      */
-    public function __construct()
+    public function __construct(TemplateRendererInterface $templateRenderer)
     {
-        $templatesLoader = new FilesystemLoader(__DIR__ . '/Template/');
-        $this->twig = new Environment($templatesLoader);
+        $this->templateRenderer = $templateRenderer;
         $this->componentsGraphBuilder = new ObjectsGraphBuilder();
         $this->dependencyComponentExtractor = new DependencyComponentExtractor();
         $this->componentsGraphExtractor = new ComponentsGraphExtractor();
@@ -65,8 +63,7 @@ class ComponentPageRenderingService
             $extractedDependencyComponentsData[] = $this->dependencyComponentExtractor->extract($dependencyComponent, $component, $processedComponents, true);
         }
 
-        $componentName = $this->generateUid($component->name());
-        file_put_contents($reportsPath . '/' . $componentName . '.html', $this->twig->render('component-info.twig', [
+        $reportContent = $this->templateRenderer->render('component-info.twig', [
             'name' => $component->name(),
             'primitiveness_rate' => $component->calculatePrimitivenessRate(),
             'abstractness_rate' => $component->calculateAbstractnessRate(),
@@ -77,6 +74,8 @@ class ComponentPageRenderingService
             'dependent_components_json' => StringHelper::escapeBackslashes(json_encode($extractedDependentComponentsData)),
             'dependency_components_json' => StringHelper::escapeBackslashes(json_encode($extractedDependencyComponentsData)),
             'components_graph' => $this->componentsGraphExtractor->extract($this->componentsGraphBuilder),
-        ]));
+        ]);
+
+        file_put_contents($reportsPath . '/' . $this->generateUid($component->name()) . '.html', $reportContent);
     }
 }
