@@ -2,11 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Model\Event;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event;
+
+use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
+use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
+use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 
 class EventManager implements EventManagerInterface
 {
-    /** @var EventListenerInterface[] */
+    /** @var \Chetkov\PHPCleanArchitecture\Service\EventListenerInterface[] */
     private $listeners = [];
 
     /** @var EventInterface[] */
@@ -34,7 +38,7 @@ class EventManager implements EventManagerInterface
     }
 
     /**
-     * @param EventListenerInterface $listener
+     * @param \Chetkov\PHPCleanArchitecture\Service\EventListenerInterface $listener
      */
     public function unsubscribe(EventListenerInterface $listener): void
     {

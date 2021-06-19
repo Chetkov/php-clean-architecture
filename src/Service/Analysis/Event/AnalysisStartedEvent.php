@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Model\Event\Event;
+namespace Chetkov\PHPCleanArchitecture\Service\Analysis\Event;
 
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
+use Chetkov\PHPCleanArchitecture\Model\Event\TimedTrait;
 
-class AnalysisFinishedEvent implements EventInterface
+class AnalysisStartedEvent implements EventInterface
 {
     use TimedTrait;
 

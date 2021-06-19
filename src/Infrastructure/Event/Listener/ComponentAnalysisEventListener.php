@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Model\Event\Listener;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener;
 
-use Chetkov\PHPCleanArchitecture\Helper\Console\Console;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisStartedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
-use Chetkov\PHPCleanArchitecture\Model\Event\EventListenerInterface;
+use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
 
 class ComponentAnalysisEventListener implements EventListenerInterface
 {
@@ -17,7 +17,7 @@ class ComponentAnalysisEventListener implements EventListenerInterface
     private $startedAt = [];
 
     /**
-     * @param EventInterface $event
+     * @param \Chetkov\PHPCleanArchitecture\Model\\Chetkov\PHPCleanArchitecture\Model\Event\EventInterface $event
      */
     public function handle(EventInterface $event): void
     {

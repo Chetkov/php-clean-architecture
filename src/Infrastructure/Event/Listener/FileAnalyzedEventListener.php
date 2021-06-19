@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Model\Event\Listener;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener;
 
-use Chetkov\PHPCleanArchitecture\Helper\Console\Console;
-use Chetkov\PHPCleanArchitecture\Helper\Console\ProgressBar;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\AnalysisStartedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisStartedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\FileAnalyzedEvent;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Console\ProgressBar;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\FileAnalyzedEvent;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
-use Chetkov\PHPCleanArchitecture\Model\Event\EventListenerInterface;
+use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
 
 class FileAnalyzedEventListener implements EventListenerInterface
 {

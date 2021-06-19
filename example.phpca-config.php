@@ -1,10 +1,10 @@
 <?php
 
-use Chetkov\PHPCleanArchitecture\Model\Event\EventManager;
-use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
-use Chetkov\PHPCleanArchitecture\Model\Event\Listener\AnalysisEventListener;
-use Chetkov\PHPCleanArchitecture\Model\Event\Listener\ComponentAnalysisEventListener;
-use Chetkov\PHPCleanArchitecture\Model\Event\Listener\FileAnalyzedEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\EventManager;
+use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\AnalysisEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\ComponentAnalysisEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\FileAnalyzedEventListener;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CompositeDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\CodeParsingDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;

@@ -3,11 +3,11 @@
 namespace Chetkov\PHPCleanArchitecture;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\AnalysisFinishedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\AnalysisStartedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisFinishedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\Event\ComponentAnalysisStartedEvent;
-use Chetkov\PHPCleanArchitecture\Model\Event\EventManagerInterface;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
