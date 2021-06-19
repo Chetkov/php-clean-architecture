@@ -23,7 +23,6 @@ class ComponentAnalyzer
     private $eventManager;
 
     /**
-     * ComponentAnalyzer constructor.
      * @param DependenciesFinderInterface $dependenciesFinder
      * @param EventManagerInterface $eventManager
      */

@@ -20,7 +20,6 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
     private $codeParsingStrategies;
 
     /**
-     * CodeParsingDependenciesFinder constructor.
      * @param CodeParsingStrategyInterface ...$codeParsingStrategies
      */
     public function __construct(CodeParsingStrategyInterface ...$codeParsingStrategies)

@@ -12,7 +12,6 @@ class TypeClass extends Type
     private $isAbstract;
 
     /**
-     * TypeClass constructor.
      * @param bool $isAbstract
      */
     public function __construct(bool $isAbstract = false)

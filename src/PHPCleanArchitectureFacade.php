@@ -43,7 +43,6 @@ class PHPCleanArchitectureFacade
     private $isAnalyzePerformed = false;
 
     /**
-     * PHPCleanArchitectureFacade constructor.
      * @param array $config
      */
     public function __construct(array $config)
