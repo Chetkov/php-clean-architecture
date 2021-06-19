@@ -52,7 +52,7 @@ class ReflectionDependenciesFinder implements DependenciesFinderInterface
 
             foreach ($class->getProperties() as $property) {
                 if (method_exists($property, 'getType')) {
-                    $propertyType = call_user_func([$property, 'getType']);
+                    $propertyType = $property->getType();
                     if ($propertyType instanceof \ReflectionNamedType) {
                         $dependencies[] = $propertyType->getName();
                     }

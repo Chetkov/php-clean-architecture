@@ -44,7 +44,7 @@ class ProgressBar
         $this->percentageTextWidth = $percentageTextWidth;
         $this->percentageWidth = $percentageWidth;
 
-        $this->calculateWidths((int) shell_exec("tput cols"));
+        $this->calculateWidths(Console::getTerminalWidth());
     }
 
     /**
