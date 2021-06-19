@@ -16,6 +16,6 @@ trait UidGenerator
      */
     private function generateUid(string $name): string
     {
-        return strtolower(preg_replace('/[ \/\\\]/', '-', $name));
+        return strtolower((string) preg_replace('/[ \/\\\]/', '-', $name));
     }
 }

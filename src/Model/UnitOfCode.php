@@ -35,7 +35,7 @@ class UnitOfCode
     /** @var array<UnitOfCode> */
     private $outputDependencies = [];
 
-    /** @var Component|null */
+    /** @var Component */
     private $component;
 
     /**
@@ -49,9 +49,8 @@ class UnitOfCode
         $this->name = $name;
         $this->type = $type;
         $this->path = $path;
-
-        $component = $component ?? Component::createByUnitOfCode($this);
-        $this->setComponent($component);
+        $this->component = ($component ?? Component::createByUnitOfCode($this))
+            ->addUnitOfCode($this);
     }
 
     /**
@@ -139,11 +138,8 @@ class UnitOfCode
     private function setComponent(Component $component): self
     {
         if ($this->component !== $component) {
-            if ($this->component) {
-                $this->component->removeUnitOfCode($this);
-            }
-            $component->addUnitOfCode($this);
-            $this->component = $component;
+            $this->component->removeUnitOfCode($this);
+            $this->component = $component->addUnitOfCode($this);
         }
         return $this;
     }

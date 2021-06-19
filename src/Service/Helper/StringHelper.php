@@ -16,7 +16,7 @@ class StringHelper
      */
     public static function removeSpaces(string $subject): string
     {
-        return preg_replace('/[ ]*/u', '', $subject);
+        return (string) preg_replace('/[ ]*/u', '', $subject);
     }
 
     /**
@@ -25,7 +25,7 @@ class StringHelper
      */
     public static function removeDoubleSpaces(string $subject): string
     {
-        return preg_replace('/[ ]+/u', ' ', $subject);
+        return (string) preg_replace('/[ ]+/u', ' ', $subject);
     }
 
     /**
