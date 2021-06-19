@@ -197,7 +197,7 @@ class PHPCleanArchitectureFacade
                 foreach ($component->getDependentUnitsOfCode($illegalDependencyComponent) as $dependentUnitOfCode) {
                     foreach ($dependentUnitOfCode->outputDependencies($illegalDependencyComponent) as $dependencyUnitOfCode) {
                         if (!$dependentUnitOfCode->isDependencyInAllowedState($dependencyUnitOfCode)) {
-                            $errorMessage .= $dependentUnitOfCode->name() . PHP_EOL;
+                            $errorMessage .= $dependentUnitOfCode->name() . ' -> ' . $dependencyUnitOfCode->name() . PHP_EOL;
                         }
                     }
                 }
