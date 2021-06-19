@@ -16,11 +16,11 @@ class ComponentsGraphNodeExtractor
      */
     public function extract(Component $node): array
     {
-        $fanIn = array_map(function (Component $inputDependency) {
+        $fanIn = array_map(static function (Component $inputDependency) {
             return $inputDependency->name();
         }, $node->getDependentComponents());
 
-        $fanOut = array_map(function (Component $outputDependency) {
+        $fanOut = array_map(static function (Component $outputDependency) {
             return $outputDependency->name();
         }, $node->getDependencyComponents());
 
