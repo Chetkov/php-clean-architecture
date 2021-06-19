@@ -10,7 +10,7 @@ use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 
 class EventManager implements EventManagerInterface
 {
-    /** @var \Chetkov\PHPCleanArchitecture\Service\EventListenerInterface[] */
+    /** @var EventListenerInterface[] */
     private $listeners = [];
 
     /** @var EventInterface[] */
@@ -38,7 +38,7 @@ class EventManager implements EventManagerInterface
     }
 
     /**
-     * @param \Chetkov\PHPCleanArchitecture\Service\EventListenerInterface $listener
+     * @param EventListenerInterface $listener
      */
     public function unsubscribe(EventListenerInterface $listener): void
     {

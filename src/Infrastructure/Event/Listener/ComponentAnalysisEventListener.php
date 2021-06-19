@@ -17,7 +17,7 @@ class ComponentAnalysisEventListener implements EventListenerInterface
     private $startedAt = [];
 
     /**
-     * @param \Chetkov\PHPCleanArchitecture\Model\\Chetkov\PHPCleanArchitecture\Model\Event\EventInterface $event
+     * @param EventInterface $event
      */
     public function handle(EventInterface $event): void
     {
