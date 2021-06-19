@@ -31,9 +31,11 @@ function recreateReportsDirectory(string $path): void
 
 function removeDirectory(string $path): void
 {
-    $files = glob($path . '/*');
-    foreach ($files as $file) {
-        is_dir($file) ? removeDirectory($file) : unlink($file);
+    if (is_dir($path)) {
+        $files = glob($path . '/*');
+        foreach ($files as $file) {
+            is_dir($file) ? removeDirectory($file) : unlink($file);
+        }
+        rmdir($path);
     }
-    rmdir($path);
 }
