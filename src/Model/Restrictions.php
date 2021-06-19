@@ -42,8 +42,8 @@ class Restrictions
         array $allowedDependencyComponents = [],
         array $forbiddenDependencyComponents = [],
         array $allowedState = [],
-        ?float $maxAllowableDistance = null)
-    {
+        ?float $maxAllowableDistance = null
+    ) {
         $this->setPublicUnitsOfCode(...$publicUnitsOfCode);
         $this->setPrivateUnitsOfCode(...$privateUnitsOfCode);
         $this->setAllowedDependencyComponents(...$allowedDependencyComponents);

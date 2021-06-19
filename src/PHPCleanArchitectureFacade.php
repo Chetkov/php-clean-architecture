@@ -178,7 +178,7 @@ class PHPCleanArchitectureFacade
                 foreach ($component->getCyclicDependencies() as $cyclicDependenciesPath) {
                     $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(static function (Component $component) {
                             return $component->name();
-                        }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
+                    }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
                 }
             }
 

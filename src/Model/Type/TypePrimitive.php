@@ -48,6 +48,6 @@ class TypePrimitive extends Type
         return in_array($type, array_merge(
             self::EXISTING_PRIMITIVE_TYPES,
             self::EXISTING_PSEUDO_TYPES
-        ),true);
+        ), true);
     }
 }

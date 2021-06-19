@@ -114,7 +114,7 @@ class ProgressBar
             str_repeat(' ', $numEmptyBars),
             str_pad((string) $percentage, 3, ' ', STR_PAD_LEFT),
             $text
-        ],self::FORMAT), $this->width);
+        ], self::FORMAT), $this->width);
     }
 
     /**
