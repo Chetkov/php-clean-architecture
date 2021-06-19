@@ -78,7 +78,7 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @param $node
+     * @param mixed $node
      */
     private function validate($node): void
     {

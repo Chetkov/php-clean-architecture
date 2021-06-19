@@ -29,7 +29,7 @@ class TypeClass extends Type
     {
         $uniqueKey = sha1(static::class . $isAbstract);
         if (!isset(self::$instances[$uniqueKey])) {
-            self::$instances[$uniqueKey] = new static($isAbstract);
+            self::$instances[$uniqueKey] = new self($isAbstract);
         }
         return self::$instances[$uniqueKey];
     }

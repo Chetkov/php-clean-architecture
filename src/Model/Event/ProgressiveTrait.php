@@ -21,7 +21,7 @@ trait ProgressiveTrait
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getTotalPositions(): int
     {

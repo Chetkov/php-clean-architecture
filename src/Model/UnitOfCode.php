@@ -67,7 +67,7 @@ class UnitOfCode
             $getElementPath = static function (string $fullName): ?string {
                 try {
                     $reflection = new \ReflectionClass($fullName);
-                    $path = $reflection->getFileName();
+                    $path = $reflection->getFileName() ?: null;
                 } catch (\ReflectionException $e) {
                     $path = null;
                 }
