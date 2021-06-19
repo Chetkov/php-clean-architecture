@@ -64,7 +64,7 @@ class ReflectionDependenciesFinder implements DependenciesFinderInterface
             $dependency = trim($dependency, '\\');
         }
 
-        return array_filter(array_unique($dependencies), function (string $dependency) {
+        return array_filter(array_unique($dependencies), static function (string $dependency) {
             return !ExclusionChecker::isExclusion($dependency);
         });
     }
