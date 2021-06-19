@@ -35,7 +35,7 @@ class UnitOfCode
     /** @var UnitOfCode[] */
     private $outputDependencies = [];
 
-    /** @var Component */
+    /** @var Component|null */
     private $component;
 
     /**

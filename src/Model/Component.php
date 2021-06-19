@@ -437,9 +437,9 @@ class Component
 
     /**
      * Возвращает найденные циклические зависимости компонентов
-     * @param array $path Оставь пустым (используется в рекурсии)
-     * @param array $result Оставь пустым (используется в рекурсии)
-     * @return array [[Component, Component, Component], [Component, Component, Component], ...]
+     * @param array<Component> $path Оставь пустым (используется в рекурсии)
+     * @param array<array<Component>> $result Оставь пустым (используется в рекурсии)
+     * @return array<array<Component>>
      */
     public function getCyclicDependencies(array $path = [], array $result = []): array
     {

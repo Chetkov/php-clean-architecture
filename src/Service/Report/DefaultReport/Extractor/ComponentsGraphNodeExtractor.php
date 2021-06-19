@@ -14,7 +14,7 @@ class ComponentsGraphNodeExtractor
 {
     /**
      * @param Component $node
-     * @return array
+     * @return array<string, mixed>
      */
     public function extract(Component $node): array
     {

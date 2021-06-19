@@ -25,7 +25,7 @@ class TwigToTemplateRendererInterfaceAdapter implements TemplateRendererInterfac
 
     /**
      * @param string $name
-     * @param array $variables
+     * @param array<string, mixed> $variables
      * @return string
      * @throws LoaderError
      * @throws RuntimeError

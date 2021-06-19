@@ -14,7 +14,7 @@ class UnitsOfCodeGraphNodeExtractor
 {
     /**
      * @param UnitOfCode $node
-     * @return array
+     * @return array<string, mixed>
      */
     public function extract(UnitOfCode $node): array
     {

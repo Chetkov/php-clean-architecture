@@ -10,10 +10,10 @@ namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
  */
 class ObjectsGraphBuilder
 {
-    /** @var array */
+    /** @var mixed[] */
     private $nodes;
 
-    /** @var array */
+    /** @var array[] */
     private $edges;
 
     public function reset(): void
@@ -53,7 +53,7 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @return array
+     * @return mixed[]
      */
     public function getNodes(): array
     {
@@ -61,7 +61,7 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @return array
+     * @return array[]
      */
     public function getEdges(): array
     {

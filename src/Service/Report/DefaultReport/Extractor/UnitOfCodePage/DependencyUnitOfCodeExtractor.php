@@ -21,7 +21,7 @@ class DependencyUnitOfCodeExtractor
      * @param UnitOfCode $dependency
      * @param Component[] $processedComponents
      * @param bool $isInputDependency
-     * @return array
+     * @return array<string, mixed>
      */
     public function extract(UnitOfCode $unitOfCode, UnitOfCode $dependency, array $processedComponents, bool $isInputDependency = true): array
     {

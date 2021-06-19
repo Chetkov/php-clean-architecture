@@ -81,7 +81,7 @@ class ComponentAnalyzer
     /**
      * @param Path[] $paths
      * @param string $pattern
-     * @return CompositeCountableIterator|\SplFileInfo[]
+     * @return CompositeCountableIterator<\SplFileInfo>|\SplFileInfo[]
      */
     private function getFiles(array $paths, string $pattern = '/\.php$/i'): CompositeCountableIterator
     {

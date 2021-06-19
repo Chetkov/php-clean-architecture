@@ -20,7 +20,7 @@ class DependencyComponentExtractor
      * @param Component $linkedComponent
      * @param Component[] $processedComponents
      * @param bool $linkedComponentIsDependent
-     * @return array
+     * @return array<string, mixed>
      */
     public function extract(Component $component, Component $linkedComponent, array $processedComponents, bool $linkedComponentIsDependent = false): array
     {
