@@ -12,7 +12,7 @@ interface CodeParsingStrategyInterface
 {
     /**
      * @param string $content
-     * @return string[]
+     * @return array<string>
      */
     public function parse(string $content): array;
 }

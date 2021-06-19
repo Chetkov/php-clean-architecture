@@ -14,11 +14,11 @@ use Chetkov\PHPCleanArchitecture\Model\Path;
  */
 class VendorBasedComponentsCreationService
 {
-    /** @var string[] */
+    /** @var array<string> */
     private $excludedPaths;
 
     /**
-     * @param string[] $excludedPaths
+     * @param array<string> $excludedPaths
      */
     public function __construct(array $excludedPaths = [])
     {
@@ -27,7 +27,7 @@ class VendorBasedComponentsCreationService
 
     /**
      * @param string $pathToVendor
-     * @return Component[]
+     * @return array<Component>
      */
     public function create(string $pathToVendor): array
     {
@@ -66,9 +66,9 @@ class VendorBasedComponentsCreationService
     }
 
     /**
-     * @param array[] $autoloadSection
+     * @param array<array> $autoloadSection
      * @param string $currentPath
-     * @return Path[]
+     * @return array<Path>
      */
     private function createPathsByAutoloadSection(array $autoloadSection, string $currentPath): array
     {

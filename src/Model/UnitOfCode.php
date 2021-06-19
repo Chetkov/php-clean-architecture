@@ -17,7 +17,7 @@ use Chetkov\PHPCleanArchitecture\Model\Type\TypeUndefined;
  */
 class UnitOfCode
 {
-    /** @var self[] */
+    /** @var array<self> */
     private static $instances = [];
 
     /** @var string */
@@ -29,10 +29,10 @@ class UnitOfCode
     /** @var Type */
     private $type;
 
-    /** @var UnitOfCode[] */
+    /** @var array<UnitOfCode> */
     private $inputDependencies = [];
 
-    /** @var UnitOfCode[] */
+    /** @var array<UnitOfCode> */
     private $outputDependencies = [];
 
     /** @var Component|null */
@@ -197,7 +197,7 @@ class UnitOfCode
      * Возвращает массив входящих зависимостей (элементов, которые каким-то образом зависят от текущего)
      * @param Component|null $component Если передан, метод вернет только его зависимые элементы, иначе зависимые элементы
      * всех компонентов
-     * @return UnitOfCode[]
+     * @return array<UnitOfCode>
      */
     public function inputDependencies(?Component $component = null): array
     {
@@ -231,7 +231,7 @@ class UnitOfCode
     /**
      * Возвращает массив исходящих зависимостей (элементов, от которых каким-то образом зависит текущий)
      * @param Component|null $component Если передан, метод вернет только его элементы, иначе элементы всех компонентов
-     * @return UnitOfCode[]
+     * @return array<UnitOfCode>
      */
     public function outputDependencies(?Component $component = null): array
     {

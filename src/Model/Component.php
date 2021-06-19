@@ -25,7 +25,7 @@ class Component
      */
     private const GLOBAL = '*global*';
 
-    /** @var self[] */
+    /** @var array<self> */
     private static $instances = [];
 
     /** @var bool */
@@ -34,22 +34,22 @@ class Component
     /** @var string */
     private $name;
 
-    /** @var Path[] */
+    /** @var array<Path> */
     private $rootPaths;
 
-    /** @var Path[] */
+    /** @var array<Path> */
     private $excludedPaths;
 
     /** @var Restrictions */
     private $restrictions;
 
-    /** @var UnitOfCode[] */
+    /** @var array<UnitOfCode> */
     private $unitsOfCode = [];
 
     /**
      * @param string $name
-     * @param Path[] $rootPaths
-     * @param Path[] $excludedPaths
+     * @param array<Path> $rootPaths
+     * @param array<Path> $excludedPaths
      * @param Restrictions|null $restrictions
      */
     private function __construct(
@@ -66,8 +66,8 @@ class Component
 
     /**
      * @param string $name
-     * @param Path[] $rootPaths
-     * @param Path[] $excludedPaths
+     * @param array<Path> $rootPaths
+     * @param array<Path> $excludedPaths
      * @param Restrictions|null $restrictions
      * @return self
      */
@@ -141,7 +141,7 @@ class Component
 
     /**
      * Возвращает все, созданные до текущего момента времени, объекты Component
-     * @return Component[]
+     * @return array<Component>
      */
     public static function getAll(): array
     {
@@ -237,7 +237,7 @@ class Component
 
     /**
      * Возвращает пути корневых директорий компонента
-     * @return Path[]
+     * @return array<Path>
      */
     public function rootPaths(): array
     {
@@ -259,7 +259,7 @@ class Component
 
     /**
      * Возвращает пути исключения
-     * @return Path[]
+     * @return array<Path>
      */
     public function excludedPaths(): array
     {
@@ -309,7 +309,7 @@ class Component
 
     /**
      * Возвращает список элементов компонента
-     * @return UnitOfCode[]
+     * @return array<UnitOfCode>
      */
     public function unitsOfCode(): array
     {
@@ -340,7 +340,7 @@ class Component
 
     /**
      * Возвращает список компонентов, которые зависят от этого компонента.
-     * @return Component[]
+     * @return array<Component>
      */
     public function getDependentComponents(): array
     {
@@ -358,7 +358,7 @@ class Component
 
     /**
      * Возвращает список компонентов, от которых зависит этот компонент.
-     * @return Component[]
+     * @return array<Component>
      */
     public function getDependencyComponents(): array
     {
@@ -380,7 +380,7 @@ class Component
     /**
      * Возвращает список элементов этого компонента, которые зависят от элементов полученного компонента.
      * @param Component $dependencyComponent
-     * @return UnitOfCode[]
+     * @return array<UnitOfCode>
      */
     public function getDependentUnitsOfCode(Component $dependencyComponent): array
     {
@@ -398,7 +398,7 @@ class Component
     /**
      * Возвращает список элементов полученного компонента, от которых зависят элементы этого компонента.
      * @param Component $dependencyComponent
-     * @return UnitOfCode[]
+     * @return array<UnitOfCode>
      */
     public function getDependencyUnitsOfCode(Component $dependencyComponent): array
     {
@@ -415,7 +415,7 @@ class Component
 
     /**
      * Возвращает компоненты, от которых текущий зависеть не должен, но зависит
-     * @return Component[]
+     * @return array<Component>
      */
     public function getIllegalDependencyComponents(): array
     {
@@ -428,7 +428,7 @@ class Component
      * т.е. элементы запрещенных для взаимодействия компонентов и приватные элементы разрешенных для взаимодействия компонентов.
      * Если true, метод вернет только запрещенные элементы-зависимости из разрешенных для взаимодействия компонентов,
      * т.е. только приватные элементы разрешенных для взаимодействия компонентов.
-     * @return UnitOfCode[]
+     * @return array<UnitOfCode>
      */
     public function getIllegalDependencyUnitsOfCode(bool $onlyFromAllowedComponents = false): array
     {

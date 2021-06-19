@@ -18,7 +18,7 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\ExclusionCh
  */
 class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 {
-    /** @var CodeParsingStrategyInterface[] */
+    /** @var array<CodeParsingStrategyInterface> */
     private $codeParsingStrategies;
 
     /**
@@ -123,7 +123,7 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 
     /**
      * @param string $content
-     * @return string[][]
+     * @return array<array<string>>
      */
     private function parseCode(string $content): array
     {

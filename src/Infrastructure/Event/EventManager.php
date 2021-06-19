@@ -10,14 +10,14 @@ use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 
 class EventManager implements EventManagerInterface
 {
-    /** @var EventListenerInterface[] */
+    /** @var array<EventListenerInterface> */
     private $listeners = [];
 
-    /** @var EventInterface[] */
+    /** @var array<EventInterface> */
     private $events = [];
 
     /**
-     * @param EventListenerInterface[] $listeners
+     * @param array<EventListenerInterface> $listeners
      */
     public function __construct(array $listeners)
     {

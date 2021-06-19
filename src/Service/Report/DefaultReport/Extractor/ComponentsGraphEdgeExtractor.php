@@ -13,7 +13,7 @@ use Chetkov\PHPCleanArchitecture\Model\Component;
 class ComponentsGraphEdgeExtractor
 {
     /**
-     * @param Component[] $edge [$from, $to]
+     * @param array<Component> $edge [$from, $to]
      * @return array<string, mixed>
      */
     public function extract(array $edge): array
