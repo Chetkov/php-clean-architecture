@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\EventManager;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Render\TwigToTemplateRendererInterfaceAdapter;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;

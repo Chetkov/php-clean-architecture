@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;

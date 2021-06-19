@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Chetkov\PHPCleanArchitecture;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;
