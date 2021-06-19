@@ -73,8 +73,8 @@ class ComponentPageRenderingService
             'distance_rate' => $component->calculateDistanceRate(),
             'dependent_components' => $extractedDependentComponentsData,
             'dependency_components' => $extractedDependencyComponentsData,
-            'dependent_components_json' => StringHelper::escapeBackslashes(json_encode($extractedDependentComponentsData)),
-            'dependency_components_json' => StringHelper::escapeBackslashes(json_encode($extractedDependencyComponentsData)),
+            'dependent_components_json' => StringHelper::escapeBackslashes((string) json_encode($extractedDependentComponentsData)),
+            'dependency_components_json' => StringHelper::escapeBackslashes((string) json_encode($extractedDependencyComponentsData)),
             'components_graph' => $this->componentsGraphExtractor->extract($this->componentsGraphBuilder),
         ]);
 

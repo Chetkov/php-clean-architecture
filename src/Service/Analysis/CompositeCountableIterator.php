@@ -36,7 +36,9 @@ class CompositeCountableIterator implements \Iterator, \Countable
     {
         $this->getCurrentIterator()->next();
         if (!$this->getCurrentIterator()->valid()) {
-            $this->currentIterator = next($this->iterators) !== false ? current($this->iterators) : null;
+            if (next($this->iterators) !== false) {
+                $this->currentIterator = current($this->iterators) ?: null;
+            }
         }
     }
 

@@ -37,11 +37,14 @@ class VendorBasedComponentsCreationService
         /** @var \SplFileInfo $composerFile */
         foreach ($composerFiles as $composerFile) {
             $filePath = $composerFile->getRealPath();
-            if ($this->isExcludedPath($filePath)) {
+            if (!$filePath || $this->isExcludedPath($filePath)) {
                 continue;
             }
 
-            $content = file_get_contents($filePath);
+            if (!$content = file_get_contents($filePath)) {
+                continue;
+            }
+
             $composerData = json_decode($content, true);
             if (json_last_error() !== 0) {
                 continue;
