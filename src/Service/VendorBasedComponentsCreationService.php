@@ -2,7 +2,7 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service;
 
-use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
+use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 

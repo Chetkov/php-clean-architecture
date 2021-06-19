@@ -2,8 +2,8 @@
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing;
 
-use Chetkov\PHPCleanArchitecture\Helper\PathHelper;
-use Chetkov\PHPCleanArchitecture\Helper\StringHelper;
+use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
+use Chetkov\PHPCleanArchitecture\Service\Helper\StringHelper;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypePrimitive;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\CodeParsingStrategyInterface;

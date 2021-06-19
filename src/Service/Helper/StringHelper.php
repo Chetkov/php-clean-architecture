@@ -1,10 +1,10 @@
 <?php
 
-namespace Chetkov\PHPCleanArchitecture\Helper;
+namespace Chetkov\PHPCleanArchitecture\Service\Helper;
 
 /**
  * Class StringHelper
- * @package Chetkov\PHPCleanArchitecture\Helper
+ * @package Chetkov\PHPCleanArchitecture\Service\Helper
  */
 class StringHelper
 {
