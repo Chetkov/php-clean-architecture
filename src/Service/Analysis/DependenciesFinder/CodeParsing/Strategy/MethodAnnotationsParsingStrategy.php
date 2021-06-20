@@ -37,7 +37,7 @@ class MethodAnnotationsParsingStrategy implements CodeParsingStrategyInterface
         $dependencies = [];
         foreach ($types as $typesAsString) {
             foreach (explode('|', str_replace('[]', '', StringHelper::removeSpaces($typesAsString))) as $type) {
-                $dependencies[$type] = true;
+                $dependencies[(string) $type] = true;
             }
         }
 

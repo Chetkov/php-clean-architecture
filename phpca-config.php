@@ -160,7 +160,7 @@ return [
         },
         //Фабрика, собирающая сервис рендеринга отчетов
         'report_rendering_service' => static function (): ReportRenderingServiceInterface {
-            $templatesLoader = new FilesystemLoader(__DIR__ . '/src/Service/Report/DefaultReport/Template');
+            $templatesLoader = new FilesystemLoader(ReportRenderingService::templatesPath());
             $twigRenderer = new Environment($templatesLoader);
             $twigAdapter = new TwigToTemplateRendererInterfaceAdapter($twigRenderer);
             return new ReportRenderingService($twigAdapter);

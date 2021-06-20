@@ -24,7 +24,7 @@ class ReturnAnnotationsParsingStrategy implements CodeParsingStrategyInterface
         $dependencies = [];
         foreach (array_filter($matches['types']) as $typesAsString) {
             foreach (explode('|', str_replace('[]', '', StringHelper::removeSpaces($typesAsString))) as $type) {
-                $dependencies[$type] = true;
+                $dependencies[(string) $type] = true;
             }
         }
 

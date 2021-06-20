@@ -19,7 +19,9 @@ class VarAnnotationsParsingStrategy implements CodeParsingStrategyInterface
     public function parse(string $content): array
     {
         $filter = static function (string $element) {
-            return !empty($element) && mb_stripos($element, '$') === false;
+            return !empty($element)
+                && !is_numeric($element)
+                && strpos($element, '$') === false;
         };
 
         $groupPattern = '\s*([\w|\[\]\\\\\$]*)';
@@ -29,7 +31,7 @@ class VarAnnotationsParsingStrategy implements CodeParsingStrategyInterface
         $dependencies = [];
         foreach (array_merge(array_filter($group1, $filter), array_filter($group2, $filter)) as $one) {
             foreach (explode('|', str_replace('[]', '', StringHelper::removeSpaces($one))) as $type) {
-                $dependencies[$type] = true;
+                $dependencies[(string) $type] = true;
             }
         }
 

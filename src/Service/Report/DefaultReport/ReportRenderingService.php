@@ -50,4 +50,12 @@ class ReportRenderingService implements ReportRenderingServiceInterface
             }
         }
     }
+
+    /**
+     * @return string
+     */
+    public static function templatesPath(): string
+    {
+        return __DIR__ . '/Template';
+    }
 }

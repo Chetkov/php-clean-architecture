@@ -23,7 +23,7 @@ class ThrowsAnnotationsParsingStrategy implements CodeParsingStrategyInterface
         $dependencies = [];
         foreach (array_filter($matches['exceptions']) as $exceptionsAsString) {
             foreach (explode('|', StringHelper::removeSpaces($exceptionsAsString)) as $exception) {
-                $dependencies[$exception] = true;
+                $dependencies[(string) $exception] = true;
             }
         }
 
