@@ -100,7 +100,7 @@ class UnitOfCode
                 default:
                     $type = TypeUndefined::getInstance();
             }
-            $unitOfCode = new UnitOfCode($fullName, $type, $path, $component);
+            $unitOfCode = new CachingUnitOfCode($fullName, $type, $path, $component);
             self::$instances[$fullName] = $unitOfCode;
         }
         if ($component) {
@@ -172,20 +172,15 @@ class UnitOfCode
         return $this->component === $component;
     }
 
-    private $isAccessibleFromOutside;
     /**
      * Проверяет, является ли элемент доступным для взаимодействия извне компонента, к которому он принадлежит
      * @return bool
      */
     public function isAccessibleFromOutside(): bool
     {
-        if ($this->isAccessibleFromOutside === null) {
-            $this->isAccessibleFromOutside = $this->component->restrictions()->isUnitOfCodeAccessibleFromOutside($this);
-        }
-        return $this->isAccessibleFromOutside;
+        return $this->component->restrictions()->isUnitOfCodeAccessibleFromOutside($this);
     }
 
-    private $isDependencyInAllowedStateMap = [];
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
      * @param UnitOfCode $dependency
@@ -193,10 +188,7 @@ class UnitOfCode
      */
     public function isDependencyInAllowedState(UnitOfCode $dependency): bool
     {
-        if (!isset($this->isDependencyInAllowedStateMap[$dependency->name()])) {
-            $this->isDependencyInAllowedStateMap[$dependency->name()] = $this->component->restrictions()->isUnitOfCodeDependencyInAllowedState($dependency, $this);
-        }
-        return $this->isDependencyInAllowedStateMap[$dependency->name()];
+        return $this->component->restrictions()->isUnitOfCodeDependencyInAllowedState($dependency, $this);
     }
 
     /**

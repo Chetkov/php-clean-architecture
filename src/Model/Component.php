@@ -78,7 +78,7 @@ class Component
         ?Restrictions $restrictions = null
     ): self {
         if (!isset(self::$instances[$name])) {
-            self::$instances[$name] = new CachedComponent(
+            self::$instances[$name] = new CachingComponent(
                 $name,
                 $rootPaths,
                 $excludedPaths,
