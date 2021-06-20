@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis;
 
 use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Console\ProgressBar;
@@ -15,10 +15,10 @@ use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
 class FileAnalyzedEventListener implements EventListenerInterface
 {
     /** @var AnalysisStartedEvent */
-    private $lastAnalysisStartEvent;
+    private $lastAnalysisStartedEvent;
 
     /** @var ComponentAnalysisStartedEvent */
-    private $lastComponentAnalysisStartEvent;
+    private $lastComponentAnalysisStartedEvent;
 
     /** @var int */
     private $counter = 0;
@@ -27,10 +27,10 @@ class FileAnalyzedEventListener implements EventListenerInterface
     {
         switch (true) {
             case $event instanceof AnalysisStartedEvent:
-                $this->lastAnalysisStartEvent = $event;
+                $this->lastAnalysisStartedEvent = $event;
                 break;
             case $event instanceof ComponentAnalysisStartedEvent:
-                $this->lastComponentAnalysisStartEvent = $event;
+                $this->lastComponentAnalysisStartedEvent = $event;
                 break;
             case $event instanceof FileAnalyzedEvent:
                 $this->counter++;
@@ -38,15 +38,15 @@ class FileAnalyzedEventListener implements EventListenerInterface
                     return;
                 }
 
-                $executionTime = (int) (microtime(true) - $this->lastAnalysisStartEvent->getMicroTime());
+                $executionTime = (int) (microtime(true) - $this->lastAnalysisStartedEvent->getMicroTime());
                 $componentAnalysisProgress = $this->calculateComponentAnalysisProgress($event);
                 $fullProgress = $this->calculateFullProgress($componentAnalysisProgress);
 
-                $progressOutput = $this->getFullPProgressBar()->getOutput($fullProgress) .
+                $progressOutput = $this->getFullProgressBar()->getOutput($fullProgress) .
                     $this->getComponentAnalysisProgressBar()->getOutput($componentAnalysisProgress, sprintf(
                         '[%ss] %s: [%s] %s',
                         $executionTime,
-                        $this->lastComponentAnalysisStartEvent->getComponent()->name(),
+                        $this->lastComponentAnalysisStartedEvent->getComponent()->name(),
                         $event->getStatus(),
                         $event->getFullPath()
                     )) . "\r";
@@ -71,17 +71,17 @@ class FileAnalyzedEventListener implements EventListenerInterface
      */
     private function calculateFullProgress(int $componentAnalysisProgress): int
     {
-        $stage = 100 / $this->lastComponentAnalysisStartEvent->getTotalPositions();
+        $stage = 100 / $this->lastComponentAnalysisStartedEvent->getTotalPositions();
         $progressOfStage = $stage / 100 * $componentAnalysisProgress;
         return (int) ($progressOfStage +
-            ($this->lastComponentAnalysisStartEvent->getPosition() /
-                $this->lastComponentAnalysisStartEvent->getTotalPositions() * 100));
+            ($this->lastComponentAnalysisStartedEvent->getPosition() /
+                $this->lastComponentAnalysisStartedEvent->getTotalPositions() * 100));
     }
 
     /**
      * @return ProgressBar
      */
-    private function getFullPProgressBar(): ProgressBar
+    private function getFullProgressBar(): ProgressBar
     {
         return ProgressBar::getInstance(0, 25);
     }

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report;
 
 use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisEvent;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisStartedEvent;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingStartedEvent;
 
-class ComponentAnalysisEventListener implements EventListenerInterface
+class ComponentReportRenderingEventListener implements EventListenerInterface
 {
     /** @var array<float> */
     private $startedAt = [];
@@ -21,15 +21,15 @@ class ComponentAnalysisEventListener implements EventListenerInterface
      */
     public function handle(EventInterface $event): void
     {
-        if (!$event instanceof ComponentAnalysisEvent) {
+        if (!$event instanceof ComponentReportRenderingEvent) {
             return;
         }
 
         switch (true) {
-            case $event instanceof ComponentAnalysisStartedEvent:
+            case $event instanceof ComponentReportRenderingStartedEvent:
                 $this->handleStart($event);
                 break;
-            case $event instanceof ComponentAnalysisFinishedEvent:
+            case $event instanceof ComponentReportRenderingFinishedEvent:
                 $this->handleFinish($event);
                 break;
             default:
@@ -37,9 +37,9 @@ class ComponentAnalysisEventListener implements EventListenerInterface
     }
 
     /**
-     * @param ComponentAnalysisStartedEvent $event
+     * @param ComponentReportRenderingStartedEvent $event
      */
-    private function handleStart(ComponentAnalysisStartedEvent $event): void
+    private function handleStart(ComponentReportRenderingStartedEvent $event): void
     {
         $componentName = $event->getComponent()->name();
         if (!isset($this->startedAt[$componentName])) {
@@ -48,9 +48,9 @@ class ComponentAnalysisEventListener implements EventListenerInterface
     }
 
     /**
-     * @param ComponentAnalysisFinishedEvent $event
+     * @param ComponentReportRenderingFinishedEvent $event
      */
-    private function handleFinish(ComponentAnalysisFinishedEvent $event): void
+    private function handleFinish(ComponentReportRenderingFinishedEvent $event): void
     {
         $componentName = $event->getComponent()->name();
         $startedAt = $this->startedAt[$componentName] ?? microtime(true);

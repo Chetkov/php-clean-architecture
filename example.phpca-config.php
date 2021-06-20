@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\EventManager;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\ComponentReportRenderingEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\ReportBuildingEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\ReportRenderingEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\UnitOfCodeReportRenderedEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Render\TwigToTemplateRendererInterfaceAdapter;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
-use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\AnalysisEventListener;
-use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\ComponentAnalysisEventListener;
-use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\FileAnalyzedEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\AnalysisEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\ComponentAnalysisEventListener;
+use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\FileAnalyzedEventListener;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CompositeDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\CodeParsingDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;
@@ -156,18 +160,23 @@ return [
             ]);
         },
         //Фабрика, собирающая сервис рендеринга отчетов
-        'report_rendering_service' => static function (): ReportRenderingServiceInterface {
+        'report_rendering_service' => static function (EventManagerInterface $eventManager): ReportRenderingServiceInterface {
             $templatesLoader = new FilesystemLoader(ReportRenderingService::templatesPath());
             $twigRenderer = new Environment($templatesLoader);
             $twigAdapter = new TwigToTemplateRendererInterfaceAdapter($twigRenderer);
-            return new ReportRenderingService($twigAdapter);
+            return new ReportRenderingService($eventManager, $twigAdapter);
         },
         //Фабрика, собирающая и настраивающая EventManager
         'event_manager' => static function (): EventManagerInterface {
             return new EventManager([
+                new ReportBuildingEventListener(),
                 new AnalysisEventListener(),
                 new ComponentAnalysisEventListener(),
                 new FileAnalyzedEventListener(),
+                new ReportBuildingEventListener(),
+                new ReportRenderingEventListener(),
+                new ComponentReportRenderingEventListener(),
+                new UnitOfCodeReportRenderedEventListener(),
             ]);
         }
     ],

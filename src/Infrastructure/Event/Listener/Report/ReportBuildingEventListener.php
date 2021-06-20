@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener;
+namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report;
 
 use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisFinishedEvent;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingStartedEvent;
 
-class AnalysisEventListener implements EventListenerInterface
+class ReportBuildingEventListener implements EventListenerInterface
 {
     /** @var float|null */
     private $startedAt;
@@ -18,10 +18,10 @@ class AnalysisEventListener implements EventListenerInterface
     public function handle(EventInterface $event): void
     {
         switch (true) {
-            case $event instanceof AnalysisStartedEvent:
+            case $event instanceof ReportBuildingStartedEvent:
                 $this->handleStart($event);
                 break;
-            case $event instanceof AnalysisFinishedEvent:
+            case $event instanceof ReportBuildingFinishedEvent:
                 $this->handleFinish($event);
                 break;
             default:
@@ -29,28 +29,28 @@ class AnalysisEventListener implements EventListenerInterface
     }
 
     /**
-     * @param AnalysisStartedEvent $event
+     * @param ReportBuildingStartedEvent $event
      */
-    private function handleStart(AnalysisStartedEvent $event): void
+    private function handleStart(ReportBuildingStartedEvent $event): void
     {
         if (!$this->startedAt) {
             $this->startedAt = $event->getMicroTime();
         }
 
-        Console::write('Analysis started.');
+        Console::write('Report building started.');
         Console::writeln();
     }
 
     /**
-     * @param AnalysisFinishedEvent $event
+     * @param ReportBuildingFinishedEvent $event
      */
-    private function handleFinish(AnalysisFinishedEvent $event): void
+    private function handleFinish(ReportBuildingFinishedEvent $event): void
     {
         $startedAt = $this->startedAt ?? microtime(true);
         $this->startedAt = null;
 
         $executionTime = round($event->getMicroTime() - $startedAt, 3);
-        Console::write(sprintf('Analysis finished. Execution time: %s sec.', $executionTime), true);
+        Console::write(sprintf('Report building finished. Execution time: %s sec.', $executionTime), true);
         Console::writeln();
     }
 }

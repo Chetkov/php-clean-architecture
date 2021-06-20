@@ -14,6 +14,8 @@ use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\ComponentAnalyzer;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingStartedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
 use Chetkov\PHPCleanArchitecture\Service\VendorBasedComponentsCreationService;
 
@@ -160,9 +162,11 @@ class PHPCleanArchitectureFacade
      */
     public function generateReport(string $path): void
     {
+        $this->eventManager->notify(new ReportBuildingStartedEvent());
         $this->analyze();
 
         $this->createReportRenderingService()->render($path, ...$this->analyzedComponents);
+        $this->eventManager->notify(new ReportBuildingFinishedEvent());
     }
 
     /**
@@ -241,6 +245,6 @@ class PHPCleanArchitectureFacade
     private function createReportRenderingService(): ReportRenderingServiceInterface
     {
         $reportRenderingServiceFactory = $this->reportRenderingServiceFactory;
-        return $reportRenderingServiceFactory();
+        return $reportRenderingServiceFactory($this->eventManager);
     }
 }
