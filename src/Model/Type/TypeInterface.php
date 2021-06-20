@@ -23,6 +23,6 @@ class TypeInterface extends Type
      */
     public static function isThisType(string $fullName): bool
     {
-        return interface_exists($fullName);
+        return interface_exists($fullName, false);
     }
 }

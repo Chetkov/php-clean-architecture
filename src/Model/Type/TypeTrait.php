@@ -23,6 +23,6 @@ class TypeTrait extends Type
      */
     public static function isThisType(string $fullName): bool
     {
-        return trait_exists($fullName);
+        return trait_exists($fullName, false);
     }
 }

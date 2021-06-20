@@ -65,7 +65,7 @@ class UnitOfCode
         if (!$unitOfCode) {
             $getElementPath = static function (string $fullName): ?string {
                 try {
-                    assert(class_exists($fullName));
+                    assert(class_exists($fullName, false));
                     $reflection = new \ReflectionClass($fullName);
                     $path = $reflection->getFileName() ?: null;
                 } catch (\ReflectionException $e) {
@@ -81,7 +81,7 @@ class UnitOfCode
                     break;
                 case TypeClass::isThisType($fullName):
                     try {
-                        assert(class_exists($fullName));
+                        assert(class_exists($fullName, false));
                         $reflection = new \ReflectionClass($fullName);
                         $isAbstract = $reflection->isAbstract();
                     } catch (\ReflectionException $e) {

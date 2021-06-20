@@ -47,6 +47,6 @@ class TypeClass extends Type
      */
     public static function isThisType(string $fullName): bool
     {
-        return class_exists($fullName);
+        return class_exists($fullName, false);
     }
 }

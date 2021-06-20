@@ -157,6 +157,6 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
      */
     private function isElementExists(string $name): bool
     {
-        return class_exists($name) || interface_exists($name) || trait_exists($name);
+            return class_exists($name, false) || interface_exists($name, false) || trait_exists($name, false);
     }
 }
