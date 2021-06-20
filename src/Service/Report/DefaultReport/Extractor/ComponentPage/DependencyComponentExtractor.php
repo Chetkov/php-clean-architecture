@@ -102,7 +102,7 @@ class DependencyComponentExtractor
      * @param bool $isAllowed
      * @param bool $inAllowedState
      * @param bool $isOutputDependency
-     * @return array
+     * @return array<string, mixed>
      */
     private function extractDependency(
         UnitOfCode $dependency,
