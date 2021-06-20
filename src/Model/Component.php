@@ -282,6 +282,7 @@ class Component
         return $this;
     }
 
+    private $isDependencyAllowedMap = [];
     /**
      * Проверяет, разрешена ли текщему компоненту зависимость от переданного?
      * @param Component $dependency
@@ -289,9 +290,13 @@ class Component
      */
     public function isDependencyAllowed(Component $dependency): bool
     {
-        return $this->restrictions->isDependencyAllowed($dependency, $this);
+        if (!isset($this->isDependencyAllowedMap[$dependency->name()])) {
+            $this->isDependencyAllowedMap[$dependency->name()] = $this->restrictions->isDependencyAllowed($dependency, $this);
+        }
+        return $this->isDependencyAllowedMap[$dependency->name()];
     }
 
+    private $isDependencyInAllowedStateMap = [];
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
      * @param Component $dependency
@@ -299,7 +304,10 @@ class Component
      */
     public function isDependencyInAllowedState(Component $dependency): bool
     {
-        return $this->restrictions->isComponentDependencyInAllowedState($dependency, $this);
+        if (!isset($this->isDependencyInAllowedStateMap[$dependency->name()])) {
+            $this->isDependencyInAllowedStateMap[$dependency->name()] = $this->restrictions->isComponentDependencyInAllowedState($dependency, $this);
+        }
+        return $this->isDependencyInAllowedStateMap[$dependency->name()];
     }
 
     /**
@@ -359,27 +367,32 @@ class Component
         return array_values($uniqueDependentComponents);
     }
 
+    private $uniqueDependencyComponents;
     /**
      * Возвращает список компонентов, от которых зависит этот компонент.
      * @return array<Component>
      */
     public function getDependencyComponents(): array
     {
-        $uniqueDependencyComponents = [];
-        foreach ($this->unitsOfCode as $unitOfCode) {
-            foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if (!$dependency->belongToComponent($this)
-                    && !$dependency->belongToGlobalNamespace()
-                    && !$dependency->isPrimitive()
-                ) {
-                    $component = $dependency->component();
-                    $uniqueDependencyComponents[spl_object_hash($component)] = $component;
+        if ($this->uniqueDependencyComponents === null) {
+            $uniqueDependencyComponents = [];
+            foreach ($this->unitsOfCode as $unitOfCode) {
+                foreach ($unitOfCode->outputDependencies() as $dependency) {
+                    if (!$dependency->belongToComponent($this)
+                        && !$dependency->belongToGlobalNamespace()
+                        && !$dependency->isPrimitive()
+                    ) {
+                        $component = $dependency->component();
+                        $uniqueDependencyComponents[spl_object_hash($component)] = $component;
+                    }
                 }
             }
+            $this->uniqueDependencyComponents = array_values($uniqueDependencyComponents);
         }
-        return array_values($uniqueDependencyComponents);
+        return $this->uniqueDependencyComponents;
     }
 
+    private $uniqueDependentUnitsOfCodeMap = [];
     /**
      * Возвращает список элементов этого компонента, которые зависят от элементов полученного компонента.
      * @param Component $dependencyComponent
@@ -387,17 +400,21 @@ class Component
      */
     public function getDependentUnitsOfCode(Component $dependencyComponent): array
     {
-        $uniqueDependentUnitsOfCode = [];
-        foreach ($this->unitsOfCode as $unitOfCode) {
-            foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToComponent($dependencyComponent)) {
-                    $uniqueDependentUnitsOfCode[spl_object_hash($unitOfCode)] = $unitOfCode;
+        if (!isset($this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()])) {
+            $uniqueDependentUnitsOfCode = [];
+            foreach ($this->unitsOfCode as $unitOfCode) {
+                foreach ($unitOfCode->outputDependencies() as $dependency) {
+                    if ($dependency->belongToComponent($dependencyComponent)) {
+                        $uniqueDependentUnitsOfCode[spl_object_hash($unitOfCode)] = $unitOfCode;
+                    }
                 }
             }
+            $this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()] = array_values($uniqueDependentUnitsOfCode);
         }
-        return array_values($uniqueDependentUnitsOfCode);
+        return $this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()];
     }
 
+    private $uniqueDependencyUnitsOfCodeMap = [];
     /**
      * Возвращает список элементов полученного компонента, от которых зависят элементы этого компонента.
      * @param Component $dependencyComponent
@@ -405,15 +422,18 @@ class Component
      */
     public function getDependencyUnitsOfCode(Component $dependencyComponent): array
     {
-        $uniqueDependencyUnitsOfCode = [];
-        foreach ($this->unitsOfCode as $unitOfCode) {
-            foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToComponent($dependencyComponent)) {
-                    $uniqueDependencyUnitsOfCode[spl_object_hash($dependency)] = $dependency;
+        if (!isset($this->uniqueDependencyUnitsOfCodeMap[$dependencyComponent->name()])) {
+            $uniqueDependencyUnitsOfCode = [];
+            foreach ($this->unitsOfCode as $unitOfCode) {
+                foreach ($unitOfCode->outputDependencies() as $dependency) {
+                    if ($dependency->belongToComponent($dependencyComponent)) {
+                        $uniqueDependencyUnitsOfCode[spl_object_hash($dependency)] = $dependency;
+                    }
                 }
             }
+            $this->uniqueDependencyUnitsOfCodeMap[$dependencyComponent->name()] = array_values($uniqueDependencyUnitsOfCode);
         }
-        return array_values($uniqueDependencyUnitsOfCode);
+        return $this->uniqueDependencyUnitsOfCodeMap[$dependencyComponent->name()];
     }
 
     /**
@@ -486,6 +506,7 @@ class Component
         return round($numOfAbstract / $total, 3);
     }
 
+    private $instabilityRate;
     /**
      * Рассчитывает неустойчивость компонента <br>
      * I = Fan-out ÷ (Fan-in + Fan-out) <br>
@@ -496,32 +517,35 @@ class Component
      */
     public function calculateInstabilityRate(): float
     {
-        $uniqueInputExternalDependencies = [];
-        $uniqueOutputExternalDependencies = [];
-        foreach ($this->unitsOfCode as $unitOfCode) {
-            foreach ($unitOfCode->inputDependencies() as $dependency) {
-                if (!$dependency->belongToComponent($this)) {
-                    $uniqueInputExternalDependencies[$dependency->name()] = true;
+        if ($this->instabilityRate === null) {
+            $uniqueInputExternalDependencies = [];
+            $uniqueOutputExternalDependencies = [];
+            foreach ($this->unitsOfCode as $unitOfCode) {
+                foreach ($unitOfCode->inputDependencies() as $dependency) {
+                    if (!$dependency->belongToComponent($this)) {
+                        $uniqueInputExternalDependencies[$dependency->name()] = true;
+                    }
+                }
+                foreach ($unitOfCode->outputDependencies() as $dependency) {
+                    if ($dependency->belongToComponent($this)
+                        || $dependency->belongToGlobalNamespace()
+                        || $dependency->isPrimitive()
+                    ) {
+                        continue;
+                    }
+                    $uniqueOutputExternalDependencies[$dependency->name()] = true;
                 }
             }
-            foreach ($unitOfCode->outputDependencies() as $dependency) {
-                if ($dependency->belongToComponent($this)
-                    || $dependency->belongToGlobalNamespace()
-                    || $dependency->isPrimitive()
-                ) {
-                    continue;
-                }
-                $uniqueOutputExternalDependencies[$dependency->name()] = true;
-            }
-        }
-        
-        $numOfUniqueInputExternalDependencies = count($uniqueInputExternalDependencies);
-        $numOfUniqueOutputExternalDependencies = count($uniqueOutputExternalDependencies);
-        $totalUniqueExternalDependencies = $numOfUniqueInputExternalDependencies + $numOfUniqueOutputExternalDependencies;
 
-        return $totalUniqueExternalDependencies ?
-            round($numOfUniqueOutputExternalDependencies / $totalUniqueExternalDependencies, 3)
-            : 0;
+            $numOfUniqueInputExternalDependencies = count($uniqueInputExternalDependencies);
+            $numOfUniqueOutputExternalDependencies = count($uniqueOutputExternalDependencies);
+            $totalUniqueExternalDependencies = $numOfUniqueInputExternalDependencies + $numOfUniqueOutputExternalDependencies;
+
+            $this->instabilityRate = $totalUniqueExternalDependencies ?
+                round($numOfUniqueOutputExternalDependencies / $totalUniqueExternalDependencies, 3)
+                : 0;
+        }
+        return $this->instabilityRate;
     }
 
     /**

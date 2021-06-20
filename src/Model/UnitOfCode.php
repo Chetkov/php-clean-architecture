@@ -172,15 +172,20 @@ class UnitOfCode
         return $this->component === $component;
     }
 
+    private $isAccessibleFromOutside;
     /**
      * Проверяет, является ли элемент доступным для взаимодействия извне компонента, к которому он принадлежит
      * @return bool
      */
     public function isAccessibleFromOutside(): bool
     {
-        return $this->component->restrictions()->isUnitOfCodeAccessibleFromOutside($this);
+        if ($this->isAccessibleFromOutside === null) {
+            $this->isAccessibleFromOutside = $this->component->restrictions()->isUnitOfCodeAccessibleFromOutside($this);
+        }
+        return $this->isAccessibleFromOutside;
     }
 
+    private $isDependencyInAllowedStateMap = [];
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
      * @param UnitOfCode $dependency
@@ -188,7 +193,10 @@ class UnitOfCode
      */
     public function isDependencyInAllowedState(UnitOfCode $dependency): bool
     {
-        return $this->component->restrictions()->isUnitOfCodeDependencyInAllowedState($dependency, $this);
+        if (!isset($this->isDependencyInAllowedStateMap[$dependency->name()])) {
+            $this->isDependencyInAllowedStateMap[$dependency->name()] = $this->component->restrictions()->isUnitOfCodeDependencyInAllowedState($dependency, $this);
+        }
+        return $this->isDependencyInAllowedStateMap[$dependency->name()];
     }
 
     /**
