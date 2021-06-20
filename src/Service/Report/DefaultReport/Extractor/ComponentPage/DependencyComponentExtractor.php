@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentPage;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\UidGenerator;
 
@@ -17,13 +17,13 @@ class DependencyComponentExtractor
     use UidGenerator;
 
     /**
-     * @param Component $component
-     * @param Component $linkedComponent
-     * @param array<Component> $processedComponents
+     * @param ComponentInterface $component
+     * @param ComponentInterface $linkedComponent
+     * @param array<ComponentInterface> $processedComponents
      * @param bool $linkedComponentIsDependent
      * @return array<string, mixed>
      */
-    public function extract(Component $component, Component $linkedComponent, array $processedComponents, bool $linkedComponentIsDependent = false): array
+    public function extract(ComponentInterface $component, ComponentInterface $linkedComponent, array $processedComponents, bool $linkedComponentIsDependent = false): array
     {
         $extracted = [
             'name' => $this->generateUid($component->name()),
@@ -102,7 +102,7 @@ class DependencyComponentExtractor
      * @param bool $isAllowed
      * @param bool $inAllowedState
      * @param bool $isOutputDependency
-     * @return array
+     * @return array<string, mixed>
      */
     private function extractDependency(
         UnitOfCode $dependency,

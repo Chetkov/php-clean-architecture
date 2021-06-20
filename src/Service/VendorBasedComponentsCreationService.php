@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service;
 
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\Path;
@@ -27,7 +28,7 @@ class VendorBasedComponentsCreationService
 
     /**
      * @param string $pathToVendor
-     * @return array<Component>
+     * @return array<ComponentInterface>
      */
     public function create(string $pathToVendor): array
     {

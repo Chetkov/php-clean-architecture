@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis\Event;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
 use Chetkov\PHPCleanArchitecture\Model\Event\ProgressiveTrait;
 use Chetkov\PHPCleanArchitecture\Model\Event\TimedTrait;
@@ -13,15 +13,15 @@ abstract class ComponentAnalysisEvent implements EventInterface
 {
     use TimedTrait, ProgressiveTrait;
 
-    /** @var Component */
+    /** @var ComponentInterface */
     private $component;
 
     /**
      * @param int $position
      * @param int $totalPositions
-     * @param Component $component
+     * @param ComponentInterface $component
      */
-    public function __construct(int $position, int $totalPositions, Component $component)
+    public function __construct(int $position, int $totalPositions, ComponentInterface $component)
     {
         $this->position = $position;
         $this->totalPositions = $totalPositions;
@@ -30,9 +30,9 @@ abstract class ComponentAnalysisEvent implements EventInterface
     }
 
     /**
-     * @return Component
+     * @return ComponentInterface
      */
-    public function getComponent(): Component
+    public function getComponent(): ComponentInterface
     {
         return $this->component;
     }

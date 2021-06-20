@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\UidGenerator;
 
@@ -19,7 +19,7 @@ class DependencyUnitOfCodeExtractor
     /**
      * @param UnitOfCode $unitOfCode
      * @param UnitOfCode $dependency
-     * @param array<Component> $processedComponents
+     * @param array<ComponentInterface> $processedComponents
      * @param bool $isInputDependency
      * @return array<string, mixed>
      */

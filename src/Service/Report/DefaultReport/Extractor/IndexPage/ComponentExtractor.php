@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\IndexPage;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\UidGenerator;
 
 /**
@@ -16,10 +16,10 @@ class ComponentExtractor
     use UidGenerator;
 
     /**
-     * @param Component $component
+     * @param ComponentInterface $component
      * @return array<string, mixed>
      */
-    public function extract(Component $component): array
+    public function extract(ComponentInterface $component): array
     {
         $distanceRate = $component->calculateDistanceRate();
         $distanceRateOverage = $component->calculateDistanceRateOverage();

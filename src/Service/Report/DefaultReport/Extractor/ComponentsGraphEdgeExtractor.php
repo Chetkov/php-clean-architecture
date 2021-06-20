@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 
 /**
  * Class ComponentsGraphEdgeExtractor
@@ -13,7 +13,7 @@ use Chetkov\PHPCleanArchitecture\Model\Component;
 class ComponentsGraphEdgeExtractor
 {
     /**
-     * @param array<Component> $edge [$from, $to]
+     * @param array<ComponentInterface> $edge [$from, $to]
      * @return array<string, mixed>
      */
     public function extract(array $edge): array

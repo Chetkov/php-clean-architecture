@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 
 /**
  * Interface ReportRenderingServiceInterface
@@ -14,7 +14,7 @@ interface ReportRenderingServiceInterface
 {
     /**
      * @param string $reportPath
-     * @param Component ...$components
+     * @param ComponentInterface ...$components
      */
-    public function render(string $reportPath, Component ...$components): void;
+    public function render(string $reportPath, ComponentInterface ...$components): void;
 }

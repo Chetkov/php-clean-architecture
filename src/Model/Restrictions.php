@@ -16,10 +16,10 @@ class Restrictions
     /** @var array<UnitOfCode> */
     private $privateUnitsOfCode = [];
 
-    /** @var array<Component> */
+    /** @var array<ComponentInterface> */
     private $allowedDependencyComponents = [];
 
-    /** @var array<Component> */
+    /** @var array<ComponentInterface> */
     private $forbiddenDependencyComponents = [];
 
     /** @var float|null */
@@ -31,8 +31,8 @@ class Restrictions
     /**
      * @param array<UnitOfCode> $publicUnitsOfCode
      * @param array<UnitOfCode> $privateUnitsOfCode
-     * @param array<Component> $allowedDependencyComponents
-     * @param array<Component> $forbiddenDependencyComponents
+     * @param array<ComponentInterface> $allowedDependencyComponents
+     * @param array<ComponentInterface> $forbiddenDependencyComponents
      * @param array<string, array<string, array<string, array<string, bool>>>> $allowedState
      * @param float|null $maxAllowableDistance
      */
@@ -107,10 +107,10 @@ class Restrictions
     }
 
     /**
-     * @param Component ...$components
+     * @param ComponentInterface ...$components
      * @return $this
      */
-    public function setAllowedDependencyComponents(Component ...$components): self
+    public function setAllowedDependencyComponents(ComponentInterface ...$components): self
     {
         foreach ($components as $component) {
             $this->addAllowedDependencyComponent($component);
@@ -119,10 +119,10 @@ class Restrictions
     }
 
     /**
-     * @param Component $component
+     * @param ComponentInterface $component
      * @return $this
      */
-    public function addAllowedDependencyComponent(Component $component): self
+    public function addAllowedDependencyComponent(ComponentInterface $component): self
     {
         if (!empty($this->forbiddenDependencyComponents)) {
             throw new \LogicException('Component cannot have allowed and forbidden dependencies at the same time!');
@@ -134,10 +134,10 @@ class Restrictions
     }
 
     /**
-     * @param Component ...$components
+     * @param ComponentInterface ...$components
      * @return $this
      */
-    public function setForbiddenDependencyComponents(Component ...$components): self
+    public function setForbiddenDependencyComponents(ComponentInterface ...$components): self
     {
         foreach ($components as $component) {
             $this->addForbiddenDependencyComponent($component);
@@ -146,10 +146,10 @@ class Restrictions
     }
 
     /**
-     * @param Component $component
+     * @param ComponentInterface $component
      * @return $this
      */
-    public function addForbiddenDependencyComponent(Component $component): self
+    public function addForbiddenDependencyComponent(ComponentInterface $component): self
     {
         if (!empty($this->allowedDependencyComponents)) {
             throw new \LogicException('Component cannot have allowed and forbidden dependencies at the same time!');
@@ -179,10 +179,10 @@ class Restrictions
     }
 
     /**
-     * @param Component $thisComponent
+     * @param ComponentInterface $thisComponent
      * @return float
      */
-    public function calculateDistanceRateOverage(Component $thisComponent): float
+    public function calculateDistanceRateOverage(ComponentInterface $thisComponent): float
     {
         if ($this->maxAllowableDistance === null) {
             return 0;
@@ -195,11 +195,11 @@ class Restrictions
     }
 
     /**
-     * @param Component $dependency
-     * @param Component $thisComponent
+     * @param ComponentInterface $dependency
+     * @param ComponentInterface $thisComponent
      * @return bool
      */
-    public function isDependencyAllowed(Component $dependency, Component $thisComponent): bool
+    public function isDependencyAllowed(ComponentInterface $dependency, ComponentInterface $thisComponent): bool
     {
         if ($dependency === $thisComponent || $dependency->isPrimitives() || $dependency->isGlobal()) {
             return true;
@@ -214,11 +214,11 @@ class Restrictions
     }
 
     /**
-     * @param Component $dependencyComponent
-     * @param Component $thisComponent
+     * @param ComponentInterface $dependencyComponent
+     * @param ComponentInterface $thisComponent
      * @return bool
      */
-    public function isComponentDependencyInAllowedState(Component $dependencyComponent, Component $thisComponent): bool
+    public function isComponentDependencyInAllowedState(ComponentInterface $dependencyComponent, ComponentInterface $thisComponent): bool
     {
         if (!$this->allowedState) {
             return false;
@@ -268,10 +268,10 @@ class Restrictions
     }
 
     /**
-     * @param Component $thisComponent
-     * @return array<Component>
+     * @param ComponentInterface $thisComponent
+     * @return array<ComponentInterface>
      */
-    public function getIllegalDependencyComponents(Component $thisComponent): array
+    public function getIllegalDependencyComponents(ComponentInterface $thisComponent): array
     {
         $uniqueIllegalDependencyComponents = [];
         foreach ($thisComponent->getDependencyComponents() as $dependencyComponent) {
@@ -289,11 +289,11 @@ class Restrictions
     }
 
     /**
-     * @param Component $thisComponent
+     * @param ComponentInterface $thisComponent
      * @param bool $onlyFromAllowedComponents
      * @return array<UnitOfCode>
      */
-    public function getIllegalDependencyUnitsOfCode(Component $thisComponent, bool $onlyFromAllowedComponents = false): array
+    public function getIllegalDependencyUnitsOfCode(ComponentInterface $thisComponent, bool $onlyFromAllowedComponents = false): array
     {
         $uniqueIllegalDependencies = [];
         foreach ($thisComponent->unitsOfCode() as $unitOfCode) {

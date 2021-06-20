@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\DependencyUnitOfCodeExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\UnitOfCodePage\UnitsOfCodeGraphExtractor;
@@ -44,9 +44,9 @@ class UnitOfCodePageRenderingService
     /**
      * @param string $reportsPath
      * @param UnitOfCode $unitOfCode
-     * @param Component ...$processedComponents
+     * @param ComponentInterface ...$processedComponents
      */
-    public function render(string $reportsPath, UnitOfCode $unitOfCode, Component ...$processedComponents): void
+    public function render(string $reportsPath, UnitOfCode $unitOfCode, ComponentInterface ...$processedComponents): void
     {
         $this->unitsOfCodeGraphBuilder->reset();
 

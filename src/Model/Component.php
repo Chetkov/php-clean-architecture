@@ -8,7 +8,7 @@ namespace Chetkov\PHPCleanArchitecture\Model;
  * Class Component
  * @package Chetkov\PHPCleanArchitecture\Model
  */
-class Component
+class Component implements ComponentInterface
 {
     /**
      * Название по умолчанию, если не передано другое
@@ -25,7 +25,7 @@ class Component
      */
     private const GLOBAL = '*global*';
 
-    /** @var array<self> */
+    /** @var array<ComponentInterface> */
     private static $instances = [];
 
     /** @var bool */
@@ -69,21 +69,21 @@ class Component
      * @param array<Path> $rootPaths
      * @param array<Path> $excludedPaths
      * @param Restrictions|null $restrictions
-     * @return self
+     * @return ComponentInterface
      */
     public static function create(
         string $name = self::UNDEFINED,
         array $rootPaths = [],
         array $excludedPaths = [],
         ?Restrictions $restrictions = null
-    ): self {
+    ): ComponentInterface {
         if (!isset(self::$instances[$name])) {
-            self::$instances[$name] = new self(
+            self::$instances[$name] = new CachedComponent(new self(
                 $name,
                 $rootPaths,
                 $excludedPaths,
                 $restrictions
-            );
+            ));
         }
         $component = self::$instances[$name];
         foreach ($rootPaths as $rootPath) {
@@ -93,16 +93,16 @@ class Component
             $component->addExcludedPath($excludedPath);
         }
         if ($restrictions) {
-            $component->restrictions = $restrictions;
+            $component->setRestrictions($restrictions);
         }
         return $component;
     }
 
     /**
      * @param UnitOfCode $unitOfCode
-     * @return self
+     * @return ComponentInterface
      */
-    public static function createByUnitOfCode(UnitOfCode $unitOfCode): self
+    public static function createByUnitOfCode(UnitOfCode $unitOfCode): ComponentInterface
     {
         if ($unitOfCode->isPrimitive()) {
             return self::create(self::PRIMITIVES);
@@ -144,7 +144,7 @@ class Component
 
     /**
      * Возвращает все, созданные до текущего момента времени, объекты Component
-     * @return array<Component>
+     * @return array<ComponentInterface>
      */
     public static function getAll(): array
     {
@@ -154,9 +154,9 @@ class Component
     /**
      * Выполняет поиск объекта Component по названию (среди всех ранее созданных)
      * @param string $name
-     * @return Component|null
+     * @return ComponentInterface|null
      */
-    public static function findByName(string $name): ?Component
+    public static function findByName(string $name): ?ComponentInterface
     {
         return self::$instances[$name] ?? null;
     }
@@ -172,9 +172,9 @@ class Component
 
     /**
      * Исключает метод из процесса анализа содержимого
-     * @return $this
+     * @return ComponentInterface
      */
-    public function excludeFromAnalyze(): Component
+    public function excludeFromAnalyze(): ComponentInterface
     {
         $this->isEnabledForAnalysis = false;
         return $this;
@@ -250,9 +250,9 @@ class Component
     /**
      * Добавляет путь корневой директории компонента
      * @param Path $rootPath
-     * @return $this
+     * @return ComponentInterface
      */
-    public function addRootPath(Path $rootPath): self
+    public function addRootPath(Path $rootPath): ComponentInterface
     {
         if (!in_array($rootPath, $this->rootPaths, true)) {
             $this->rootPaths[] = $rootPath;
@@ -272,9 +272,9 @@ class Component
     /**
      * Добавляет путь исключение
      * @param Path $excludedPath
-     * @return $this
+     * @return ComponentInterface
      */
-    public function addExcludedPath(Path $excludedPath): self
+    public function addExcludedPath(Path $excludedPath): ComponentInterface
     {
         if (!in_array($excludedPath, $this->excludedPaths, true)) {
             $this->excludedPaths[] = $excludedPath;
@@ -282,13 +282,14 @@ class Component
         return $this;
     }
 
+    /** @var array<string, bool> */
     private $isDependencyAllowedMap = [];
     /**
      * Проверяет, разрешена ли текщему компоненту зависимость от переданного?
-     * @param Component $dependency
+     * @param ComponentInterface $dependency
      * @return bool
      */
-    public function isDependencyAllowed(Component $dependency): bool
+    public function isDependencyAllowed(ComponentInterface $dependency): bool
     {
         if (!isset($this->isDependencyAllowedMap[$dependency->name()])) {
             $this->isDependencyAllowedMap[$dependency->name()] = $this->restrictions->isDependencyAllowed($dependency, $this);
@@ -296,13 +297,16 @@ class Component
         return $this->isDependencyAllowedMap[$dependency->name()];
     }
 
+    /**
+     * @var array<string, bool>
+     */
     private $isDependencyInAllowedStateMap = [];
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
-     * @param Component $dependency
+     * @param ComponentInterface $dependency
      * @return bool
      */
-    public function isDependencyInAllowedState(Component $dependency): bool
+    public function isDependencyInAllowedState(ComponentInterface $dependency): bool
     {
         if (!isset($this->isDependencyInAllowedStateMap[$dependency->name()])) {
             $this->isDependencyInAllowedStateMap[$dependency->name()] = $this->restrictions->isComponentDependencyInAllowedState($dependency, $this);
@@ -319,6 +323,16 @@ class Component
     }
 
     /**
+     * @param Restrictions $restrictions
+     * @return ComponentInterface
+     */
+    public function setRestrictions(Restrictions $restrictions): ComponentInterface
+    {
+        $this->restrictions = $restrictions;
+        return $this;
+    }
+
+    /**
      * Возвращает список элементов компонента
      * @return array<UnitOfCode>
      */
@@ -330,9 +344,9 @@ class Component
     /**
      * Добавляет элемент компонента
      * @param UnitOfCode $unitOfCode
-     * @return $this
+     * @return ComponentInterface
      */
-    public function addUnitOfCode(UnitOfCode $unitOfCode): self
+    public function addUnitOfCode(UnitOfCode $unitOfCode): ComponentInterface
     {
         $this->unitsOfCode[spl_object_hash($unitOfCode)] = $unitOfCode;
         return $this;
@@ -341,9 +355,9 @@ class Component
     /**
      * Удаляет элемент компонента
      * @param UnitOfCode $unitOfCode
-     * @return $this
+     * @return ComponentInterface
      */
-    public function removeUnitOfCode(UnitOfCode $unitOfCode): self
+    public function removeUnitOfCode(UnitOfCode $unitOfCode): ComponentInterface
     {
         unset($this->unitsOfCode[spl_object_hash($unitOfCode)]);
         return $this;
@@ -351,7 +365,7 @@ class Component
 
     /**
      * Возвращает список компонентов, которые зависят от этого компонента.
-     * @return array<Component>
+     * @return array<ComponentInterface>
      */
     public function getDependentComponents(): array
     {
@@ -367,10 +381,11 @@ class Component
         return array_values($uniqueDependentComponents);
     }
 
+    /** @var array<ComponentInterface> */
     private $uniqueDependencyComponents;
     /**
      * Возвращает список компонентов, от которых зависит этот компонент.
-     * @return array<Component>
+     * @return array<ComponentInterface>
      */
     public function getDependencyComponents(): array
     {
@@ -392,13 +407,14 @@ class Component
         return $this->uniqueDependencyComponents;
     }
 
+    /** @var array<string, array<UnitOfCode>> */
     private $uniqueDependentUnitsOfCodeMap = [];
     /**
      * Возвращает список элементов этого компонента, которые зависят от элементов полученного компонента.
-     * @param Component $dependencyComponent
+     * @param ComponentInterface $dependencyComponent
      * @return array<UnitOfCode>
      */
-    public function getDependentUnitsOfCode(Component $dependencyComponent): array
+    public function getDependentUnitsOfCode(ComponentInterface $dependencyComponent): array
     {
         if (!isset($this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()])) {
             $uniqueDependentUnitsOfCode = [];
@@ -414,13 +430,14 @@ class Component
         return $this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()];
     }
 
+    /** @var array<string, array<UnitOfCode>> */
     private $uniqueDependencyUnitsOfCodeMap = [];
     /**
      * Возвращает список элементов полученного компонента, от которых зависят элементы этого компонента.
-     * @param Component $dependencyComponent
+     * @param ComponentInterface $dependencyComponent
      * @return array<UnitOfCode>
      */
-    public function getDependencyUnitsOfCode(Component $dependencyComponent): array
+    public function getDependencyUnitsOfCode(ComponentInterface $dependencyComponent): array
     {
         if (!isset($this->uniqueDependencyUnitsOfCodeMap[$dependencyComponent->name()])) {
             $uniqueDependencyUnitsOfCode = [];
@@ -438,7 +455,7 @@ class Component
 
     /**
      * Возвращает компоненты, от которых текущий зависеть не должен, но зависит
-     * @return array<Component>
+     * @return array<ComponentInterface>
      */
     public function getIllegalDependencyComponents(): array
     {
@@ -460,9 +477,9 @@ class Component
 
     /**
      * Возвращает найденные циклические зависимости компонентов
-     * @param array<Component> $path Оставь пустым (используется в рекурсии)
-     * @param array<array<Component>> $result Оставь пустым (используется в рекурсии)
-     * @return array<array<Component>>
+     * @param array<ComponentInterface> $path Оставь пустым (используется в рекурсии)
+     * @param array<array<ComponentInterface>> $result Оставь пустым (используется в рекурсии)
+     * @return array<array<ComponentInterface>>
      */
     public function getCyclicDependencies(array $path = [], array $result = []): array
     {
@@ -506,6 +523,7 @@ class Component
         return round($numOfAbstract / $total, 3);
     }
 
+    /** @var float|null */
     private $instabilityRate;
     /**
      * Рассчитывает неустойчивость компонента <br>

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Service\Helper\StringHelper;
-use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentPage\DependencyComponentExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentsGraphExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\TemplateRendererInterface;
@@ -43,10 +43,10 @@ class ComponentPageRenderingService
 
     /**
      * @param string $reportsPath
-     * @param Component $component
-     * @param Component ...$processedComponents
+     * @param ComponentInterface $component
+     * @param ComponentInterface ...$processedComponents
      */
-    public function render(string $reportsPath, Component $component, Component ...$processedComponents): void
+    public function render(string $reportsPath, ComponentInterface $component, ComponentInterface ...$processedComponents): void
     {
         $this->componentsGraphBuilder->reset();
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingStartedEvent;
@@ -47,7 +47,7 @@ class ReportRenderingService implements ReportRenderingServiceInterface
     /**
      * @inheritDoc
      */
-    public function render(string $reportPath, Component ...$components): void
+    public function render(string $reportPath, ComponentInterface ...$components): void
     {
         $this->eventManager->notify(new ReportRenderingStartedEvent());
 

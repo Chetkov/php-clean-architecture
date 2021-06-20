@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\IndexPage\ComponentExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentsGraphExtractor;
 use Chetkov\PHPCleanArchitecture\Service\Report\TemplateRendererInterface;
@@ -40,9 +40,9 @@ class IndexPageRenderingService
 
     /**
      * @param string $reportsPath
-     * @param Component ...$components
+     * @param ComponentInterface ...$components
      */
-    public function render(string $reportsPath, Component ...$components): void
+    public function render(string $reportsPath, ComponentInterface ...$components): void
     {
         $extractedComponentsData = [];
         $this->componentsGraphBuilder->reset();

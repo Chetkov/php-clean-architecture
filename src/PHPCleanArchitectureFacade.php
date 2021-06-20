@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Chetkov\PHPCleanArchitecture;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisFinishedEvent;
@@ -40,7 +41,7 @@ class PHPCleanArchitectureFacade
     /** @var bool */
     private $checkStableDependenciesPrinciple;
 
-    /** @var array<Component> */
+    /** @var array<ComponentInterface> */
     private $analyzedComponents;
 
     /** @var bool */
@@ -180,7 +181,7 @@ class PHPCleanArchitectureFacade
         foreach ($this->analyzedComponents as $component) {
             if ($this->checkAcyclicDependenciesPrinciple) {
                 foreach ($component->getCyclicDependencies() as $cyclicDependenciesPath) {
-                    $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(static function (Component $component) {
+                    $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(static function (ComponentInterface $component) {
                             return $component->name();
                     }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
                 }

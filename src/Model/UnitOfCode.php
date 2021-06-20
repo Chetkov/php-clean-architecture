@@ -35,16 +35,16 @@ class UnitOfCode
     /** @var array<UnitOfCode> */
     private $outputDependencies = [];
 
-    /** @var Component */
+    /** @var ComponentInterface */
     private $component;
 
     /**
      * @param string $name
      * @param Type $type
      * @param string|null $path
-     * @param Component|null $component
+     * @param ComponentInterface|null $component
      */
-    private function __construct(string $name, Type $type, ?string $path = null, ?Component $component = null)
+    private function __construct(string $name, Type $type, ?string $path = null, ?ComponentInterface $component = null)
     {
         $this->name = $name;
         $this->type = $type;
@@ -55,11 +55,11 @@ class UnitOfCode
 
     /**
      * @param string $fullName
-     * @param Component|null $component
+     * @param ComponentInterface|null $component
      * @param string|null $path
      * @return self
      */
-    public static function create(string $fullName, ?Component $component = null, ?string $path = null): self
+    public static function create(string $fullName, ?ComponentInterface $component = null, ?string $path = null): self
     {
         $unitOfCode = self::$instances[$fullName] ?? null;
         if (!$unitOfCode) {
@@ -132,10 +132,10 @@ class UnitOfCode
 
     /**
      * Устанавливает принадлежность элемента к переданному компоненту
-     * @param Component $component
+     * @param ComponentInterface $component
      * @return $this
      */
-    private function setComponent(Component $component): self
+    private function setComponent(ComponentInterface $component): self
     {
         if ($this->component !== $component) {
             $this->component->removeUnitOfCode($this);
@@ -146,9 +146,9 @@ class UnitOfCode
 
     /**
      * Возвращает компонент, которому элемент принадлежит
-     * @return Component
+     * @return ComponentInterface
      */
-    public function component(): Component
+    public function component(): ComponentInterface
     {
         return $this->component;
     }
@@ -164,14 +164,15 @@ class UnitOfCode
 
     /**
      * Проверяет принадлежность элемента переданному компоненту
-     * @param Component $component
+     * @param ComponentInterface $component
      * @return bool
      */
-    public function belongToComponent(Component $component): bool
+    public function belongToComponent(ComponentInterface $component): bool
     {
         return $this->component === $component;
     }
 
+    /** @var bool|null */
     private $isAccessibleFromOutside;
     /**
      * Проверяет, является ли элемент доступным для взаимодействия извне компонента, к которому он принадлежит
@@ -185,6 +186,7 @@ class UnitOfCode
         return $this->isAccessibleFromOutside;
     }
 
+    /** @var array<string, bool> */
     private $isDependencyInAllowedStateMap = [];
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
@@ -201,11 +203,11 @@ class UnitOfCode
 
     /**
      * Возвращает массив входящих зависимостей (элементов, которые каким-то образом зависят от текущего)
-     * @param Component|null $component Если передан, метод вернет только его зависимые элементы, иначе зависимые элементы
+     * @param ComponentInterface|null $component Если передан, метод вернет только его зависимые элементы, иначе зависимые элементы
      * всех компонентов
      * @return array<UnitOfCode>
      */
-    public function inputDependencies(?Component $component = null): array
+    public function inputDependencies(?ComponentInterface $component = null): array
     {
         if (!$component) {
             return $this->inputDependencies;
@@ -236,10 +238,10 @@ class UnitOfCode
 
     /**
      * Возвращает массив исходящих зависимостей (элементов, от которых каким-то образом зависит текущий)
-     * @param Component|null $component Если передан, метод вернет только его элементы, иначе элементы всех компонентов
+     * @param ComponentInterface|null $component Если передан, метод вернет только его элементы, иначе элементы всех компонентов
      * @return array<UnitOfCode>
      */
-    public function outputDependencies(?Component $component = null): array
+    public function outputDependencies(?ComponentInterface $component = null): array
     {
         if (!$component) {
             return $this->outputDependencies;

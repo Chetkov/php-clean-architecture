@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 
 /**
  * Class ComponentsGraphNodeExtractor
@@ -13,16 +13,16 @@ use Chetkov\PHPCleanArchitecture\Model\Component;
 class ComponentsGraphNodeExtractor
 {
     /**
-     * @param Component $node
+     * @param ComponentInterface $node
      * @return array<string, mixed>
      */
-    public function extract(Component $node): array
+    public function extract(ComponentInterface $node): array
     {
-        $fanIn = array_map(static function (Component $inputDependency) {
+        $fanIn = array_map(static function (ComponentInterface $inputDependency) {
             return $inputDependency->name();
         }, $node->getDependentComponents());
 
-        $fanOut = array_map(static function (Component $outputDependency) {
+        $fanOut = array_map(static function (ComponentInterface $outputDependency) {
             return $outputDependency->name();
         }, $node->getDependencyComponents());
 

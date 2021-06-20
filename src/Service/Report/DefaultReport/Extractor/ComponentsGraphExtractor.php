@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\ComponentInterface;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ObjectsGraphBuilder;
 
 /**
@@ -32,7 +32,7 @@ class ComponentsGraphExtractor
     public function extract(ObjectsGraphBuilder $graphBuilder): array
     {
         return [
-            'nodes' => json_encode(array_map(function (Component $node) {
+            'nodes' => json_encode(array_map(function (ComponentInterface $node) {
                 return $this->nodeExtractor->extract($node);
             }, $graphBuilder->getNodes())),
             'edges' => json_encode(array_map(function (array $edge) {
