@@ -37,7 +37,9 @@ class AnalysisEventListener implements EventListenerInterface
             $this->startedAt = $event->getMicroTime();
         }
 
-        Console::write('Analysis started.');
+        Console::writeln('//////////////////////////////');
+        Console::writeln('//     Analysis started     //');
+        Console::writeln('//////////////////////////////');
         Console::writeln();
     }
 

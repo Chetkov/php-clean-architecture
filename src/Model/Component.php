@@ -10,6 +10,8 @@ namespace Chetkov\PHPCleanArchitecture\Model;
  */
 class Component
 {
+    use CachingTrait;
+
     /**
      * Название по умолчанию, если не передано другое
      */
@@ -282,7 +284,6 @@ class Component
         return $this;
     }
 
-    private $isDependencyAllowedMap = [];
     /**
      * Проверяет, разрешена ли текщему компоненту зависимость от переданного?
      * @param Component $dependency
@@ -290,13 +291,12 @@ class Component
      */
     public function isDependencyAllowed(Component $dependency): bool
     {
-        if (!isset($this->isDependencyAllowedMap[$dependency->name()])) {
-            $this->isDependencyAllowedMap[$dependency->name()] = $this->restrictions->isDependencyAllowed($dependency, $this);
-        }
-        return $this->isDependencyAllowedMap[$dependency->name()];
+        $key = 'isDependencyAllowed' . $dependency->name();
+        return $this->execWithCache($key, function () use ($dependency) {
+            return $this->restrictions->isDependencyAllowed($dependency, $this);
+        });
     }
 
-    private $isDependencyInAllowedStateMap = [];
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
      * @param Component $dependency
@@ -304,10 +304,10 @@ class Component
      */
     public function isDependencyInAllowedState(Component $dependency): bool
     {
-        if (!isset($this->isDependencyInAllowedStateMap[$dependency->name()])) {
-            $this->isDependencyInAllowedStateMap[$dependency->name()] = $this->restrictions->isComponentDependencyInAllowedState($dependency, $this);
-        }
-        return $this->isDependencyInAllowedStateMap[$dependency->name()];
+        $key = 'isDependencyInAllowedState' . $dependency->name();
+        return $this->execWithCache($key, function () use ($dependency) {
+            return $this->restrictions->isComponentDependencyInAllowedState($dependency, $this);
+        });
     }
 
     /**
@@ -367,14 +367,13 @@ class Component
         return array_values($uniqueDependentComponents);
     }
 
-    private $uniqueDependencyComponents;
     /**
      * Возвращает список компонентов, от которых зависит этот компонент.
      * @return array<Component>
      */
     public function getDependencyComponents(): array
     {
-        if ($this->uniqueDependencyComponents === null) {
+        return $this->execWithCache('getDependencyComponents', function () {
             $uniqueDependencyComponents = [];
             foreach ($this->unitsOfCode as $unitOfCode) {
                 foreach ($unitOfCode->outputDependencies() as $dependency) {
@@ -387,12 +386,10 @@ class Component
                     }
                 }
             }
-            $this->uniqueDependencyComponents = array_values($uniqueDependencyComponents);
-        }
-        return $this->uniqueDependencyComponents;
+            return array_values($uniqueDependencyComponents);
+        });
     }
 
-    private $uniqueDependentUnitsOfCodeMap = [];
     /**
      * Возвращает список элементов этого компонента, которые зависят от элементов полученного компонента.
      * @param Component $dependencyComponent
@@ -400,7 +397,8 @@ class Component
      */
     public function getDependentUnitsOfCode(Component $dependencyComponent): array
     {
-        if (!isset($this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()])) {
+        $key = 'getDependentUnitsOfCode' . $dependencyComponent->name();
+        return $this->execWithCache($key, function () use ($dependencyComponent) {
             $uniqueDependentUnitsOfCode = [];
             foreach ($this->unitsOfCode as $unitOfCode) {
                 foreach ($unitOfCode->outputDependencies() as $dependency) {
@@ -409,12 +407,10 @@ class Component
                     }
                 }
             }
-            $this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()] = array_values($uniqueDependentUnitsOfCode);
-        }
-        return $this->uniqueDependentUnitsOfCodeMap[$dependencyComponent->name()];
+            return array_values($uniqueDependentUnitsOfCode);
+        });
     }
 
-    private $uniqueDependencyUnitsOfCodeMap = [];
     /**
      * Возвращает список элементов полученного компонента, от которых зависят элементы этого компонента.
      * @param Component $dependencyComponent
@@ -422,7 +418,8 @@ class Component
      */
     public function getDependencyUnitsOfCode(Component $dependencyComponent): array
     {
-        if (!isset($this->uniqueDependencyUnitsOfCodeMap[$dependencyComponent->name()])) {
+        $key = 'getDependencyUnitsOfCode' . $dependencyComponent->name();
+        return $this->execWithCache($key, function () use ($dependencyComponent) {
             $uniqueDependencyUnitsOfCode = [];
             foreach ($this->unitsOfCode as $unitOfCode) {
                 foreach ($unitOfCode->outputDependencies() as $dependency) {
@@ -431,9 +428,8 @@ class Component
                     }
                 }
             }
-            $this->uniqueDependencyUnitsOfCodeMap[$dependencyComponent->name()] = array_values($uniqueDependencyUnitsOfCode);
-        }
-        return $this->uniqueDependencyUnitsOfCodeMap[$dependencyComponent->name()];
+            return array_values($uniqueDependencyUnitsOfCode);
+        });
     }
 
     /**
@@ -506,7 +502,6 @@ class Component
         return round($numOfAbstract / $total, 3);
     }
 
-    private $instabilityRate;
     /**
      * Рассчитывает неустойчивость компонента <br>
      * I = Fan-out ÷ (Fan-in + Fan-out) <br>
@@ -517,7 +512,7 @@ class Component
      */
     public function calculateInstabilityRate(): float
     {
-        if ($this->instabilityRate === null) {
+        return $this->execWithCache('calculateInstabilityRate', function () {
             $uniqueInputExternalDependencies = [];
             $uniqueOutputExternalDependencies = [];
             foreach ($this->unitsOfCode as $unitOfCode) {
@@ -541,11 +536,10 @@ class Component
             $numOfUniqueOutputExternalDependencies = count($uniqueOutputExternalDependencies);
             $totalUniqueExternalDependencies = $numOfUniqueInputExternalDependencies + $numOfUniqueOutputExternalDependencies;
 
-            $this->instabilityRate = $totalUniqueExternalDependencies ?
+            return $totalUniqueExternalDependencies ?
                 round($numOfUniqueOutputExternalDependencies / $totalUniqueExternalDependencies, 3)
                 : 0;
-        }
-        return $this->instabilityRate;
+        });
     }
 
     /**
