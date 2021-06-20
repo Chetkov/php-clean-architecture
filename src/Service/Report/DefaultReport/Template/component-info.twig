@@ -162,7 +162,10 @@
             <table class="table table-borderless table-hover">
                 {% for dependency_component in dependency_components %}
                     {% for unit_of_code in dependency_component.units_of_code %}
-                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_component.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_component.name }}
+                            {% if not unit_of_code.is_allowed and unit_of_code.in_allowed_state %}alert-primary
+                            {% elseif not unit_of_code.is_allowed and not unit_of_code.in_allowed_state %}alert-warning
+                            {% endif %}">
                             <td>
                                 <span style="cursor:pointer;" onclick="this.parentElement.getElementsByTagName('ul')[0].classList.toggle('hidden')">{{ unit_of_code.name }}</span>
                                 {% if unit_of_code.uid is defined %}
@@ -170,7 +173,11 @@
                                 {% endif %}
                                 <ul class="hidden">
                                     {% for dependency in unit_of_code.dependencies %}
-                                        <li class="{% if not dependency.is_allowed %}alert-danger{% endif %}">{{ dependency.name }}</li>
+                                        <li class="{% if not dependency.is_allowed and dependency.in_allowed_state %}alert-primary
+                                                   {% elseif not dependency.is_allowed and not dependency.in_allowed_state %}alert-danger
+                                                   {% endif %}">
+                                            {{ dependency.name }}
+                                        </li>
                                     {% endfor %}
                                 </ul>
                             </td>
@@ -183,7 +190,10 @@
             <table class="table table-borderless table-hover">
                 {% for dependency_component in dependency_components %}
                     {% for unit_of_code in dependency_component.reverted_units_of_code %}
-                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_component.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                        <tr class="hidden unit-of-code-row output-deps-chart {{ dependency_component.name }}
+                            {% if not unit_of_code.is_allowed and unit_of_code.in_allowed_state %}alert-primary
+                            {% elseif not unit_of_code.is_allowed and not unit_of_code.in_allowed_state %}alert-warning
+                            {% endif %}">
                             <td>
                                 <span style="cursor:pointer;" onclick="this.parentElement.getElementsByTagName('ul')[0].classList.toggle('hidden')">{{ unit_of_code.name }}</span>
                                 {% if unit_of_code.uid is defined %}
@@ -191,7 +201,11 @@
                                 {% endif %}
                                 <ul class="hidden">
                                     {% for dependency in unit_of_code.dependencies %}
-                                        <li class="{% if not dependency.is_allowed %}alert-danger{% endif %}">{{ dependency.name }}</li>
+                                        <li class="{% if not dependency.is_allowed and dependency.in_allowed_state %}alert-primary
+                                                   {% elseif not dependency.is_allowed and not dependency.in_allowed_state%}alert-danger
+                                                   {% endif %}">
+                                            {{ dependency.name }}
+                                        </li>
                                     {% endfor %}
                                 </ul>
                             </td>
@@ -211,7 +225,10 @@
             <table class="table table-borderless table-hover">
                 {% for dependent_component in dependent_components %}
                     {% for unit_of_code in dependent_component.units_of_code %}
-                        <tr class="hidden unit-of-code-row input-deps-chart {{ dependent_component.name }} {% if not unit_of_code.is_allowed %}alert-warning{% endif %}">
+                        <tr class="hidden unit-of-code-row input-deps-chart {{ dependent_component.name }}
+                            {% if not unit_of_code.is_allowed and unit_of_code.in_allowed_state %}alert-primary
+                            {% elseif not unit_of_code.is_allowed and not unit_of_code.in_allowed_state%}alert-warning
+                            {% endif %}">
                             <td>
                                 {{ unit_of_code.name }}
                                 {% if unit_of_code.uid is defined %}

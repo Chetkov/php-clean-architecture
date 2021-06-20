@@ -79,7 +79,9 @@
             <b>Исходящие зависимости</b>
             <table class="table table-borderless table-hover">
                 {% for output_dependency in output_dependencies %}
-                    <tr class="{% if not output_dependency.is_allowed %}alert-danger{% endif %}">
+                    <tr class="{% if not output_dependency.is_allowed and output_dependency.in_allowed_state %}alert-primary
+                               {% elseif not output_dependency.is_allowed and not output_dependency.in_allowed_state %}alert-danger
+                               {% endif %}">
                         <td>
                             {{ output_dependency.name }}
                             {% if output_dependency.uid is defined %}
@@ -94,7 +96,9 @@
             <b>Входящие зависимости</b>
             <table class="table table-borderless table-hover">
                 {% for input_dependency in input_dependencies %}
-                    <tr class="{% if not input_dependency.is_allowed %}alert-danger{% endif %}">
+                    <tr class="{% if not input_dependency.is_allowed and input_dependency.in_allowed_state %}alert-primary
+                               {% elseif not input_dependency.is_allowed and not input_dependency.in_allowed_state %}alert-danger
+                               {% endif %}">
                         <td>
                             {{ input_dependency.name }}
                             {% if input_dependency.uid is defined %}

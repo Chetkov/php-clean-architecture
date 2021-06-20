@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Extractor\ComponentPage;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\UidGenerator;
 
 /**
@@ -34,29 +35,21 @@ class DependencyComponentExtractor
         if ($linkedComponentIsDependent) {
             foreach ($linkedComponent->getDependencyUnitsOfCode($component) as $unitOfCode) {
                 $isAllowed = true;
+                $inAllowedState = false;
                 $dependencies = [];
-                foreach ($unitOfCode->inputDependencies() as $dependency) {
-                    if ($dependency->component() !== $linkedComponent) {
+                foreach ($unitOfCode->inputDependencies() as $dependent) {
+                    if ($dependent->component() !== $linkedComponent) {
                         continue;
                     }
 
-                    $dependencyIsAllowed = $dependency->isDependencyInAllowedState($unitOfCode)
-                        || ($unitOfCode->isAccessibleFromOutside()
-                            && $dependency->component()->isDependencyAllowed($unitOfCode->component()));
-                    if (!$dependencyIsAllowed) {
-                        $isAllowed = false;
-                    }
-
-                    $dependencies[] = [
-                        'name' => $dependency->name(),
-                        'is_allowed' => $dependencyIsAllowed,
-                    ];
+                    $dependencies[] = $this->extractDependency($unitOfCode, $dependent, $isAllowed, $inAllowedState);
                 }
 
                 $extractedRevertedUnitOfCode = [
                     'name' => $unitOfCode->name(),
                     'dependencies' => $dependencies,
                     'is_allowed' => $isAllowed,
+                    'in_allowed_state' => $inAllowedState,
                 ];
 
                 foreach ($processedComponents as $processedComponent) {
@@ -76,25 +69,17 @@ class DependencyComponentExtractor
 
         foreach ($unitsOfCodes as $unitOfCode) {
             $isAllowed = true;
+            $inAllowedState = false;
             $dependencies = [];
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                $outputDependencyIsAllowed = $unitOfCode->isDependencyInAllowedState($dependency)
-                    || ($dependency->isAccessibleFromOutside()
-                        && $unitOfCode->component()->isDependencyAllowed($dependency->component()));
-                if (!$outputDependencyIsAllowed) {
-                    $isAllowed = false;
-                }
-
-                $dependencies[] = [
-                    'name' => $dependency->name(),
-                    'is_allowed' => $outputDependencyIsAllowed,
-                ];
+                $dependencies[] = $this->extractDependency($dependency, $unitOfCode, $isAllowed, $inAllowedState);
             }
 
             $extractedUnitOfCode = [
                 'name' => $unitOfCode->name(),
                 'dependencies' => $dependencies,
                 'is_allowed' => $isAllowed,
+                'in_allowed_state' => $inAllowedState,
             ];
 
             foreach ($processedComponents as $processedComponent) {
@@ -108,5 +93,32 @@ class DependencyComponentExtractor
         }
 
         return $extracted;
+    }
+
+    /**
+     * @param UnitOfCode $dependency
+     * @param UnitOfCode $dependent
+     * @param bool $isAllowed
+     * @param bool $inAllowedState
+     * @return array<string, mixed>
+     */
+    private function extractDependency(UnitOfCode $dependency, UnitOfCode $dependent, bool &$isAllowed, bool &$inAllowedState): array
+    {
+        $dependencyIsAllowed = $dependency->isAccessibleFromOutside()
+            && $dependent->component()->isDependencyAllowed($dependency->component());
+        if (!$dependencyIsAllowed) {
+            $isAllowed = false;
+        }
+
+        $dependencyInAllowedState = $dependent->isDependencyInAllowedState($dependency);
+        if ($dependencyInAllowedState) {
+            $inAllowedState = true;
+        }
+
+        return [
+            'name' => $dependency->name(),
+            'is_allowed' => $dependencyIsAllowed,
+            'in_allowed_state' => $dependencyInAllowedState,
+        ];
     }
 }
