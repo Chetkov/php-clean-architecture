@@ -72,7 +72,8 @@ class DependencyComponentExtractor
             $inAllowedState = false;
             $dependencies = [];
             foreach ($unitOfCode->outputDependencies() as $dependency) {
-                $dependencies[] = $this->extractDependency($dependency, $unitOfCode, $isAllowed, $inAllowedState);
+                $dependencies[] = $this
+                    ->extractDependency($dependency, $unitOfCode, $isAllowed, $inAllowedState, true);
             }
 
             $extractedUnitOfCode = [
@@ -100,10 +101,16 @@ class DependencyComponentExtractor
      * @param UnitOfCode $dependent
      * @param bool $isAllowed
      * @param bool $inAllowedState
-     * @return array<string, mixed>
+     * @param bool $isOutputDependency
+     * @return array
      */
-    private function extractDependency(UnitOfCode $dependency, UnitOfCode $dependent, bool &$isAllowed, bool &$inAllowedState): array
-    {
+    private function extractDependency(
+        UnitOfCode $dependency,
+        UnitOfCode $dependent,
+        bool &$isAllowed,
+        bool &$inAllowedState,
+        bool $isOutputDependency = false
+    ): array {
         $dependencyIsAllowed = $dependency->isAccessibleFromOutside()
             && $dependent->component()->isDependencyAllowed($dependency->component());
         if (!$dependencyIsAllowed) {
@@ -116,7 +123,7 @@ class DependencyComponentExtractor
         }
 
         return [
-            'name' => $dependency->name(),
+            'name' => $isOutputDependency ? $dependency->name() : $dependent->name(),
             'is_allowed' => $dependencyIsAllowed,
             'in_allowed_state' => $dependencyInAllowedState,
         ];
