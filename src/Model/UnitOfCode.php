@@ -17,6 +17,8 @@ use Chetkov\PHPCleanArchitecture\Model\Type\TypeUndefined;
  */
 class UnitOfCode
 {
+    use CachingTrait;
+
     /** @var array<self> */
     private static $instances = [];
 
@@ -172,20 +174,17 @@ class UnitOfCode
         return $this->component === $component;
     }
 
-    private $isAccessibleFromOutside;
     /**
      * Проверяет, является ли элемент доступным для взаимодействия извне компонента, к которому он принадлежит
      * @return bool
      */
     public function isAccessibleFromOutside(): bool
     {
-        if ($this->isAccessibleFromOutside === null) {
-            $this->isAccessibleFromOutside = $this->component->restrictions()->isUnitOfCodeAccessibleFromOutside($this);
-        }
-        return $this->isAccessibleFromOutside;
+        return $this->execWithCache('isAccessibleFromOutside', function () {
+            return $this->component->restrictions()->isUnitOfCodeAccessibleFromOutside($this);
+        });
     }
 
-    private $isDependencyInAllowedStateMap = [];
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
      * @param UnitOfCode $dependency
@@ -193,10 +192,10 @@ class UnitOfCode
      */
     public function isDependencyInAllowedState(UnitOfCode $dependency): bool
     {
-        if (!isset($this->isDependencyInAllowedStateMap[$dependency->name()])) {
-            $this->isDependencyInAllowedStateMap[$dependency->name()] = $this->component->restrictions()->isUnitOfCodeDependencyInAllowedState($dependency, $this);
-        }
-        return $this->isDependencyInAllowedStateMap[$dependency->name()];
+        $key = 'isDependencyInAllowedState' . $dependency->name();
+        return $this->execWithCache($key, function () use ($dependency) {
+            return $this->component->restrictions()->isUnitOfCodeDependencyInAllowedState($dependency, $this);
+        });
     }
 
     /**

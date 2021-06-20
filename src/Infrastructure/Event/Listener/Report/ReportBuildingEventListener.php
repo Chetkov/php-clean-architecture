@@ -37,8 +37,8 @@ class ReportBuildingEventListener implements EventListenerInterface
             $this->startedAt = $event->getMicroTime();
         }
 
-        Console::write('Report building started.');
-        Console::writeln();
+        Console::writeln('   Report building started    ');
+        Console::writeln('‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾');
     }
 
     /**
@@ -50,7 +50,8 @@ class ReportBuildingEventListener implements EventListenerInterface
         $this->startedAt = null;
 
         $executionTime = round($event->getMicroTime() - $startedAt, 3);
-        Console::write(sprintf('Report building finished. Execution time: %s sec.', $executionTime), true);
+        Console::writeln('_____________________________________________________');
+        Console::writeln(sprintf('Report building finished. Execution time: %s sec.', $executionTime));
         Console::writeln();
     }
 }

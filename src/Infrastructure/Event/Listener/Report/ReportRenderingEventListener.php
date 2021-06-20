@@ -37,7 +37,9 @@ class ReportRenderingEventListener implements EventListenerInterface
             $this->startedAt = $event->getMicroTime();
         }
 
-        Console::write('Report rendering started.');
+        Console::writeln('//////////////////////////////');
+        Console::writeln('// Report rendering started //');
+        Console::writeln('//////////////////////////////');
         Console::writeln();
     }
 
