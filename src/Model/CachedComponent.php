@@ -58,9 +58,7 @@ class CachedComponent implements ComponentInterface
      */
     public function isEnabledForAnalysis(): bool
     {
-        return $this->execWithCache(__METHOD__, function () {
-            return $this->decorated->isEnabledForAnalysis();
-        });
+        return $this->decorated->isEnabledForAnalysis();
     }
 
     /**
@@ -118,9 +116,7 @@ class CachedComponent implements ComponentInterface
      */
     public function name(): string
     {
-        return $this->execWithCache(__METHOD__, function () {
-            return $this->decorated->name();
-        });
+        return $this->decorated->name();
     }
 
     /**
@@ -128,9 +124,7 @@ class CachedComponent implements ComponentInterface
      */
     public function rootPaths(): array
     {
-        return $this->execWithCache(__METHOD__, function () {
-            return $this->decorated->rootPaths();
-        });
+        return $this->decorated->rootPaths();
     }
 
     /**
@@ -147,9 +141,7 @@ class CachedComponent implements ComponentInterface
      */
     public function excludedPaths(): array
     {
-        return $this->execWithCache(__METHOD__, function () {
-            return $this->decorated->excludedPaths();
-        });
+        return $this->decorated->excludedPaths();
     }
 
     /**
@@ -188,9 +180,7 @@ class CachedComponent implements ComponentInterface
      */
     public function restrictions(): Restrictions
     {
-        return $this->execWithCache(__METHOD__, function () {
-            return $this->decorated->restrictions();
-        });
+        return $this->decorated->restrictions();
     }
 
     /**
@@ -207,9 +197,7 @@ class CachedComponent implements ComponentInterface
      */
     public function unitsOfCode(): array
     {
-        return $this->execWithCache(__METHOD__, function () {
-            return $this->decorated->unitsOfCode();
-        });
+        return $this->decorated->unitsOfCode();
     }
 
     /**
@@ -298,7 +286,7 @@ class CachedComponent implements ComponentInterface
      */
     public function getCyclicDependencies(array $path = [], array $result = []): array
     {
-        $key = __METHOD__ . json_encode($path) . json_encode($result);
+        $key = __METHOD__;
         return $this->execWithCache($key, function () use ($path, $result) {
             return $this->decorated->getCyclicDependencies($path, $result);
         });
