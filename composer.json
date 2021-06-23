@@ -26,7 +26,8 @@
     },
     "bin": [
       "/bin/phpca-build-reports",
-      "/bin/phpca-check"
+      "/bin/phpca-check",
+      "/bin/phpca-allow-current-state"
     ],
     "scripts": {
         "php-linter": "php -l bin && php -l src",
