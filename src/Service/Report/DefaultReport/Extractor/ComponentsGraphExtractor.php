@@ -38,6 +38,9 @@ class ComponentsGraphExtractor
             'edges' => json_encode(array_map(function (array $edge) {
                 return $this->edgeExtractor->extract($edge);
             }, $graphBuilder->getEdges())),
+            'clusters' => '["' . implode('","',array_unique(array_map(static function (Component $component) {
+                    return $component->group();
+                }, $graphBuilder->getNodes()))) . '"]',
         ];
     }
 }

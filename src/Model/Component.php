@@ -36,6 +36,9 @@ class Component
     /** @var string */
     private $name;
 
+    /** @var string|null */
+    private $group;
+
     /** @var array<Path> */
     private $rootPaths;
 
@@ -238,6 +241,22 @@ class Component
     public function name(): string
     {
         return $this->name;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function group(): ?string
+    {
+        return $this->group;
+    }
+
+    /**
+     * @param string|null $group
+     */
+    public function setGroup(?string $group): void
+    {
+        $this->group = $group;
     }
 
     /**

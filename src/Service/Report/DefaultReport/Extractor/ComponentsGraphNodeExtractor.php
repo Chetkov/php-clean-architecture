@@ -34,6 +34,7 @@ class ComponentsGraphNodeExtractor
         return [
             'id' => spl_object_hash($node),
             'label' => $node->name(),
+            'cluster' => $node->group(),
             'title' => $title,
         ];
     }

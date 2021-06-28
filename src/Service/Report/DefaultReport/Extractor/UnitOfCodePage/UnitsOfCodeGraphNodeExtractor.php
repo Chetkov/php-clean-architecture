@@ -21,6 +21,7 @@ class UnitsOfCodeGraphNodeExtractor
         return [
             'id' => spl_object_hash($node),
             'label' => $node->name(),
+            'cluster' => $node->component()->name(),
         ];
     }
 }

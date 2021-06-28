@@ -149,7 +149,7 @@
         </div>
     </div>
     <div class="row">
-        <b>Граф зависимостей</b>
+        <span>Граф зависимостей <i class="fa fa-refresh" title="перерисовать граф" style="cursor: pointer" onclick="redrawAll()"></i></span>
         <div id="graph"></div>
     </div>
     <div class="row">
@@ -243,23 +243,76 @@
     </div>
 
     <script type="text/javascript">
-        var container = document.getElementById('graph');
+        var network;
 
-        var nodes = new vis.DataSet({{ components_graph.nodes|raw }});
-        var edges = new vis.DataSet({{ components_graph.edges|raw }});
-        var data = {
-            nodes: nodes,
-            edges: edges
-        };
-        var options = {
-            nodes: {
-                shape: 'box'
-            },
-            edges: {
-                arrows: 'to'
+        var nodes = new vis.DataSet();
+        var edges = new vis.DataSet();
+
+        function redrawAll() {
+            nodes.clear();
+            edges.clear();
+
+            network = null;
+            nodesData = {{ components_graph.nodes|raw }};
+            edgesData = {{ components_graph.edges|raw }};
+
+            nodes.add(nodesData);
+            edges.add(edgesData);
+
+            var container = document.getElementById('graph');
+            var data = {
+                nodes: nodes,
+                edges: edges
+            };
+            var options = {
+                nodes: {
+                    shape: "box",
+                },
+                edges: {
+                    arrows: 'to',
+                },
+            };
+
+            network = new vis.Network(container, data, options);
+            network.on("selectNode", function (params) {
+                if (params.nodes.length === 1) {
+                    if (network.isCluster(params.nodes[0]) === true) {
+                        network.openCluster(params.nodes[0]);
+                    }
+                }
+            });
+
+            cluster();
+        }
+
+        function cluster() {
+            var clusters = {{ components_graph.clusters|raw }};
+            var clusterOptionsByData;
+            for (var i = 0; i < clusters.length; i++) {
+                var cluster = clusters[i];
+                clusterOptionsByData = {
+                    joinCondition: function (childOptions) {
+                        return childOptions.cluster === cluster;
+                    },
+                    processProperties: function (clusterOptions, childNodes, childEdges) {
+                        var totalMass = 0;
+                        for (var i = 0; i < childNodes.length; i++) {
+                            totalMass += childNodes[i].mass;
+                        }
+                        clusterOptions.mass = totalMass;
+                        return clusterOptions;
+                    },
+                    clusterNodeProperties: {
+                        id: "cluster:" + cluster,
+                        borderWidth: 3,
+                        shape: "circle",
+                        label: cluster,
+                    },
+                };
+                network.cluster(clusterOptionsByData);
             }
-        };
+        }
 
-        var network = new vis.Network(container, data, options);
+        redrawAll();
     </script>
 {% endblock %}

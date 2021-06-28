@@ -116,6 +116,10 @@ class PHPCleanArchitectureFacade
                 $restrictions
             );
 
+            if (!empty($componentConfig['group'])) {
+                $component->setGroup($componentConfig['group']);
+            }
+
             $isEnabledForAnalysis = $componentConfig['is_analyze_enabled'] ?? true;
             if ($isEnabledForAnalysis) {
                 $this->analyzedComponents[] = $component;
