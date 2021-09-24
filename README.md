@@ -27,6 +27,8 @@ vendor/bin/phpca-build-reports {?path/to/phpca-config.php}
 Отчет визуализирует текущее состояние системы, наглядно отображает взаимосвязи между компонентами, их силу, удалённость 
 компонентов от главной последовательности, а также подсвечивает обнаруженные, на основе конфига, нежелательные зависимости 
 и прочие архитектурные проблемы.
+![image](https://user-images.githubusercontent.com/12594577/134708940-f53dc72e-8664-4e57-a3a7-4f6bb4ec965c.png)
+![image](https://user-images.githubusercontent.com/12594577/134709361-fbe654bd-70f4-460c-a107-fb3956f064b0.png)
  
 2. Check для CI.
 ```shell script
