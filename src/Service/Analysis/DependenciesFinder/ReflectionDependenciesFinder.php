@@ -18,7 +18,9 @@ class ReflectionDependenciesFinder implements DependenciesFinderInterface
     public function find(UnitOfCode $unitOfCode): array
     {
         try {
-            assert(class_exists($unitOfCode->name(), false));
+            assert(class_exists($unitOfCode->name(), false)
+                || trait_exists($unitOfCode->name(), false)
+                || interface_exists($unitOfCode->name(), false));
             $class = new \ReflectionClass($unitOfCode->name());
 
             $dependencies = [];
