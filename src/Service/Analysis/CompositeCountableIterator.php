@@ -55,6 +55,12 @@ class CompositeCountableIterator implements \Iterator, \Countable
      */
     public function valid(): bool
     {
+        if (!$this->currentIterator instanceof \Iterator || !$this->currentIterator->valid()) {
+            if (next($this->iterators) !== false) {
+                $this->currentIterator = current($this->iterators) ?: null;
+            }
+        }
+
         return $this->currentIterator instanceof \Iterator && $this->currentIterator->valid();
     }
 

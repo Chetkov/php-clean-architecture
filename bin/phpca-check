@@ -9,7 +9,9 @@ $configPath = $argv[1] ?? dirname(__DIR__, 4) . '/phpca-config.php';
 $config = require $configPath;
 
 $analyzer = new PHPCleanArchitectureFacade($config);
-$errors = $analyzer->check();
+
+$allowedPaths = array_filter(explode(PHP_EOL, getenv('PHPCA_ALLOWED_PATHS'))) ?: [];
+$errors = $analyzer->check($allowedPaths);
 if (empty($errors)) {
     exit('No errors!' . PHP_EOL);
 }

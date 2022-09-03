@@ -356,4 +356,42 @@ class UnitOfCode
 
         return round($numOfPrimitiveOutputDependencies / $numOfOutputDependencies, 3);
     }
+
+    /**
+     * @param array<Path> $allowedPaths
+     * @param bool $filterDependenciesByAllowedState
+     *
+     * @return void
+     */
+    public function filterDependenciesByPaths(array $allowedPaths, bool $filterDependenciesByAllowedState): void
+    {
+        if (empty($allowedPaths)) {
+            return;
+        }
+
+        foreach ($this->inputDependencies as $index => $dependent) {
+            if ($filterDependenciesByAllowedState && $dependent->isDependencyInAllowedState($this)) {
+                unset($this->inputDependencies[$index]);
+                continue;
+            }
+
+            $isAllowed = false;
+            foreach ($allowedPaths as $allowedPath) {
+                if ($allowedPath->isPartOf($dependent->path())) {
+                    $isAllowed = true;
+                    break;
+                }
+            }
+
+            if (!$isAllowed) {
+                unset($this->inputDependencies[$index]);
+            }
+        }
+
+        foreach ($this->outputDependencies as $index => $dependency) {
+            if ($filterDependenciesByAllowedState && $this->isDependencyInAllowedState($dependency)) {
+                unset($this->outputDependencies[$index]);
+            }
+        }
+    }
 }

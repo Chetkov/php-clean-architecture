@@ -32,7 +32,7 @@ use Twig\Loader\FilesystemLoader;
 
 return [
     // Директория в которую будут складываться файлы отчета
-    'reports_dir' => __DIR__ . '/phpca-reports',
+    'reports_dir' => (string) getenv('PHPCA_REPORTS_DIR') ?: __DIR__ . '/phpca-reports',
 
     // Учет vendor пакетов (каждый подключенный пакет, за исключением перечисленных в excluded, будет представлен компонентом)
     'vendor_based_components' => [

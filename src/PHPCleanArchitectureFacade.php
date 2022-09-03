@@ -158,30 +158,33 @@ class PHPCleanArchitectureFacade
     }
 
     /**
-     * @param string $path
+     * @param string $reportPath
+     * @param array<string> $allowedPaths
      */
-    public function generateReport(string $path): void
+    public function generateReport(string $reportPath, array $allowedPaths = []): void
     {
         $this->eventManager->notify(new ReportBuildingStartedEvent());
-        $this->analyze();
+        $this->analyze()->filterByPaths($allowedPaths);
 
-        $this->createReportRenderingService()->render($path, ...$this->analyzedComponents);
+        $this->createReportRenderingService()->render($reportPath, ...$this->analyzedComponents);
         $this->eventManager->notify(new ReportBuildingFinishedEvent());
     }
 
     /**
+     * @param array<string> $allowedPaths
+     *
      * @return array<string>
      */
-    public function check(): array
+    public function check(array $allowedPaths = []): array
     {
-        $this->analyze();
+        $this->analyze()->filterByPaths($allowedPaths);
 
         $errors = [];
         foreach ($this->analyzedComponents as $component) {
             if ($this->checkAcyclicDependenciesPrinciple) {
                 foreach ($component->getCyclicDependencies() as $cyclicDependenciesPath) {
                     $errors[] = 'Cyclic dependencies: ' . implode('-', array_map(static function (Component $component) {
-                            return $component->name();
+                        return $component->name();
                     }, $cyclicDependenciesPath)) . ' violates the ADP (acyclic dependencies principle)';
                 }
             }
@@ -191,7 +194,7 @@ class PHPCleanArchitectureFacade
                     $dependentComponentInstabilityRate = $dependentComponent->calculateInstabilityRate();
                     $componentInstabilityRate = $component->calculateInstabilityRate();
                     if ($dependentComponentInstabilityRate < $componentInstabilityRate) {
-                        $errors[] = "Dependency {$dependentComponent->name()}(instability: $dependentComponentInstabilityRate) -> {$component->name()}(instability: $componentInstabilityRate) violates the SDP (stable dependencies principle)";
+                        $errors[] = "Dependency {$dependentComponent->name()} (instability: $dependentComponentInstabilityRate) -> {$component->name()} (instability: $componentInstabilityRate) violates the SDP (stable dependencies principle)";
                     }
                 }
             }
@@ -224,7 +227,10 @@ class PHPCleanArchitectureFacade
         return $errors;
     }
 
-    private function analyze(): void
+    /**
+     * @return $this
+     */
+    private function analyze(): self
     {
         if (!$this->isAnalyzePerformed) {
             $this->eventManager->notify(new AnalysisStartedEvent());
@@ -236,6 +242,30 @@ class PHPCleanArchitectureFacade
             }
             $this->isAnalyzePerformed = true;
             $this->eventManager->notify(new AnalysisFinishedEvent());
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param array<string> $allowedPaths
+     *
+     * @return void
+     */
+    private function filterByPaths(array $allowedPaths): void
+    {
+        $allowedPaths = array_map(static function (string $path) {
+            return new Path($path);
+        }, $allowedPaths);
+
+        foreach ($this->analyzedComponents as $component) {
+            $component->filterByPaths($allowedPaths);
+        }
+
+        foreach ($this->analyzedComponents as $index => $component) {
+            if (empty($component->getDependencyComponents()) && empty($component->getDependentComponents())) {
+                unset($this->analyzedComponents[$index]);
+            }
         }
     }
 

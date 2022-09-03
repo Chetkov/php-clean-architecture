@@ -25,6 +25,9 @@ class Restrictions
     /** @var float|null */
     private $maxAllowableDistance;
 
+    /** @var bool */
+    private $isAllowedStateEnabled = false;
+
     /** @var array<string, array<string, array<string, array<string, bool>>>> */
     private $allowedState;
 
@@ -166,8 +169,17 @@ class Restrictions
      */
     public function setAllowedState(array $allowedState): Restrictions
     {
+        $this->isAllowedStateEnabled = true;
         $this->allowedState = $allowedState;
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAllowedStateEnabled(): bool
+    {
+        return $this->isAllowedStateEnabled;
     }
 
     /**

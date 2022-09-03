@@ -81,17 +81,49 @@ class ComponentAnalyzer
 
     /**
      * @param array<Path> $paths
-     * @param string $pattern
+     * @param string $fileExtension
+     * @param array<string> $shebangTemplates example: ['/usr/bin/env php', '/usr/bin/php']
+     *
      * @return CompositeCountableIterator<\SplFileInfo>
      */
-    private function getFiles(array $paths, string $pattern = '/\.php$/i'): CompositeCountableIterator
-    {
+    private function getFiles(
+        array $paths,
+        string $fileExtension = '.php',
+        array $shebangTemplates = ['/usr/bin/env php', '/usr/bin/php']
+    ): CompositeCountableIterator {
         $filesIterator = new CompositeCountableIterator();
         foreach ($paths as $path) {
-            $filesIterator->addIterator(
-                new \RegexIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path->path())), $pattern)
-            );
+            $recursiveDirectoryIterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path->path()));
+            $phpExtIterator = new \RegexIterator($recursiveDirectoryIterator, "/\\$fileExtension$/i");
+            $filesIterator->addIterator($phpExtIterator);
+
+            $phpFilesWithoutPhpExtensions = [];
+            $notPhpExtIterator = new \RegexIterator($recursiveDirectoryIterator, "/^((?!\\$fileExtension).)*$/i");
+            /** @var \SplFileInfo $notPhpFile */
+            foreach ($notPhpExtIterator as $notPhpFile) {
+                if (!$notPhpFile->isFile()) {
+                    continue;
+                }
+
+                $content = file_get_contents($notPhpFile->getRealPath());
+                if (!$content) {
+                    continue;
+                }
+
+                foreach ($shebangTemplates as $shebang) {
+                    if (false !== stripos($content, "#!$shebang")) {
+                        $phpFilesWithoutPhpExtensions[] = $notPhpFile;
+                        break;
+                    }
+                }
+
+            }
+
+            if (!empty($phpFilesWithoutPhpExtensions)) {
+                $filesIterator->addIterator(new \ArrayIterator($phpFilesWithoutPhpExtensions));
+            }
         }
+
         return $filesIterator;
     }
 }

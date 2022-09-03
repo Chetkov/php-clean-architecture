@@ -32,7 +32,7 @@ use Twig\Loader\FilesystemLoader;
 
 return [
     // Директория в которую будут складываться файлы отчета
-    'reports_dir' => __DIR__ . '/phpca-reports',
+    'reports_dir' => (string) getenv('PHPCA_REPORTS_DIR') ?: __DIR__ . '/phpca-reports',
 
     // Учет vendor пакетов (каждый подключенный пакет, за исключением перечисленных в excluded, будет представлен компонентом)
     'vendor_based_components' => [
@@ -132,6 +132,27 @@ return [
                     'path' => __DIR__ . '/src/Infrastructure',
                     'namespace' => 'Chetkov\PHPCleanArchitecture\Infrastructure',
                 ],
+            ],
+        ],
+        'entry-points' => [
+            'name' => 'entry-points',
+            'roots' => [
+                [
+                    'path' => __DIR__ . '/src',
+                    'namespace' => 'Chetkov\PHPCleanArchitecture',
+                ],
+                [
+                    'path' => __DIR__ . '/bin',
+                    'namespace' => '',
+                ],
+            ],
+            'excluded' => [
+                __DIR__ . '/src/Model',
+                __DIR__ . '/src/Service',
+                __DIR__ . '/src/Infrastructure',
+            ],
+            'restrictions' => [
+                'allowed_dependencies' => ['entry-points', 'service', 'model', 'infrastructure'],
             ],
         ],
     ],

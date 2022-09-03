@@ -12,7 +12,9 @@ $reportsPath = $config['reports_dir'];
 recreateReportsDirectory($reportsPath);
 
 $analyzer = new PHPCleanArchitectureFacade($config);
-$analyzer->generateReport($reportsPath);
+
+$allowedPaths = array_filter(explode(PHP_EOL, getenv('PHPCA_ALLOWED_PATHS'))) ?: [];
+$analyzer->generateReport($reportsPath, $allowedPaths);
 
 echo PHP_EOL . 'Report: ' . $reportsPath . '/index.html' . PHP_EOL;
 

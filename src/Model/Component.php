@@ -285,7 +285,7 @@ class Component
     }
 
     /**
-     * Проверяет, разрешена ли текщему компоненту зависимость от переданного?
+     * Проверяет, разрешена ли текущему компоненту зависимость от переданного?
      * @param Component $dependency
      * @return bool
      */
@@ -581,5 +581,37 @@ class Component
         }
 
         return round($sumPrimitivenessRates/$numOfUnitOfCode, 3);
+    }
+
+    /**
+     * @param array<Path> $allowedPaths
+     *
+     * @return void
+     */
+    public function filterByPaths(array $allowedPaths): void
+    {
+        if (empty($allowedPaths)) {
+            return;
+        }
+
+        foreach ($this->unitsOfCode as $index => $unitOfCode) {
+            $isAllowed = false;
+            foreach ($allowedPaths as $allowedPath) {
+                if ($allowedPath->isPartOf($unitOfCode->path())) {
+                    $isAllowed = true;
+                    break;
+                }
+            }
+
+            if (!$isAllowed) {
+                unset($this->unitsOfCode[$index]);
+                continue;
+            }
+
+            $unitOfCode->filterDependenciesByPaths($allowedPaths, $this->restrictions->isAllowedStateEnabled());
+            if (!$unitOfCode->inputDependencies() && !$unitOfCode->outputDependencies()) {
+                unset($this->unitsOfCode[$index]);
+            }
+        }
     }
 }
