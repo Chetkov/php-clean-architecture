@@ -16,7 +16,7 @@ composer require v.chetkov/php-clean-architecture
 cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config.php
 ```
 
-Все детали конфигурации подробно описаны в образце конфига https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php, и второй части статьи https://habr.com/ru/post/504590/
+Все детали конфигурации подробно описаны в образце конфига https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php, а также в статьях https://habr.com/ru/post/504590/ и https://habr.com/ru/post/686236/
 
 ## Использование
 
