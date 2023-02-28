@@ -1,6 +1,5 @@
-# PHP Clean Architecture
-
 To continue in English go to [README.en](README-EN.md)
+# PHP Clean Architecture
 
 Инструмент для автоматизации контроля над качеством архитектуры приложений написанных на PHP, а также упрощения анализа 
 и визуализации некоторых метрик.
