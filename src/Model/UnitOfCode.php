@@ -63,6 +63,9 @@ class UnitOfCode
      */
     public static function create(string $fullName, ?Component $component = null, ?string $path = null): self
     {
+        //Приведение названий к единому виду, без обратного слэша в начале
+        $fullName = trim($fullName, '\\');
+
         $unitOfCode = self::$instances[$fullName] ?? null;
         if (!$unitOfCode) {
             $getElementPath = static function (string $fullName): ?string {
@@ -230,10 +233,15 @@ class UnitOfCode
      */
     public function addInputDependency(self $unitOfCode): self
     {
+        if ($unitOfCode === $this) {
+            return $this;
+        }
+
         $this->inputDependencies[] = $unitOfCode;
         if (!in_array($this, $unitOfCode->outputDependencies(), true)) {
             $unitOfCode->addOutputDependency($this);
         }
+
         return $this;
     }
 
@@ -264,10 +272,15 @@ class UnitOfCode
      */
     public function addOutputDependency(self $unitOfCode): self
     {
+        if ($unitOfCode === $this) {
+            return $this;
+        }
+
         $this->outputDependencies[] = $unitOfCode;
         if (!in_array($this, $unitOfCode->inputDependencies(), true)) {
             $unitOfCode->addInputDependency($this);
         }
+
         return $this;
     }
 
