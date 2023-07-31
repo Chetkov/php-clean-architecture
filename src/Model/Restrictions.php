@@ -10,11 +10,11 @@ namespace Chetkov\PHPCleanArchitecture\Model;
  */
 class Restrictions
 {
-    /** @var array<UnitOfCode> */
-    private $publicUnitsOfCode = [];
+    /** @var array<Path> */
+    private $publicPaths = [];
 
-    /** @var array<UnitOfCode> */
-    private $privateUnitsOfCode = [];
+    /** @var array<Path> */
+    private $privatePaths = [];
 
     /** @var array<Component> */
     private $allowedDependencyComponents = [];
@@ -32,23 +32,23 @@ class Restrictions
     private $allowedState;
 
     /**
-     * @param array<UnitOfCode> $publicUnitsOfCode
-     * @param array<UnitOfCode> $privateUnitsOfCode
+     * @param array<Path> $publicPaths
+     * @param array<Path> $privatePaths
      * @param array<Component> $allowedDependencyComponents
      * @param array<Component> $forbiddenDependencyComponents
      * @param array<string, array<string, array<string, array<string, bool>>>> $allowedState
      * @param float|null $maxAllowableDistance
      */
     public function __construct(
-        array $publicUnitsOfCode = [],
-        array $privateUnitsOfCode = [],
+        array $publicPaths = [],
+        array $privatePaths = [],
         array $allowedDependencyComponents = [],
         array $forbiddenDependencyComponents = [],
         array $allowedState = [],
         ?float $maxAllowableDistance = null
     ) {
-        $this->setPublicUnitsOfCode(...$publicUnitsOfCode);
-        $this->setPrivateUnitsOfCode(...$privateUnitsOfCode);
+        $this->setPublicPaths(...$publicPaths);
+        $this->setPrivatePaths(...$privatePaths);
         $this->setAllowedDependencyComponents(...$allowedDependencyComponents);
         $this->setForbiddenDependencyComponents(...$forbiddenDependencyComponents);
         $this->setAllowedState($allowedState);
@@ -56,55 +56,55 @@ class Restrictions
     }
 
     /**
-     * @param UnitOfCode ...$unitsOfCodes
+     * @param Path ...$paths
      * @return $this
      */
-    public function setPublicUnitsOfCode(UnitOfCode ...$unitsOfCodes): self
+    public function setPublicPaths(Path ...$paths): self
     {
-        foreach ($unitsOfCodes as $unitOfCode) {
-            $this->addPublicUnitOfCode($unitOfCode);
+        foreach ($paths as $path) {
+            $this->addPublicPath($path);
         }
         return $this;
     }
 
     /**
-     * @param UnitOfCode $unitOfCode
+     * @param Path $path
      * @return $this
      */
-    public function addPublicUnitOfCode(UnitOfCode $unitOfCode): self
+    public function addPublicPath(Path $path): self
     {
-        if (!empty($this->privateUnitsOfCode)) {
+        if (!empty($this->privatePaths)) {
             throw new \LogicException('Component cannot contains public and private elements at the same time!');
         }
-        if (!in_array($unitOfCode, $this->publicUnitsOfCode, true)) {
-            $this->publicUnitsOfCode[] = $unitOfCode;
+        if (!in_array($path, $this->publicPaths, true)) {
+            $this->publicPaths[] = $path;
         }
         return $this;
     }
 
     /**
-     * @param UnitOfCode ...$unitsOfCodes
+     * @param Path ...$paths
      * @return $this
      */
-    public function setPrivateUnitsOfCode(UnitOfCode ...$unitsOfCodes): self
+    public function setPrivatePaths(Path ...$paths): self
     {
-        foreach ($unitsOfCodes as $unitOfCode) {
-            $this->addPrivateUnitOfCode($unitOfCode);
+        foreach ($paths as $path) {
+            $this->addPrivatePath($path);
         }
         return $this;
     }
 
     /**
-     * @param UnitOfCode $unitOfCode
+     * @param Path $path
      * @return $this
      */
-    public function addPrivateUnitOfCode(UnitOfCode $unitOfCode): self
+    public function addPrivatePath(Path $path): self
     {
-        if (!empty($this->publicUnitsOfCode)) {
+        if (!empty($this->publicPaths)) {
             throw new \LogicException('Component cannot contains public and private elements at the same time!');
         }
-        if (!in_array($unitOfCode, $this->privateUnitsOfCode, true)) {
-            $this->privateUnitsOfCode[] = $unitOfCode;
+        if (!in_array($path, $this->privatePaths, true)) {
+            $this->privatePaths[] = $path;
         }
         return $this;
     }
@@ -270,11 +270,21 @@ class Restrictions
         if ($unitOfCode->isPrimitive() || $unitOfCode->belongToGlobalNamespace()) {
             return true;
         }
-        if (!empty($this->publicUnitsOfCode)) {
-            return in_array($unitOfCode, $this->publicUnitsOfCode, true);
+        if (!empty($this->publicPaths)) {
+            foreach ($this->publicPaths as $publicPath) {
+                if ($publicPath->isContains($unitOfCode)) {
+                    return true;
+                }
+            }
+            return false;
         }
-        if (!empty($this->privateUnitsOfCode)) {
-            return !in_array($unitOfCode, $this->privateUnitsOfCode, true);
+        if (!empty($this->privatePaths)) {
+            foreach ($this->privatePaths as $privatePath) {
+                if ($privatePath->isContains($unitOfCode)) {
+                    return false;
+                }
+            }
+            return true;
         }
         return true;
     }

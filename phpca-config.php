@@ -103,6 +103,7 @@ return [
                 // 'public_elements' => [
                 //     First\Component\FirstClass::class,
                 //     First\Component\SecondClass::class,
+                //     __DIR__ . '/directory/with/public/elements',
                 // ],
 
                 // Список приватных элементов компонента. Если отсутствует или пустой, все элементы считаются публичными.
@@ -110,6 +111,7 @@ return [
                 // 'private_elements' => [
                 //     First\Component\FirstClass::class,
                 //     First\Component\SecondClass::class,
+                //     __DIR__ . '/directory/with/private/elements',
                 // ],
             ],
         ],

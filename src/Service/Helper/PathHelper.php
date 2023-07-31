@@ -36,4 +36,22 @@ class PathHelper
     {
         return str_replace(['/', '.php'], ['\\', ''], self::removeDoubleSlashes($filePath));
     }
+
+    /**
+     * @param string $fullName
+     * @return string|null
+     */
+    public static function detectPath(string $fullName): ?string
+    {
+        try {
+            assert(class_exists($fullName, false)
+                || trait_exists($fullName, false)
+                || interface_exists($fullName, false));
+            $reflection = new \ReflectionClass($fullName);
+            $path = $reflection->getFileName() ?: null;
+        } catch (\ReflectionException $e) {
+            $path = null;
+        }
+        return $path;
+    }
 }

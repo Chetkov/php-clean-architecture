@@ -200,7 +200,7 @@ class Component
     public function isExcluded(string $path): bool
     {
         foreach ($this->excludedPaths as $excludedPath) {
-            if ($excludedPath->isPartOf($path)) {
+            if ($excludedPath->isPartOfPath($path)) {
                 return true;
             }
         }
@@ -597,7 +597,7 @@ class Component
         foreach ($this->unitsOfCode as $index => $unitOfCode) {
             $isAllowed = false;
             foreach ($allowedPaths as $allowedPath) {
-                if ($allowedPath->isPartOf($unitOfCode->path())) {
+                if ($allowedPath->isPartOfPath($unitOfCode->path())) {
                     $isAllowed = true;
                     break;
                 }

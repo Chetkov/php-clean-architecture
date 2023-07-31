@@ -86,10 +86,10 @@ class PHPCleanArchitectureFacade
             $componentRestrictionsConfig = $componentConfig['restrictions'] ?? [];
 
             foreach ($componentRestrictionsConfig['public_elements'] ?? [] as $publicElement) {
-                $restrictions->addPublicUnitOfCode(UnitOfCode::create($publicElement));
+                $restrictions->addPublicPath(Path::fromString($publicElement));
             }
             foreach ($componentRestrictionsConfig['private_elements'] ?? [] as $privateElement) {
-                $restrictions->addPrivateUnitOfCode(UnitOfCode::create($privateElement));
+                $restrictions->addPrivatePath(Path::fromString($privateElement));
             }
 
             foreach ($componentRestrictionsConfig['allowed_dependencies'] ?? [] as $allowedDependency) {

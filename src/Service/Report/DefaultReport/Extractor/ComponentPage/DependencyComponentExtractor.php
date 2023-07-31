@@ -111,8 +111,11 @@ class DependencyComponentExtractor
         bool &$inAllowedState,
         bool $isOutputDependency = false
     ): array {
-        $dependencyIsAllowed = $dependency->isAccessibleFromOutside()
-            && $dependent->component()->isDependencyAllowed($dependency->component());
+        $isInnerDependency = $dependency->belongToComponent($dependent->component());
+        $isValidExternalDependency = $dependent->component()->isDependencyAllowed($dependency->component())
+            && $dependency->isAccessibleFromOutside();
+
+        $dependencyIsAllowed = $isInnerDependency || $isValidExternalDependency;
         if (!$dependencyIsAllowed) {
             $isAllowed = false;
         }

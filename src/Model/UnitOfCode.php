@@ -10,6 +10,7 @@ use Chetkov\PHPCleanArchitecture\Model\Type\TypeInterface;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypePrimitive;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypeTrait;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypeUndefined;
+use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
 
 /**
  * Class UnitOfCode
@@ -68,23 +69,10 @@ class UnitOfCode
 
         $unitOfCode = self::$instances[$fullName] ?? null;
         if (!$unitOfCode) {
-            $getElementPath = static function (string $fullName): ?string {
-                try {
-                    assert(class_exists($fullName, false)
-                        || trait_exists($fullName, false)
-                        || interface_exists($fullName, false));
-                    $reflection = new \ReflectionClass($fullName);
-                    $path = $reflection->getFileName() ?: null;
-                } catch (\ReflectionException $e) {
-                    $path = null;
-                }
-                return $path;
-            };
-
             switch (true) {
                 case TypeInterface::isThisType($fullName):
                     $type = TypeInterface::getInstance();
-                    $path = $path ?? $getElementPath($fullName);
+                    $path = $path ?? PathHelper::detectPath($fullName);
                     break;
                 case TypeClass::isThisType($fullName):
                     try {
@@ -97,11 +85,11 @@ class UnitOfCode
                         $isAbstract = false;
                     }
                     $type = TypeClass::getInstance($isAbstract);
-                    $path = $path ?? $getElementPath($fullName);
+                    $path = $path ?? PathHelper::detectPath($fullName);
                     break;
                 case TypeTrait::isThisType($fullName):
                     $type = TypeTrait::getInstance();
-                    $path = $path ?? $getElementPath($fullName);
+                    $path = $path ?? PathHelper::detectPath($fullName);
                     break;
                 case TypePrimitive::isThisType($fullName):
                     $type = TypePrimitive::getInstance();
@@ -390,7 +378,7 @@ class UnitOfCode
 
             $isAllowed = false;
             foreach ($allowedPaths as $allowedPath) {
-                if ($allowedPath->isPartOf($dependent->path())) {
+                if ($allowedPath->isPartOfPath($dependent->path())) {
                     $isAllowed = true;
                     break;
                 }
