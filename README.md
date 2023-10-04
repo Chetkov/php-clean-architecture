@@ -9,7 +9,7 @@ To continue in English go to [README.en](README-EN.md)
 
 ## Установка
 ```shell script
-composer require v.chetkov/php-clean-architecture
+composer require v.chetkov/php-clean-architecture --dev
 ```
 
 ## Конфигурация
