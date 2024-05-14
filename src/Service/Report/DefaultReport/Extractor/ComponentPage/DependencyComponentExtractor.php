@@ -113,7 +113,7 @@ class DependencyComponentExtractor
     ): array {
         $isInnerDependency = $dependency->belongToComponent($dependent->component());
         $isValidExternalDependency = $dependent->component()->isDependencyAllowed($dependency->component())
-            && $dependency->isAccessibleFromOutside();
+            && $dependency->isAccessibleFromOutside() && $dependent->isIntegrationAllowed($dependency->component());
 
         $dependencyIsAllowed = $isInnerDependency || $isValidExternalDependency;
         if (!$dependencyIsAllowed) {

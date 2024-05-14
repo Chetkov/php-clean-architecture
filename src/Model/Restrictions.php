@@ -335,8 +335,12 @@ class Restrictions
         return true;
     }
 
-    public function isIntegrationAllowed(UnitOfCode $unitOfCode): bool
+    public function isIntegrationAllowed(UnitOfCode $unitOfCode, ?Component $dependencyComponent = null): bool
     {
+        if ($dependencyComponent && $dependencyComponent->isShared()) {
+            return true;
+        }
+
         if (empty($this->integrationPaths)) {
             return true;
         }
@@ -388,9 +392,8 @@ class Restrictions
 
                 if (
                     $dependency->belongToComponent($thisComponent)
-                    || $dependency->component()->isShared()
+                    || $unitOfCode->isIntegrationAllowed($dependencyComponent)
                     || $unitOfCode->isDependencyInAllowedState($dependency)
-                    || $unitOfCode->isIntegrationAllowed()
                 ) {
                     continue;
                 }

@@ -37,8 +37,8 @@ class DependencyUnitOfCodeExtractor
         }
 
         $data['is_allowed'] = $isInputDependency
-            ? $unitOfCode->belongToComponent($dependency->component()) || ($dependency->component()->isDependencyAllowed($unitOfCode->component()) && $unitOfCode->isAccessibleFromOutside())
-            : $dependency->belongToComponent($unitOfCode->component()) || ($unitOfCode->component()->isDependencyAllowed($dependency->component()) && $dependency->isAccessibleFromOutside());
+            ? $unitOfCode->belongToComponent($dependency->component()) || ($dependency->component()->isDependencyAllowed($unitOfCode->component()) && $dependency->isIntegrationAllowed($unitOfCode->component()) && $unitOfCode->isAccessibleFromOutside())
+            : $dependency->belongToComponent($unitOfCode->component()) || ($unitOfCode->component()->isDependencyAllowed($dependency->component()) && $unitOfCode->isIntegrationAllowed($dependency->component()) && $dependency->isAccessibleFromOutside());
 
         $data['in_allowed_state'] = $isInputDependency
             ? $dependency->isDependencyInAllowedState($unitOfCode)

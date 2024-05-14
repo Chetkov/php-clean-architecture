@@ -180,10 +180,15 @@ class UnitOfCode
         });
     }
 
-    public function isIntegrationAllowed(): bool
+    public function isIntegrationAllowed(?Component $dependencyComponent = null): bool
     {
-        return $this->execWithCache('isIntegrationAllowed', function () {
-            return $this->component->restrictions()->isIntegrationAllowed($this);
+        $key = 'isIntegrationAllowed';
+        if ($dependencyComponent) {
+            $key .= $dependencyComponent->name();
+        }
+
+        return $this->execWithCache($key, function () use ($dependencyComponent) {
+            return $this->component->restrictions()->isIntegrationAllowed($this, $dependencyComponent);
         });
     }
 
