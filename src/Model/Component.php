@@ -231,6 +231,14 @@ class Component
         return $this->name === self::PRIMITIVES;
     }
 
+    public function isShared(): bool
+    {
+        return
+            $this->isPrimitives()
+            || $this->isGlobal()
+            || $this->restrictions->isShared();
+    }
+
     /**
      * Возвращает название компонента
      * @return string
@@ -445,9 +453,9 @@ class Component
      * Возвращает элементы текущего компонента, зависимые от внешних компонентов, но не указанные в конфиге integration_elements.
      * @return array<array{0: UnitOfCode, 1: array<UnitOfCode>}>
  */
-    public function getIllegalDependentUnitsOfCode(): array
+    public function getIllegalDependentUnitsOfCode(?Component $dependencyComponent = null): array
     {
-        return $this->restrictions->getIllegalDependentUnitsOfCode($this);
+        return $this->restrictions->getIllegalDependentUnitsOfCode($this, $dependencyComponent);
     }
 
     /**

@@ -30,8 +30,12 @@ class UnitsOfCodeGraphEdgeExtractor
 
         if (!$from->component()->isDependencyAllowed($to->component())) {
             $extractedData['color'] = $isDependencyInAllowedState ? 'yellow' : 'red';
-        } elseif (!$to->isAccessibleFromOutside() && !$to->belongToComponent($from->component())) {
-            $extractedData['color'] = $isDependencyInAllowedState ? 'yellow' : 'orange';
+        } elseif (!$to->belongToComponent($from->component())) {
+            if (!$to->isAccessibleFromOutside()) {
+                $extractedData['color'] = $isDependencyInAllowedState ? 'yellow' : 'orange';
+            } elseif (!$to->component()->isShared() && !$from->isIntegrationAllowed()) {
+                $extractedData['color'] = $isDependencyInAllowedState ? 'yellow' : 'gray';
+            }
         }
 
         return $extractedData;

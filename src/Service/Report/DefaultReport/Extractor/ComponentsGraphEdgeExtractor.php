@@ -42,6 +42,19 @@ class ComponentsGraphEdgeExtractor
                     }
                 }
             }
+
+            $illegalDependentUnitsOfCode = $from->getIllegalDependentUnitsOfCode($to);
+            if (!empty($illegalDependentUnitsOfCode)) {
+                foreach ($illegalDependentUnitsOfCode as [$illegal, $illegalDependencies]) {
+                    foreach ($illegalDependencies as $illegalDependency) {
+                        if (!$illegal->isDependencyInAllowedState($illegalDependency)) {
+                            $extractedData['color'] = 'gray';
+                            break 2;
+                        }
+                        $extractedData['color'] = 'yellow';
+                    }
+                }
+            }
         }
 
         return $extractedData;

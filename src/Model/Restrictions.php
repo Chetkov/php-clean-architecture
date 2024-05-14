@@ -211,6 +211,11 @@ class Restrictions
         return $this;
     }
 
+    public function isShared(): bool
+    {
+        return $this->isShared;
+    }
+
     /**
      * @return bool
      */
@@ -250,12 +255,7 @@ class Restrictions
      */
     public function isDependencyAllowed(Component $dependency, Component $thisComponent): bool
     {
-        if (
-            $dependency === $thisComponent
-            || $dependency->isPrimitives()
-            || $dependency->isGlobal()
-            || $dependency->restrictions()->isShared
-        ) {
+        if ($dependency === $thisComponent || $dependency->isShared()) {
             return true;
         }
         if (!empty($this->allowedDependencyComponents)) {
@@ -373,19 +373,22 @@ class Restrictions
 
     /**
      * @param Component $thisComponent
+     * @param Component|null $dependencyComponent Интересующий компонент, от которого зависит текущий (если не передан, обрабатываем любой)
      * @return array<array{0: UnitOfCode, 1: array<UnitOfCode>}>
      */
-    public function getIllegalDependentUnitsOfCode(Component $thisComponent): array
+    public function getIllegalDependentUnitsOfCode(Component $thisComponent, ?Component $dependencyComponent = null): array
     {
         $uniqueIllegalDependents = [];
         foreach ($thisComponent->unitsOfCode() as $unitOfCode) {
             $illegalDependencies = [];
             foreach ($unitOfCode->outputDependencies() as $dependency) {
+                if ($dependencyComponent && !$dependency->belongToComponent($dependencyComponent)) {
+                    continue;
+                }
+
                 if (
                     $dependency->belongToComponent($thisComponent)
-                    || $dependency->component()->isPrimitives()
-                    || $dependency->component()->isGlobal()
-                    || $dependency->component()->restrictions()->isShared
+                    || $dependency->component()->isShared()
                     || $unitOfCode->isDependencyInAllowedState($dependency)
                     || $unitOfCode->isIntegrationAllowed()
                 ) {
