@@ -180,6 +180,13 @@ class UnitOfCode
         });
     }
 
+    public function isIntegrationAllowed(): bool
+    {
+        return $this->execWithCache('isIntegrationAllowed', function () {
+            return $this->component->restrictions()->isIntegrationAllowed($this);
+        });
+    }
+
     /**
      * Проверяет, существует ли зависимость в конфиге разрешенного состояния
      * @param UnitOfCode $dependency

@@ -442,6 +442,15 @@ class Component
     }
 
     /**
+     * Возвращает элементы текущего компонента, зависимые от внешних компонентов, но не указанные в конфиге integration_elements.
+     * @return array<array{0: UnitOfCode, 1: array<UnitOfCode>}>
+ */
+    public function getIllegalDependentUnitsOfCode(): array
+    {
+        return $this->restrictions->getIllegalDependentUnitsOfCode($this);
+    }
+
+    /**
      * Возвращает элементы других компонентов, от которых текущий зависеть не должен, но зависит
      * @param bool $onlyFromAllowedComponents Если false, метод вернёт все запрещенные для взаимодействия элементы-зависимости,
      * т.е. элементы запрещенных для взаимодействия компонентов и приватные элементы разрешенных для взаимодействия компонентов.

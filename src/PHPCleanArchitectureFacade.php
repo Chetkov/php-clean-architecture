@@ -82,7 +82,8 @@ class PHPCleanArchitectureFacade
                 $excludedPaths[] = new Path($excludedPath, '');
             }
 
-            $restrictions = new Restrictions();
+            $isShared = $componentConfig['is_shared'] ?? false;
+            $restrictions = new Restrictions($isShared);
             $componentRestrictionsConfig = $componentConfig['restrictions'] ?? [];
 
             foreach ($componentRestrictionsConfig['public_elements'] ?? [] as $publicElement) {
@@ -90,6 +91,9 @@ class PHPCleanArchitectureFacade
             }
             foreach ($componentRestrictionsConfig['private_elements'] ?? [] as $privateElement) {
                 $restrictions->addPrivatePath(Path::fromString($privateElement));
+            }
+            foreach ($componentRestrictionsConfig['integration_elements'] ?? [] as $integrationElement) {
+                $restrictions->addIntegrationPath(Path::fromString($integrationElement));
             }
 
             foreach ($componentRestrictionsConfig['allowed_dependencies'] ?? [] as $allowedDependency) {
@@ -206,6 +210,18 @@ class PHPCleanArchitectureFacade
                         if (!$dependentUnitOfCode->isDependencyInAllowedState($dependencyUnitOfCode)) {
                             $errorMessage .= $dependentUnitOfCode->name() . ' -> ' . $dependencyUnitOfCode->name() . PHP_EOL;
                         }
+                    }
+                }
+                $errors[] = $errorMessage;
+            }
+
+            $illegalDependentUnitsOfCode = $component->getIllegalDependentUnitsOfCode();
+            if (!empty($illegalDependentUnitsOfCode)) {
+                $errorMessage = "\"{$component->name()}\" has outgoing dependencies FROM NON-INTEGRATION ELEMENTS:" . PHP_EOL;
+                foreach ($illegalDependentUnitsOfCode as [$illegal, $illegalDependencies]) {
+                    $errorMessage .= $illegal->name() . ': ' . PHP_EOL;
+                    foreach ($illegalDependencies as $illegalDependency) {
+                        $errorMessage .= " - " . $illegalDependency->name() . PHP_EOL;
                     }
                 }
                 $errors[] = $errorMessage;

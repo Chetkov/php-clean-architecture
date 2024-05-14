@@ -63,6 +63,13 @@ return [
             // сопоставления зависимости других компонентов от элементов текущего?
             // Значение по умолчанию true (в случае отсутствия его в конфиге).
             'is_analyze_enabled' => true,
+
+            // Является ли компонент общим
+            // true - классы компонента являются доступными из любых других компонентов.
+            // Имеет приоритет над списками allowed_dependencies и forbidden_dependencies зависящих компонентов
+            // Не должен задаваться одновременно с public_elements или private_elements
+            'is_shared' => false,
+
             'name' => 'FirstComponent',
             'roots' => [
                 [
@@ -112,6 +119,14 @@ return [
                 //     First\Component\FirstClass::class,
                 //     First\Component\SecondClass::class,
                 //     __DIR__ . '/directory/with/private/elements',
+                // ],
+
+                // Элементы интеграционного слоя компонента (которым разрешены внешние зависимости, от других компонентов).
+                // Если отсутствует или пустой, всем элементам разрешены внешние зависимости.
+                // 'integration_elements' => [
+                //     First\Component\FirstClass::class,
+                //     First\Component\SecondClass::class,
+                //     __DIR__ . '/directory/with/integration/elements',
                 // ],
             ],
         ],

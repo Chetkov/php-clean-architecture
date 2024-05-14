@@ -10,11 +10,16 @@ namespace Chetkov\PHPCleanArchitecture\Model;
  */
 class Restrictions
 {
+    private $isShared;
+
     /** @var array<Path> */
     private $publicPaths = [];
 
     /** @var array<Path> */
     private $privatePaths = [];
+
+    /** @var array<Path> */
+    private $integrationPaths = [];
 
     /** @var array<Component> */
     private $allowedDependencyComponents = [];
@@ -32,23 +37,29 @@ class Restrictions
     private $allowedState;
 
     /**
+     * @param bool $isShared
      * @param array<Path> $publicPaths
      * @param array<Path> $privatePaths
+     * @param array<Path> $integrationPaths
      * @param array<Component> $allowedDependencyComponents
      * @param array<Component> $forbiddenDependencyComponents
      * @param array<string, array<string, array<string, array<string, bool>>>> $allowedState
      * @param float|null $maxAllowableDistance
      */
     public function __construct(
+        bool $isShared = false,
         array $publicPaths = [],
         array $privatePaths = [],
+        array $integrationPaths = [],
         array $allowedDependencyComponents = [],
         array $forbiddenDependencyComponents = [],
         array $allowedState = [],
         ?float $maxAllowableDistance = null
     ) {
+        $this->isShared = $isShared;
         $this->setPublicPaths(...$publicPaths);
         $this->setPrivatePaths(...$privatePaths);
+        $this->setIntegrationPaths(...$integrationPaths);
         $this->setAllowedDependencyComponents(...$allowedDependencyComponents);
         $this->setForbiddenDependencyComponents(...$forbiddenDependencyComponents);
         $this->setAllowedState($allowedState);
@@ -105,6 +116,32 @@ class Restrictions
         }
         if (!in_array($path, $this->privatePaths, true)) {
             $this->privatePaths[] = $path;
+        }
+        return $this;
+    }
+
+    /**
+     * @param Path ...$paths
+     *
+     * @return $this
+     */
+    public function setIntegrationPaths(Path ...$paths): self
+    {
+        foreach ($paths as $path) {
+            $this->addIntegrationPath($path);
+        }
+        return $this;
+    }
+
+    /**
+     * @param Path $path
+     *
+     * @return $this
+     */
+    public function addIntegrationPath(Path $path): self
+    {
+        if (!in_array($path, $this->integrationPaths, true)) {
+            $this->integrationPaths[] = $path;
         }
         return $this;
     }
@@ -213,7 +250,12 @@ class Restrictions
      */
     public function isDependencyAllowed(Component $dependency, Component $thisComponent): bool
     {
-        if ($dependency === $thisComponent || $dependency->isPrimitives() || $dependency->isGlobal()) {
+        if (
+            $dependency === $thisComponent
+            || $dependency->isPrimitives()
+            || $dependency->isGlobal()
+            || $dependency->restrictions()->isShared
+        ) {
             return true;
         }
         if (!empty($this->allowedDependencyComponents)) {
@@ -267,7 +309,11 @@ class Restrictions
      */
     public function isUnitOfCodeAccessibleFromOutside(UnitOfCode $unitOfCode): bool
     {
-        if ($unitOfCode->isPrimitive() || $unitOfCode->belongToGlobalNamespace()) {
+        if (
+            $unitOfCode->isPrimitive()
+            || $unitOfCode->belongToGlobalNamespace()
+            || $unitOfCode->component()->restrictions()->isShared
+        ) {
             return true;
         }
         if (!empty($this->publicPaths)) {
@@ -289,6 +335,21 @@ class Restrictions
         return true;
     }
 
+    public function isIntegrationAllowed(UnitOfCode $unitOfCode): bool
+    {
+        if (empty($this->integrationPaths)) {
+            return true;
+        }
+
+        foreach ($this->integrationPaths as $integration) {
+            if ($integration->isContains($unitOfCode)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @param Component $thisComponent
      * @return array<Component>
@@ -308,6 +369,37 @@ class Restrictions
             $uniqueIllegalDependencyComponents[spl_object_hash($dependencyComponent)] = $dependencyComponent;
         }
         return array_values($uniqueIllegalDependencyComponents);
+    }
+
+    /**
+     * @param Component $thisComponent
+     * @return array<array{0: UnitOfCode, 1: array<UnitOfCode>}>
+     */
+    public function getIllegalDependentUnitsOfCode(Component $thisComponent): array
+    {
+        $uniqueIllegalDependents = [];
+        foreach ($thisComponent->unitsOfCode() as $unitOfCode) {
+            $illegalDependencies = [];
+            foreach ($unitOfCode->outputDependencies() as $dependency) {
+                if (
+                    $dependency->belongToComponent($thisComponent)
+                    || $dependency->component()->isPrimitives()
+                    || $dependency->component()->isGlobal()
+                    || $dependency->component()->restrictions()->isShared
+                    || $unitOfCode->isDependencyInAllowedState($dependency)
+                    || $unitOfCode->isIntegrationAllowed()
+                ) {
+                    continue;
+                }
+
+                $illegalDependencies[] = $dependency;
+            }
+
+            if (!empty($illegalDependencies)) {
+                $uniqueIllegalDependents[spl_object_hash($unitOfCode)] = [$unitOfCode, $illegalDependencies];
+            }
+        }
+        return array_values($uniqueIllegalDependents);
     }
 
     /**
