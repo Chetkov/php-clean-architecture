@@ -11,7 +11,7 @@ class Console
      */
     public static function getTerminalWidth(): int
     {
-        return (int) shell_exec("tput cols");
+        return (int) shell_exec("stty size | awk '{print $2}'");
     }
 
     /**

@@ -118,6 +118,18 @@ class UnitOfCode
         return $this->name;
     }
 
+    public function relativeName(): string
+    {
+        foreach ($this->component->rootPaths() as $path) {
+            if (!$path->isContains($this)) {
+                continue;
+            }
+
+            return str_replace($path->namespace(), "{{$this->component->name()}}", $this->name());
+        }
+        return $this->name();
+    }
+
     /**
      * Возвращает путь к элементу
      * @return string|null

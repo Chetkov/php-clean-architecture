@@ -1,6 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        var sharedComponentsToggler = document.getElementById('sharedComponentsToggler');
+        var graph = document.getElementById('graph');
+        function renderGraph(nodes, edges) {
+            var data = {
+                nodes: nodes,
+                edges: edges
+            };
+            var options = {
+                nodes: {
+                    shape: 'box'
+                },
+                edges: {
+                    arrows: 'to'
+                }
+            };
+
+            var network = new vis.Network(graph, data, options);
+
+            var isHidden = false;
+            sharedComponentsToggler.addEventListener('click', function() {
+                var components = [];
+                if (isHidden) {
+                    nodes.forEach(function(node) {
+                        if (node.is_shared) {
+                            node.hidden = false;
+                            components.push(node.label);
+                        }
+                    });
+                    sharedComponentsToggler.textContent = 'Скрыть (shared) компоненты';
+                } else {
+                    nodes.forEach(function(node) {
+                        if (node.is_shared) {
+                            node.hidden = true;
+                            components.push(node.label);
+                        }
+                    });
+                    sharedComponentsToggler.textContent = 'Показать (shared) компоненты';
+                }
+                network.setData(data);
+
+                alert((isHidden ? 'Отображены' : 'Скрыты') + ': ' + components.join(', '));
+                isHidden = !isHidden;
+            });
+        }
+    </script>
     {% block head %}
         <meta charset="UTF-8">
         <title>PHP Clean Architecture - {% block title %}Главная{% endblock %}</title>
@@ -122,6 +168,5 @@
         </div>
     </div>
 </div>
-
 </body>
 </html>

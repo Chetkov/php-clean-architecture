@@ -35,6 +35,7 @@ class ComponentsGraphNodeExtractor
             'id' => spl_object_hash($node),
             'label' => $node->name(),
             'title' => $title,
+            'is_shared' => $node->isShared(),
         ];
     }
 }

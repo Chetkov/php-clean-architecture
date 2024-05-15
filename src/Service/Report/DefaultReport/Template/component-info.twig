@@ -149,7 +149,8 @@
         </div>
     </div>
     <div class="row">
-        <b>Граф зависимостей</b>
+        <b>Граф зависимостей</b> |
+        <span id="sharedComponentsToggler", style="cursor: pointer">Скрыть (shared) компоненты</span>
         <div id="graph"></div>
     </div>
     <div class="row">
@@ -243,23 +244,10 @@
     </div>
 
     <script type="text/javascript">
-        var container = document.getElementById('graph');
-
+        var sharedComponentsToggler = document.getElementById('sharedComponentsToggler');
+        var graph = document.getElementById('graph');
         var nodes = new vis.DataSet({{ components_graph.nodes|raw }});
         var edges = new vis.DataSet({{ components_graph.edges|raw }});
-        var data = {
-            nodes: nodes,
-            edges: edges
-        };
-        var options = {
-            nodes: {
-                shape: 'box'
-            },
-            edges: {
-                arrows: 'to'
-            }
-        };
-
-        var network = new vis.Network(container, data, options);
+        renderGraph(nodes, edges);
     </script>
 {% endblock %}

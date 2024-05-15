@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
+use ReturnTypeWillChange;
+
 /**
  * @template T
  * @implements \Iterator<\Iterator<mixed, T>>
@@ -27,6 +29,7 @@ class CompositeCountableIterator implements \Iterator, \Countable
     /**
      * @return T
      */
+    #[ReturnTypeWillChange]
     public function current()
     {
         return $this->getCurrentIterator()->current();
@@ -45,6 +48,7 @@ class CompositeCountableIterator implements \Iterator, \Countable
     /**
      * @return bool|float|int|string|null
      */
+    #[ReturnTypeWillChange]
     public function key()
     {
         return $this->getCurrentIterator()->key();

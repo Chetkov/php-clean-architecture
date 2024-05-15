@@ -20,7 +20,8 @@ class UnitsOfCodeGraphNodeExtractor
     {
         return [
             'id' => spl_object_hash($node),
-            'label' => $node->name(),
+            'label' => $node->relativeName(),
+            'is_shared' => $node->component()->isShared(),
         ];
     }
 }
