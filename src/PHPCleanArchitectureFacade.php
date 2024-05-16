@@ -218,10 +218,10 @@ class PHPCleanArchitectureFacade
             $illegalDependentUnitsOfCode = $component->getIllegalDependentUnitsOfCode();
             if (!empty($illegalDependentUnitsOfCode)) {
                 $errorMessage = "\"{$component->name()}\" has outgoing dependencies FROM NON-INTEGRATION ELEMENTS:" . PHP_EOL;
-                foreach ($illegalDependentUnitsOfCode as [$illegal, $illegalDependencies]) {
+                foreach ($illegalDependentUnitsOfCode as [$illegal, $dependencies]) {
                     $errorMessage .= $illegal->name() . ': ' . PHP_EOL;
-                    foreach ($illegalDependencies as $illegalDependency) {
-                        $errorMessage .= " - " . $illegalDependency->name() . PHP_EOL;
+                    foreach ($dependencies as $dependency) {
+                        $errorMessage .= " - " . $dependency->name() . PHP_EOL;
                     }
                 }
                 $errors[] = $errorMessage;

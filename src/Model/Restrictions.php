@@ -392,7 +392,7 @@ class Restrictions
 
                 if (
                     $dependency->belongToComponent($thisComponent)
-                    || $unitOfCode->isIntegrationAllowed($dependencyComponent)
+                    || $unitOfCode->isIntegrationAllowed($dependency->component())
                     || $unitOfCode->isDependencyInAllowedState($dependency)
                 ) {
                     continue;
