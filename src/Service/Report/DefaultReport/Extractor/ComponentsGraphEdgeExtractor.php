@@ -29,7 +29,7 @@ class ComponentsGraphEdgeExtractor
         ];
 
         if (!$from->isDependencyAllowed($to)) {
-            $extractedData['color'] = $from->isDependencyInAllowedState($to) ? 'yellow' : 'red';
+            $extractedData['color'] = $from->isDependencyInAllowedState($to) ? 'green' : 'red';
         } else {
             foreach ($from->getDependencyUnitsOfCode($to) as $dependency) {
                 if (!$dependency->isAccessibleFromOutside()) {
@@ -38,7 +38,7 @@ class ComponentsGraphEdgeExtractor
                             $extractedData['color'] = 'orange';
                             break 2;
                         }
-                        $extractedData['color'] = 'yellow';
+                        $extractedData['color'] = 'green';
                     }
                 }
             }
@@ -51,7 +51,7 @@ class ComponentsGraphEdgeExtractor
                             $extractedData['color'] = 'gray';
                             break 2;
                         }
-                        $extractedData['color'] = 'yellow';
+                        $extractedData['color'] = 'green';
                     }
                 }
             }
