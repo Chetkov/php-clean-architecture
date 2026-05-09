@@ -456,6 +456,14 @@ function App() {
           <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />
         </section>
 
+        <details className="component-map" open>
+          <summary>
+            <GitBranch size={16} />
+            <span>{t('dependencyOverview')}</span>
+          </summary>
+          <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} t={t} />
+        </details>
+
         <section className="workbench">
           <div className="workbench-main">
             <nav className="tabs" aria-label={t('reportView')}>
@@ -501,14 +509,6 @@ function App() {
             <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
           </aside>
         </section>
-
-        <details className="component-map">
-          <summary>
-            <GitBranch size={16} />
-            <span>{t('dependencyOverview')}</span>
-          </summary>
-          <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} t={t} />
-        </details>
       </section>
     </main>
   );
