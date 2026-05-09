@@ -916,8 +916,8 @@ tr:last-child td {
 
 .flip-button,
 .segmented-filter button,
-.component-filter label,
-.filter-heading button {
+.component-filter-menu summary,
+.component-filter-actions button {
   min-height: 32px;
   border: 1px solid #c9d2d9;
   border-radius: 8px;
@@ -934,7 +934,7 @@ tr:last-child td {
 }
 
 .segmented-filter,
-.component-filter-options {
+.component-filter-actions {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
@@ -952,14 +952,71 @@ tr:last-child td {
   background: #24485f;
 }
 
-.filter-heading {
+.component-filter {
+  position: relative;
+}
+
+.component-filter-menu {
+  position: relative;
+}
+
+.component-filter-menu summary {
   display: flex;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
+  padding: 0 10px;
+  color: #22313c;
+  cursor: pointer;
+  list-style: none;
 }
 
-.filter-heading button {
+.component-filter-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.component-filter-menu summary small {
+  color: #71808d;
+  font-size: 12px;
+}
+
+.component-filter-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 260px;
+  padding: 10px;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(31, 47, 61, 0.16);
+}
+
+.component-filter-search {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d8e1e8;
+  border-radius: 8px;
+  background: #f8fafb;
+}
+
+.component-filter-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #22313c;
+}
+
+.component-filter-actions button {
   min-height: 26px;
   padding: 0 8px;
   color: #325a75;
@@ -967,12 +1024,22 @@ tr:last-child td {
   cursor: pointer;
 }
 
+.component-filter-options {
+  display: grid;
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+}
+
 .component-filter label {
-  display: inline-flex;
+  display: flex;
   gap: 6px;
   align-items: center;
   min-height: 30px;
   padding: 0 8px;
+  border: 1px solid #d8e1e8;
+  border-radius: 8px;
+  background: #ffffff;
   cursor: pointer;
 }
 
@@ -986,8 +1053,10 @@ tr:last-child td {
   height: 14px;
 }
 
-.component-filter small {
+.component-filter-options p {
+  margin: 0;
   color: #71808d;
+  font-size: 12px;
 }
 
 .dependency-explorer-header {

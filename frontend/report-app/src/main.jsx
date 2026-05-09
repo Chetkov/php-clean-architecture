@@ -60,6 +60,9 @@ const dictionaries = {
     componentMetrics: 'Component metrics',
     components: 'Components',
     clearSearch: 'Clear search',
+    clearSelection: 'Clear',
+    componentFilterSearch: 'Search components',
+    componentFilterSelected: 'selected',
     dependencyOverview: 'Dependency map',
     filtered: 'filtered',
     noUnitSelected: 'Select a unit to inspect its dependencies',
@@ -101,6 +104,7 @@ const dictionaries = {
     no: 'no',
     noActiveIssues: 'No active architecture issues for the current filters',
     noComponentData: 'No component data',
+    noComponentsSelected: 'None selected',
     noDependencies: 'No dependencies',
     noDependencyDistribution: 'No dependency distribution',
     noExternalDependencies: 'No external component dependencies',
@@ -148,6 +152,9 @@ const dictionaries = {
     componentMetrics: 'Метрики компонента',
     components: 'Компоненты',
     clearSearch: 'Очистить поиск',
+    clearSelection: 'Сбросить',
+    componentFilterSearch: 'Поиск компонентов',
+    componentFilterSelected: 'выбрано',
     dependencyOverview: 'Карта зависимостей',
     filtered: 'отфильтровано',
     noUnitSelected: 'Выберите юнит, чтобы посмотреть его зависимости',
@@ -189,6 +196,7 @@ const dictionaries = {
     no: 'нет',
     noActiveIssues: 'Для текущих фильтров нет активных архитектурных проблем',
     noComponentData: 'Нет данных компонента',
+    noComponentsSelected: 'Ничего не выбрано',
     noDependencies: 'Нет зависимостей',
     noDependencyDistribution: 'Нет распределения зависимостей',
     noExternalDependencies: 'Нет внешних зависимостей компонентов',
@@ -236,6 +244,9 @@ const dictionaries = {
     componentMetrics: '组件指标',
     components: '组件',
     clearSearch: '清除搜索',
+    clearSelection: '清除',
+    componentFilterSearch: '搜索组件',
+    componentFilterSelected: '已选',
     dependencyOverview: '依赖地图',
     filtered: '已筛选',
     noUnitSelected: '选择一个单元以查看其依赖',
@@ -277,6 +288,7 @@ const dictionaries = {
     no: '否',
     noActiveIssues: '当前筛选没有活跃架构问题',
     noComponentData: '没有组件数据',
+    noComponentsSelected: '未选择',
     noDependencies: '没有依赖',
     noDependencyDistribution: '没有依赖分布',
     noExternalDependencies: '没有外部组件依赖',
@@ -1188,8 +1200,21 @@ function SegmentedFilter({ label, options, value, onChange }) {
 }
 
 function ComponentFilter({ components, label, selectedIds, onChange, t }) {
+  const [componentQuery, setComponentQuery] = useState('');
   const selected = new Set(selectedIds);
   const allSelected = selectedIds.length === components.length;
+  const normalizedQuery = componentQuery.trim().toLowerCase();
+  const visibleComponents = normalizedQuery
+    ? components.filter((component) => component.name.toLowerCase().includes(normalizedQuery))
+    : components;
+  const selectedComponents = components.filter((component) => selected.has(component.id));
+  const summary = allSelected
+    ? t('all')
+    : selectedComponents.length === 0
+      ? t('noComponentsSelected')
+      : selectedComponents.length === 1
+        ? selectedComponents[0].name
+        : `${selectedComponents.length} ${t('componentFilterSelected')}`;
 
   const toggleComponent = (componentId) => {
     const next = new Set(selected);
@@ -1203,19 +1228,39 @@ function ComponentFilter({ components, label, selectedIds, onChange, t }) {
 
   return (
     <div className="filter-block component-filter">
-      <div className="filter-heading">
-        <span>{label}</span>
-        <button onClick={() => onChange(components.map((component) => component.id))} type="button">{t('selectAll')}</button>
-      </div>
-      <div className="component-filter-options">
-        {components.map((component) => (
-          <label className={selected.has(component.id) ? 'checked' : ''} key={component.id}>
-            <input checked={selected.has(component.id)} onChange={() => toggleComponent(component.id)} type="checkbox" />
-            <span>{component.name}</span>
+      <span>{label}</span>
+      <details className="component-filter-menu">
+        <summary>
+          <span>{summary}</span>
+          <small>{selectedIds.length}/{components.length}</small>
+        </summary>
+        <div className="component-filter-popover">
+          <label className="component-filter-search">
+            <Search size={14} />
+            <input
+              aria-label={t('componentFilterSearch')}
+              onChange={(event) => setComponentQuery(event.target.value)}
+              placeholder={t('componentFilterSearch')}
+              type="search"
+              value={componentQuery}
+            />
           </label>
-        ))}
-      </div>
-      <small>{selectedIds.length}/{components.length} {allSelected ? t('all') : ''}</small>
+          <div className="component-filter-actions">
+            <button onClick={() => onChange(components.map((component) => component.id))} type="button">{t('selectAll')}</button>
+            <button onClick={() => onChange([])} type="button">{t('clearSelection')}</button>
+          </div>
+          <div className="component-filter-options">
+            {visibleComponents.length ? visibleComponents.map((component) => (
+              <label className={selected.has(component.id) ? 'checked' : ''} key={component.id}>
+                <input checked={selected.has(component.id)} onChange={() => toggleComponent(component.id)} type="checkbox" />
+                <span>{component.name}</span>
+              </label>
+            )) : (
+              <p>{t('noComponents')}</p>
+            )}
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
