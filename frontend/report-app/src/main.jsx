@@ -349,15 +349,21 @@ function App() {
     () => report.units.filter((unit) => !selectedComponent || unit.componentId === selectedComponent.id),
     [report.units, selectedComponent],
   );
+  const unitsForCurrentSearch = query ? report.units : selectedComponentUnits;
   const visibleUnits = useMemo(
-    () => selectedComponentUnits.filter((unit) => matchesUnit(unit, query)),
-    [query, selectedComponentUnits],
+    () => unitsForCurrentSearch.filter((unit) => matchesUnit(unit, query)),
+    [query, unitsForCurrentSearch],
   );
+  const violationsForCurrentSearch = query
+    ? report.violations
+    : report.violations.filter((violation) => !selectedComponent || violation.fromComponentId === selectedComponent.id);
   const visibleViolations = useMemo(
-    () => report.violations
-      .filter((violation) => !selectedComponent || violation.fromComponentId === selectedComponent.id)
-      .filter((violation) => matchesViolation(violation, indexed, query)),
-    [indexed, query, report.violations, selectedComponent],
+    () => violationsForCurrentSearch.filter((violation) => matchesViolation(violation, indexed, query)),
+    [indexed, query, violationsForCurrentSearch],
+  );
+  const visibleDependencies = useMemo(
+    () => filterDependencies(report.dependencies, indexed, query, sourceComponentIds, targetComponentIds, dependencyStatus),
+    [dependencyStatus, indexed, query, report.dependencies, sourceComponentIds, targetComponentIds],
   );
 
   useEffect(() => {
@@ -439,7 +445,8 @@ function App() {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t('searchPlaceholder')}
                 aria-label={t('openSearch')}
-                type="search"
+                role="searchbox"
+                type="text"
                 value={query}
               />
               {query && (
@@ -477,7 +484,7 @@ function App() {
               <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')} type="button">
                 <ArrowRight size={16} />
                 {t('dependencies')}
-                <strong>{report.dependencies.length}</strong>
+                <strong>{visibleDependencies.length}</strong>
               </button>
               <button className={view === 'units' ? 'active' : ''} onClick={() => setView('units')} type="button">
                 <FileCode2 size={16} />
@@ -1373,6 +1380,17 @@ function matchesDependencyWithUnits(dependency, indexed, query) {
   return matchesDependency(dependency, query)
     || (fromUnit?.path ?? '').toLowerCase().includes(normalizedQuery)
     || (toUnit?.path ?? '').toLowerCase().includes(normalizedQuery);
+}
+
+function filterDependencies(dependencies, indexed, query, sourceComponentIds, targetComponentIds, status) {
+  const sourceIds = new Set(sourceComponentIds);
+  const targetIds = new Set(targetComponentIds);
+
+  return dependencies
+    .filter((dependency) => sourceIds.has(dependency.fromComponentId))
+    .filter((dependency) => targetIds.has(dependency.toComponentId))
+    .filter((dependency) => status === 'all' || dependencyStatusKey(dependency) === status)
+    .filter((dependency) => matchesDependencyWithUnits(dependency, indexed, query));
 }
 
 function matchesViolation(violation, indexed, query) {
