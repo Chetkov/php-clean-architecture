@@ -104,6 +104,7 @@ const dictionaries = {
     noDependencies: 'No dependencies',
     noDependencyDistribution: 'No dependency distribution',
     noExternalDependencies: 'No external component dependencies',
+    noSelection: 'Overview',
     noMatchingDependencies: 'No dependencies match the current filters',
     noMatchingUnits: 'No units match the current filters',
     out: 'Out',
@@ -191,6 +192,7 @@ const dictionaries = {
     noDependencies: 'Нет зависимостей',
     noDependencyDistribution: 'Нет распределения зависимостей',
     noExternalDependencies: 'Нет внешних зависимостей компонентов',
+    noSelection: 'Обзор',
     noMatchingDependencies: 'Нет зависимостей по текущим фильтрам',
     noMatchingUnits: 'Нет юнитов по текущим фильтрам',
     out: 'Исх.',
@@ -278,6 +280,7 @@ const dictionaries = {
     noDependencies: '没有依赖',
     noDependencyDistribution: '没有依赖分布',
     noExternalDependencies: '没有外部组件依赖',
+    noSelection: '概览',
     noMatchingDependencies: '没有匹配当前筛选的依赖',
     noMatchingUnits: '没有匹配当前筛选的单元',
     out: '出',
@@ -320,6 +323,9 @@ function App() {
   const [sourceComponentIds, setSourceComponentIds] = useState([]);
   const [targetComponentIds, setTargetComponentIds] = useState([]);
   const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'ru');
+  const navigationReady = useRef(false);
+  const applyingNavigation = useRef(false);
+  const lastNavigationHash = useRef(null);
   const t = useMemo(() => (key) => dictionaries[locale]?.[key] ?? dictionaries.en[key] ?? key, [locale]);
 
   useEffect(() => {
@@ -390,6 +396,70 @@ function App() {
     setTargetComponentIds(componentIds);
   }, [dependencyComponentOptions]);
 
+  useEffect(() => {
+    if (loadingState !== 'ready' || navigationReady.current) {
+      return;
+    }
+
+    applyNavigationState(parseNavigationHash(), indexed, {
+      setQuery,
+      setSelectedComponentId,
+      setSelectedUnitId,
+      setView,
+    });
+    navigationReady.current = true;
+    lastNavigationHash.current = window.location.hash || buildNavigationHash({ query, selectedComponentId, selectedUnitId, view });
+  }, [indexed, loadingState, query, selectedComponentId, selectedUnitId, view]);
+
+  useEffect(() => {
+    if (loadingState !== 'ready') {
+      return undefined;
+    }
+
+    const onPopState = () => {
+      applyingNavigation.current = true;
+      applyNavigationState(parseNavigationHash(), indexed, {
+        setQuery,
+        setSelectedComponentId,
+        setSelectedUnitId,
+        setView,
+      });
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [indexed, loadingState]);
+
+  useEffect(() => {
+    if (loadingState !== 'ready' || !navigationReady.current) {
+      return;
+    }
+
+    const nextHash = buildNavigationHash({ query, selectedComponentId, selectedUnitId, view });
+    if (nextHash === lastNavigationHash.current) {
+      return;
+    }
+
+    if (applyingNavigation.current) {
+      applyingNavigation.current = false;
+      lastNavigationHash.current = nextHash;
+      return;
+    }
+
+    const nextStackHash = stripNavigationQuery(nextHash);
+    const previousStackHash = stripNavigationQuery(lastNavigationHash.current ?? '');
+    lastNavigationHash.current = nextHash;
+    if (nextStackHash === previousStackHash) {
+      window.history.replaceState(null, '', nextHash);
+      return;
+    }
+    window.history.pushState(null, '', nextHash);
+  }, [loadingState, query, selectedComponentId, selectedUnitId, view]);
+
+  const selectOverview = () => {
+    setSelectedComponentId(null);
+    setSelectedUnitId(null);
+  };
   const selectComponent = (componentId) => {
     setSelectedComponentId(componentId);
     setSelectedUnitId(null);
@@ -425,6 +495,15 @@ function App() {
         </div>
         <SummaryGrid summary={report.summary} t={t} />
         <div className="component-list">
+          <button
+            className={!selectedComponent ? 'component-row selected overview-row' : 'component-row overview-row'}
+            onClick={selectOverview}
+            type="button"
+          >
+            <GitBranch size={16} />
+            <span>{t('noSelection')}</span>
+            <small>{report.components.length}</small>
+          </button>
           {report.components.map((component) => (
             <button
               className={component.id === selectedComponent?.id ? 'component-row selected' : 'component-row'}
@@ -1499,6 +1578,55 @@ function matchesViolation(violation, indexed, query) {
   return violation.message.toLowerCase().includes(normalizedQuery)
     || violation.type.toLowerCase().includes(normalizedQuery)
     || (dependency ? matchesDependency(dependency, query) : false);
+}
+
+function parseNavigationHash() {
+  const hash = window.location.hash.replace(/^#/, '');
+  const params = new URLSearchParams(hash);
+
+  return {
+    componentId: params.get('component'),
+    query: params.get('q') ?? '',
+    unitId: params.get('unit'),
+    view: normalizeReportView(params.get('view')),
+  };
+}
+
+function buildNavigationHash({ query, selectedComponentId, selectedUnitId, view }) {
+  const params = new URLSearchParams();
+  params.set('view', normalizeReportView(view));
+  if (selectedComponentId) {
+    params.set('component', selectedComponentId);
+  }
+  if (selectedUnitId) {
+    params.set('unit', selectedUnitId);
+  }
+  if (query) {
+    params.set('q', query);
+  }
+
+  return `#${params.toString()}`;
+}
+
+function stripNavigationQuery(hash) {
+  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  params.delete('q');
+
+  return `#${params.toString()}`;
+}
+
+function applyNavigationState(state, indexed, setters) {
+  const unit = state.unitId ? indexed.unitsById.get(state.unitId) : null;
+  const componentId = unit?.componentId ?? (state.componentId && indexed.componentsById.has(state.componentId) ? state.componentId : null);
+
+  setters.setQuery(state.query);
+  setters.setSelectedComponentId(componentId);
+  setters.setSelectedUnitId(unit?.id ?? null);
+  setters.setView(unit ? 'units' : state.view);
+}
+
+function normalizeReportView(view) {
+  return ['violations', 'dependencies', 'units'].includes(view) ? view : 'violations';
 }
 
 function normalizeQuery(query) {

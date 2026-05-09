@@ -166,6 +166,16 @@ td span,
   background: #1e2b36;
 }
 
+.component-row.overview-row {
+  margin-bottom: 8px;
+  border-color: #293643;
+  background: #18222c;
+}
+
+.component-row.overview-row.selected {
+  border-color: #6f8798;
+}
+
 .status-icon.ok {
   color: #55c68e;
 }
