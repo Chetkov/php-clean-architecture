@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
-use Chetkov\PHPCleanArchitecture\Model\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\FileAnalyzedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\SourceDiscovery\PhpParserSourceUnitDiscovery;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\SourceDiscovery\SourceUnitDiscoveryInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
@@ -24,14 +25,22 @@ class ComponentAnalyzer
     /** @var EventManagerInterface */
     private $eventManager;
 
+    /** @var SourceUnitDiscoveryInterface */
+    private $sourceUnitDiscovery;
+
     /**
      * @param DependenciesFinderInterface $dependenciesFinder
      * @param EventManagerInterface $eventManager
+     * @param SourceUnitDiscoveryInterface|null $sourceUnitDiscovery
      */
-    public function __construct(DependenciesFinderInterface $dependenciesFinder, EventManagerInterface $eventManager)
-    {
+    public function __construct(
+        DependenciesFinderInterface $dependenciesFinder,
+        EventManagerInterface $eventManager,
+        ?SourceUnitDiscoveryInterface $sourceUnitDiscovery = null
+    ) {
         $this->dependenciesFinder = $dependenciesFinder;
         $this->eventManager = $eventManager;
+        $this->sourceUnitDiscovery = $sourceUnitDiscovery ?? new PhpParserSourceUnitDiscovery();
     }
 
     /**
@@ -65,13 +74,12 @@ class ComponentAnalyzer
                     continue;
                 }
 
-                $fullName = PathHelper::removeDoubleBackslashes($path->namespace() .
-                    PathHelper::pathToNamespace($path->getRelativePath($fullPath)));
-
-                $unitOfCode = UnitOfCode::create($fullName, $component, $fullPath);
-                $dependencies = $this->dependenciesFinder->find($unitOfCode);
-                foreach ($dependencies as $dependency) {
-                    $unitOfCode->addOutputDependency(UnitOfCode::create($dependency));
+                foreach ($this->sourceUnitDiscovery->discover($file, $path) as $sourceUnit) {
+                    $unitOfCode = UnitOfCode::createFromSourceUnit($sourceUnit, $component);
+                    $dependencies = $this->dependenciesFinder->find($unitOfCode);
+                    foreach ($dependencies as $dependency) {
+                        $unitOfCode->addOutputDependency(UnitOfCode::create($dependency));
+                    }
                 }
 
                 $this->eventManager->notify($fileAnalyzedEvent);
@@ -93,6 +101,14 @@ class ComponentAnalyzer
     ): CompositeCountableIterator {
         $filesIterator = new CompositeCountableIterator();
         foreach ($paths as $path) {
+            if (is_file($path->path())) {
+                $filesIterator->addIterator(new \ArrayIterator([new \SplFileInfo($path->path())]));
+                continue;
+            }
+            if (!is_dir($path->path())) {
+                continue;
+            }
+
             $recursiveDirectoryIterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path->path()));
             $phpExtIterator = new \RegexIterator($recursiveDirectoryIterator, "/\\$fileExtension$/i");
             $filesIterator->addIterator($phpExtIterator);

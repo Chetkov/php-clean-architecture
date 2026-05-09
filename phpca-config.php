@@ -124,7 +124,7 @@ return [
                 ],
             ],
             'restrictions' => [
-                'allowed_dependencies' => ['service', 'model'],
+                'allowed_dependencies' => ['service', 'model', 'nikic/php-parser'],
             ],
         ],
         'infrastructure' => [

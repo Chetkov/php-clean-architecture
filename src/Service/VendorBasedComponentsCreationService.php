@@ -56,10 +56,14 @@ class VendorBasedComponentsCreationService
             }
 
             $autoloadSection = $composerData['autoload'] ?? [];
-            $rootPaths = $this->createPathsByAutoloadSection($autoloadSection, $composerFile->getPath());
+            $rootPaths = $this->createRootPathsByAutoloadSection($autoloadSection, $composerFile->getPath());
 
             $autoloadDevSection = $composerData['autoload-dev'] ?? [];
-            $excludedPaths = $this->createPathsByAutoloadSection($autoloadDevSection, $composerFile->getPath());
+            $excludedPaths = $this->createExcludedPathsByAutoloadSection(
+                $autoloadDevSection,
+                $composerData['exclude-from-classmap'] ?? [],
+                $composerFile->getPath()
+            );
 
             $components[] = Component::create($packageName, $rootPaths, $excludedPaths)
                 ->excludeFromAnalyze();
@@ -69,25 +73,114 @@ class VendorBasedComponentsCreationService
     }
 
     /**
-     * @param array<string, array<string, string|array<string>>|mixed> $autoloadSection
+     * @param array<string, mixed> $autoloadSection
      * @param string $currentPath
      * @return array<Path>
      */
-    private function createPathsByAutoloadSection(array $autoloadSection, string $currentPath): array
+    private function createRootPathsByAutoloadSection(array $autoloadSection, string $currentPath): array
     {
         $rootPaths = [];
         $psr4 = $autoloadSection['psr-4'] ?? [];
         $psr0 = $autoloadSection['psr-0'] ?? [];
-        foreach (array_merge($psr4, $psr0) as $namespace => $relativeRootPaths) {
+        $rootPaths = array_merge($rootPaths, $this->createPsrPaths($psr4, $currentPath));
+        $rootPaths = array_merge($rootPaths, $this->createPsrPaths($psr0, $currentPath));
+
+        $classmap = $autoloadSection['classmap'] ?? [];
+        $files = $autoloadSection['files'] ?? [];
+        $rootPaths = array_merge($rootPaths, $this->createPlainPaths($classmap, $currentPath));
+        $rootPaths = array_merge($rootPaths, $this->createPlainPaths($files, $currentPath));
+
+        return $rootPaths;
+    }
+
+    /**
+     * @param array<string, mixed> $autoloadDevSection
+     * @param mixed $excludeFromClassmap
+     * @param string $currentPath
+     * @return array<Path>
+     */
+    private function createExcludedPathsByAutoloadSection(
+        array $autoloadDevSection,
+        $excludeFromClassmap,
+        string $currentPath
+    ): array {
+        $excludedPaths = $this->createPlainPaths($excludeFromClassmap, $currentPath);
+
+        $psr4 = $autoloadDevSection['psr-4'] ?? [];
+        $psr0 = $autoloadDevSection['psr-0'] ?? [];
+        $classmap = $autoloadDevSection['classmap'] ?? [];
+        $files = $autoloadDevSection['files'] ?? [];
+
+        $excludedPaths = array_merge($excludedPaths, $this->createPsrPaths($psr4, $currentPath, false));
+        $excludedPaths = array_merge($excludedPaths, $this->createPsrPaths($psr0, $currentPath, false));
+        $excludedPaths = array_merge($excludedPaths, $this->createPlainPaths($classmap, $currentPath));
+        $excludedPaths = array_merge($excludedPaths, $this->createPlainPaths($files, $currentPath));
+
+        return $excludedPaths;
+    }
+
+    /**
+     * @param mixed $autoloadPaths
+     * @param string $currentPath
+     * @return array<Path>
+     */
+    private function createPlainPaths($autoloadPaths, string $currentPath): array
+    {
+        $rootPaths = [];
+        foreach ($this->normalizeRelativePaths($autoloadPaths) as $relativeRootPath) {
+            $rootPaths[] = new Path($this->createFullPath($currentPath, $relativeRootPath));
+        }
+        return $rootPaths;
+    }
+
+    /**
+     * @param mixed $autoloadPathsByNamespace
+     * @param string $currentPath
+     * @param bool $includeNamespace
+     * @return array<Path>
+     */
+    private function createPsrPaths($autoloadPathsByNamespace, string $currentPath, bool $includeNamespace = true): array
+    {
+        if (!is_array($autoloadPathsByNamespace)) {
+            return [];
+        }
+
+        $rootPaths = [];
+        foreach ($autoloadPathsByNamespace as $namespace => $relativeRootPaths) {
             if (!is_array($relativeRootPaths)) {
                  $relativeRootPaths = [$relativeRootPaths];
             }
             foreach ($relativeRootPaths as $relativeRootPath) {
-                $fullPath = PathHelper::removeDoubleSlashes($currentPath . '/' . $relativeRootPath);
-                $rootPaths[] = new Path($fullPath, $namespace);
+                $rootPaths[] = new Path(
+                    $this->createFullPath($currentPath, $relativeRootPath),
+                    $includeNamespace ? (string) $namespace : ''
+                );
             }
         }
         return $rootPaths;
+    }
+
+    /**
+     * @param mixed $relativePaths
+     * @return array<string>
+     */
+    private function normalizeRelativePaths($relativePaths): array
+    {
+        if (is_string($relativePaths)) {
+            return [$relativePaths];
+        }
+        if (!is_array($relativePaths)) {
+            return [];
+        }
+
+        return array_values(array_filter($relativePaths, static function ($relativePath): bool {
+            return is_string($relativePath);
+        }));
+    }
+
+    private function createFullPath(string $currentPath, string $relativePath): string
+    {
+        return PathHelper::removeDoubleSlashes($currentPath . '/' . $relativePath);
     }
 
     /**

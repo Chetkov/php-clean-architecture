@@ -1,0 +1,13 @@
+{
+    "name": "acme/classmap",
+    "autoload": {
+        "classmap": ["legacy/StrangeName.php"],
+        "files": ["bootstrap/helpers.php"]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Acme\\Classmap\\Tests\\": "tests/"
+        }
+    },
+    "exclude-from-classmap": ["legacy/Excluded"]
+}
