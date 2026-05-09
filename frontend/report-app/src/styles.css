@@ -315,6 +315,24 @@ meter {
   stroke-dasharray: 5 5;
 }
 
+.chart-zone.pain {
+  fill: #f7e7e7;
+}
+
+.chart-zone.uselessness {
+  fill: #edf0f7;
+}
+
+.zone-label {
+  fill: #7c6870;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.zone-label.uselessness {
+  fill: #626f86;
+}
+
 .axis-label {
   fill: #667684;
   font-size: 11px;

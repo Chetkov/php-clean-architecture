@@ -54,6 +54,8 @@ const dictionaries = {
     componentGraph: 'Component graph',
     componentMetrics: 'Component metrics',
     components: 'Components',
+    zoneOfPain: 'Zone of pain',
+    zoneOfUselessness: 'Zone of uselessness',
     dependencyDirection: 'Direction',
     dependencyFiles: 'files',
     dependencyGroups: 'Dependency groups',
@@ -129,6 +131,8 @@ const dictionaries = {
     componentGraph: 'Граф компонентов',
     componentMetrics: 'Метрики компонента',
     components: 'Компоненты',
+    zoneOfPain: 'Зона боли',
+    zoneOfUselessness: 'Зона бесполезности',
     dependencyDirection: 'Направление',
     dependencyFiles: 'файлов',
     dependencyGroups: 'Группы зависимостей',
@@ -204,6 +208,8 @@ const dictionaries = {
     componentGraph: '组件图',
     componentMetrics: '组件指标',
     components: '组件',
+    zoneOfPain: '痛点区',
+    zoneOfUselessness: '无用区',
     dependencyDirection: '方向',
     dependencyFiles: '文件',
     dependencyGroups: '依赖分组',
@@ -528,6 +534,10 @@ function AIMatrix({ components, selectedComponentId, onSelectComponent, t }) {
     <section className="panel chart-panel">
       <h2>{t('aiMatrix')}</h2>
       <svg viewBox="0 0 360 240" role="img" aria-label={t('aiMatrix')}>
+        <rect className="chart-zone pain" height="68" width="108" x="40" y="132" />
+        <rect className="chart-zone uselessness" height="68" width="108" x="212" y="24" />
+        <text className="zone-label pain" x="52" y="150">{t('zoneOfPain')}</text>
+        <text className="zone-label uselessness" textAnchor="end" x="308" y="45">{t('zoneOfUselessness')}</text>
         <line className="chart-grid strong" x1="40" x2="320" y1="200" y2="200" />
         <line className="chart-grid strong" x1="40" x2="40" y1="24" y2="200" />
         {[0.25, 0.5, 0.75, 1].map((value) => (
