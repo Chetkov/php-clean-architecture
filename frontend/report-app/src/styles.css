@@ -317,10 +317,14 @@ meter {
 
 .chart-zone.pain {
   fill: #f7e7e7;
+  stroke: #e7b8b8;
+  stroke-width: 1;
 }
 
 .chart-zone.uselessness {
   fill: #edf0f7;
+  stroke: #c9d1e2;
+  stroke-width: 1;
 }
 
 .zone-label {

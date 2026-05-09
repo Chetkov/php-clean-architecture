@@ -534,10 +534,10 @@ function AIMatrix({ components, selectedComponentId, onSelectComponent, t }) {
     <section className="panel chart-panel">
       <h2>{t('aiMatrix')}</h2>
       <svg viewBox="0 0 360 240" role="img" aria-label={t('aiMatrix')}>
-        <rect className="chart-zone pain" height="68" width="108" x="40" y="132" />
-        <rect className="chart-zone uselessness" height="68" width="108" x="212" y="24" />
-        <text className="zone-label pain" x="52" y="150">{t('zoneOfPain')}</text>
-        <text className="zone-label uselessness" textAnchor="end" x="308" y="45">{t('zoneOfUselessness')}</text>
+        <path className="chart-zone pain" d="M40 200 L40 122 A78 78 0 0 1 118 200 Z" />
+        <path className="chart-zone uselessness" d="M320 24 L320 102 A78 78 0 0 1 242 24 Z" />
+        <text className="zone-label pain" x="52" y="175">{t('zoneOfPain')}</text>
+        <text className="zone-label uselessness" textAnchor="end" x="306" y="48">{t('zoneOfUselessness')}</text>
         <line className="chart-grid strong" x1="40" x2="320" y1="200" y2="200" />
         <line className="chart-grid strong" x1="40" x2="40" y1="24" y2="200" />
         {[0.25, 0.5, 0.75, 1].map((value) => (
