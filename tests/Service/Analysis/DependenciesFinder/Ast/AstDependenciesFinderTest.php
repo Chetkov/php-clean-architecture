@@ -84,6 +84,8 @@ final class AstDependenciesFinderTest extends TestCase
             TraitDependency::class,
             UnionDependency::class,
             VarDependency::class,
+            'object',
+            'string',
         ], $dependencies);
     }
 
@@ -111,6 +113,7 @@ final class AstDependenciesFinderTest extends TestCase
             Php85ConstantExpressionDependency::class,
             Php85FinalPromotedDependency::class,
             Php85PipeDependency::class,
+            'object',
         ], $dependencies);
     }
 

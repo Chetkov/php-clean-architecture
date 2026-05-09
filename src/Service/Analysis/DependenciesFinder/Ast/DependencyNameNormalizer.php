@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\Ast;
 
-use Chetkov\PHPCleanArchitecture\Model\Type\TypePrimitive;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\ExclusionChecker;
 
 /**
@@ -31,7 +30,6 @@ class DependencyNameNormalizer
             $dependency === ''
             || ExclusionChecker::isExclusion($dependency)
             || in_array($dependency, self::BUILT_IN_ATTRIBUTES, true)
-            || TypePrimitive::isThisType(strtolower($dependency))
         ) {
             return null;
         }
