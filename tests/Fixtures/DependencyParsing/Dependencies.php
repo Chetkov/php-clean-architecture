@@ -2,43 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing;
-
-class ServiceDependency
-{
-}
-
-class FactoryDependency
-{
-}
-
-class StaticDependency
-{
-    public static function touch(): void
-    {
-    }
-}
-
-class InstanceofDependency
-{
-}
-
-class DocBlockDependency
-{
-}
-
-class ParamDependency
-{
-}
-
-class ReturnDependency
-{
-}
-
-class ThrowsDependency extends \Exception
-{
-}
-
-class VarDependency
-{
-}
+require_once __DIR__ . '/ServiceDependency.php';
+require_once __DIR__ . '/FactoryDependency.php';
+require_once __DIR__ . '/StaticDependency.php';
+require_once __DIR__ . '/InstanceofDependency.php';
+require_once __DIR__ . '/DocBlockDependency.php';
+require_once __DIR__ . '/ParamDependency.php';
+require_once __DIR__ . '/ReturnDependency.php';
+require_once __DIR__ . '/ThrowsDependency.php';
+require_once __DIR__ . '/VarDependency.php';
