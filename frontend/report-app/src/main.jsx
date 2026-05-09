@@ -449,6 +449,13 @@ function App() {
           </div>
         </header>
 
+        <section className="overview-grid" aria-label={t('overview')}>
+          <MetricPanel component={selectedComponent} t={t} />
+          <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
+          <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
+          <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />
+        </section>
+
         <section className="workbench">
           <div className="workbench-main">
             <nav className="tabs" aria-label={t('reportView')}>
@@ -493,13 +500,6 @@ function App() {
           <aside className="unit-inspector">
             <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
           </aside>
-        </section>
-
-        <section className="overview-grid" aria-label={t('overview')}>
-          <MetricPanel component={selectedComponent} t={t} />
-          <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
-          <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
-          <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />
         </section>
 
         <details className="component-map">
