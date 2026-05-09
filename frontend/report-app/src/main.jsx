@@ -63,6 +63,7 @@ const dictionaries = {
     clearSelection: 'Clear',
     componentFilterSearch: 'Search components',
     componentFilterSelected: 'selected',
+    copy: 'Copy',
     dependencyOverview: 'Dependency map',
     filtered: 'filtered',
     noUnitSelected: 'Select a unit to inspect its dependencies',
@@ -155,6 +156,7 @@ const dictionaries = {
     clearSelection: 'Сбросить',
     componentFilterSearch: 'Поиск компонентов',
     componentFilterSelected: 'выбрано',
+    copy: 'Копировать',
     dependencyOverview: 'Карта зависимостей',
     filtered: 'отфильтровано',
     noUnitSelected: 'Выберите юнит, чтобы посмотреть его зависимости',
@@ -176,7 +178,7 @@ const dictionaries = {
     dependencyGraphLabel: 'Граф зависимостей компонентов',
     dependencyUnavailable: 'Зависимость не найдена',
     distance: 'Расстояние',
-    distanceRanking: 'Distance from Main Sequence',
+    distanceRanking: 'Расстояние до главной последовательности',
     external: 'внешняя',
     flipDependencyDirection: 'Перевернуть направление зависимостей',
     fromComponents: 'Исходные компоненты',
@@ -247,6 +249,7 @@ const dictionaries = {
     clearSelection: '清除',
     componentFilterSearch: '搜索组件',
     componentFilterSelected: '已选',
+    copy: '复制',
     dependencyOverview: '依赖地图',
     filtered: '已筛选',
     noUnitSelected: '选择一个单元以查看其依赖',
@@ -268,7 +271,7 @@ const dictionaries = {
     dependencyGraphLabel: '组件依赖图',
     dependencyUnavailable: '未知依赖',
     distance: '距离',
-    distanceRanking: 'Distance from Main Sequence',
+    distanceRanking: '到主序列的距离',
     external: '外部',
     flipDependencyDirection: '切换依赖方向',
     fromComponents: '来源组件',
@@ -1394,12 +1397,12 @@ function UnitDetail({ unit, indexed, onSelectUnit, t }) {
       </header>
       <div className="unit-detail-grid">
         <div className="unit-facts">
-          <Fact label={t('type')} value={unit.type} />
-          <Fact label={t('api')} value={unit.isPublic ? t('publicApi') : t('privateApi')} />
-          <Fact label={t('abstract')} value={unit.isAbstract === null ? t('notApplicable') : unit.isAbstract ? t('yes') : t('no')} />
-          <Fact label={t('instability')} value={formatRate(unit.metrics.instability)} />
-          <Fact label={t('primitive')} value={formatRate(unit.metrics.primitiveness)} />
-          <Fact label={t('path')} value={unit.path ?? t('unknown')} copyable />
+          <Fact label={t('type')} value={unit.type} t={t} />
+          <Fact label={t('api')} value={unit.isPublic ? t('publicApi') : t('privateApi')} t={t} />
+          <Fact label={t('abstract')} value={unit.isAbstract === null ? t('notApplicable') : unit.isAbstract ? t('yes') : t('no')} t={t} />
+          <Fact label={t('instability')} value={formatRate(unit.metrics.instability)} t={t} />
+          <Fact label={t('primitive')} value={formatRate(unit.metrics.primitiveness)} t={t} />
+          <Fact label={t('path')} value={unit.path ?? t('unknown')} copyable t={t} />
         </div>
         <UnitGraph unit={unit} incoming={incoming} outgoing={outgoing} indexed={indexed} onSelectUnit={onSelectUnit} t={t} />
       </div>
@@ -1411,7 +1414,7 @@ function UnitDetail({ unit, indexed, onSelectUnit, t }) {
   );
 }
 
-function Fact({ label, value, copyable = false }) {
+function Fact({ label, value, copyable = false, t }) {
   const copyValue = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(String(value));
@@ -1423,7 +1426,7 @@ function Fact({ label, value, copyable = false }) {
       <span>{label}</span>
       <strong title={String(value)}>{value}</strong>
       {copyable && (
-        <button aria-label="Copy" onClick={copyValue} type="button">
+        <button aria-label={t('copy')} onClick={copyValue} type="button">
           <Copy size={14} />
         </button>
       )}
