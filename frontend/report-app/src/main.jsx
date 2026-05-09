@@ -8,10 +8,13 @@ import {
   CheckCircle2,
   CircleDot,
   ChevronsLeftRight,
+  Copy,
   FileCode2,
   GitBranch,
   Layers3,
   Search,
+  SlidersHorizontal,
+  X,
   ShieldAlert,
 } from 'lucide-react';
 import './styles.css';
@@ -54,10 +57,18 @@ const dictionaries = {
     componentGraph: 'Component graph',
     componentMetrics: 'Component metrics',
     components: 'Components',
+    clearSearch: 'Clear search',
+    dependencyOverview: 'Dependency map',
+    filtered: 'filtered',
+    noUnitSelected: 'Select a unit to inspect its dependencies',
+    openSearch: 'Search',
+    overview: 'Overview',
+    showMore: 'Show more',
     zoneOfPain: 'Painful',
     zoneOfUselessness: 'Useless',
     dependencyDirection: 'Direction',
     dependencyFiles: 'files',
+    dependencyFilters: 'Dependency filters',
     dependencyGroups: 'Dependency groups',
     dependencyBlockedViolation: '"{from}" must not depend on "{to}".',
     dependencyPrivateViolation: '"{from}" uses non-public "{to}".',
@@ -131,10 +142,18 @@ const dictionaries = {
     componentGraph: 'Граф компонентов',
     componentMetrics: 'Метрики компонента',
     components: 'Компоненты',
+    clearSearch: 'Очистить поиск',
+    dependencyOverview: 'Карта зависимостей',
+    filtered: 'отфильтровано',
+    noUnitSelected: 'Выберите юнит, чтобы посмотреть его зависимости',
+    openSearch: 'Поиск',
+    overview: 'Обзор',
+    showMore: 'Показать еще',
     zoneOfPain: 'Больно',
     zoneOfUselessness: 'Бесполезно',
     dependencyDirection: 'Направление',
     dependencyFiles: 'файлов',
+    dependencyFilters: 'Фильтры зависимостей',
     dependencyGroups: 'Группы зависимостей',
     dependencyBlockedViolation: '"{from}" не должен зависеть от "{to}".',
     dependencyPrivateViolation: '"{from}" использует непубличный "{to}".',
@@ -208,10 +227,18 @@ const dictionaries = {
     componentGraph: '组件图',
     componentMetrics: '组件指标',
     components: '组件',
+    clearSearch: '清除搜索',
+    dependencyOverview: '依赖地图',
+    filtered: '已筛选',
+    noUnitSelected: '选择一个单元以查看其依赖',
+    openSearch: '搜索',
+    overview: '概览',
+    showMore: '显示更多',
     zoneOfPain: '痛点',
     zoneOfUselessness: '无用',
     dependencyDirection: '方向',
     dependencyFiles: '文件',
+    dependencyFilters: '依赖筛选',
     dependencyGroups: '依赖分组',
     dependencyBlockedViolation: '"{from}" 不应依赖 "{to}"。',
     dependencyPrivateViolation: '"{from}" 使用了非公开的 "{to}"。',
@@ -315,6 +342,7 @@ function App() {
   }, [initialReport]);
 
   const indexed = useMemo(() => buildIndex(report), [report]);
+  const dependencyComponentOptions = useMemo(() => buildDependencyComponentOptions(report, indexed), [indexed, report]);
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? report.components[0] ?? null;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
   const selectedComponentUnits = useMemo(
@@ -333,18 +361,18 @@ function App() {
   );
 
   useEffect(() => {
-    if (selectedUnit && selectedUnit.componentId === selectedComponent?.id) {
+    if (selectedUnit && selectedUnit.componentId === selectedComponent?.id && matchesUnit(selectedUnit, query)) {
       return;
     }
 
-    setSelectedUnitId(selectedComponentUnits[0]?.id ?? null);
-  }, [selectedComponent?.id, selectedComponentUnits, selectedUnit]);
+    setSelectedUnitId(visibleUnits[0]?.id ?? null);
+  }, [query, selectedComponent?.id, selectedUnit, visibleUnits]);
 
   useEffect(() => {
-    const componentIds = report.components.map((component) => component.id);
+    const componentIds = dependencyComponentOptions.map((component) => component.id);
     setSourceComponentIds(componentIds);
     setTargetComponentIds(componentIds);
-  }, [report.components]);
+  }, [dependencyComponentOptions]);
 
   const selectComponent = (componentId) => {
     setSelectedComponentId(componentId);
@@ -355,6 +383,7 @@ function App() {
     if (unit) {
       setSelectedComponentId(unit.componentId);
     }
+    setQuery('');
     setSelectedUnitId(unitId);
     setView('units');
   };
@@ -407,61 +436,79 @@ function App() {
               <input
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t('searchPlaceholder')}
+                aria-label={t('openSearch')}
                 type="search"
                 value={query}
               />
+              {query && (
+                <button aria-label={t('clearSearch')} onClick={() => setQuery('')} type="button">
+                  <X size={16} />
+                </button>
+              )}
             </label>
           </div>
         </header>
 
-        <section className="overview-grid">
+        <section className="workbench">
+          <div className="workbench-main">
+            <nav className="tabs" aria-label={t('reportView')}>
+              <button className={view === 'violations' ? 'active' : ''} onClick={() => setView('violations')} type="button">
+                <ShieldAlert size={16} />
+                {t('violations')}
+                <strong>{visibleViolations.length}</strong>
+              </button>
+              <button className={view === 'units' ? 'active' : ''} onClick={() => setView('units')} type="button">
+                <FileCode2 size={16} />
+                {t('units')}
+                <strong>{visibleUnits.length}</strong>
+              </button>
+              <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')} type="button">
+                <ArrowRight size={16} />
+                {t('dependencies')}
+                <strong>{report.dependencies.length}</strong>
+              </button>
+            </nav>
+
+            {view === 'violations' && <ViolationsTable violations={visibleViolations} indexed={indexed} onSelectUnit={selectUnit} t={t} />}
+            {view === 'units' && <UnitsTable units={visibleUnits} selectedUnitId={selectedUnit?.id} onSelectUnit={selectUnit} t={t} />}
+            {view === 'dependencies' && (
+              <DependencyExplorer
+                components={dependencyComponentOptions}
+                dependencies={report.dependencies}
+                direction={dependencyDirection}
+                indexed={indexed}
+                onDirectionChange={setDependencyDirection}
+                onSelectUnit={selectUnit}
+                onSourceComponentsChange={setSourceComponentIds}
+                onStatusChange={setDependencyStatus}
+                onTargetComponentsChange={setTargetComponentIds}
+                query={query}
+                sourceComponentIds={sourceComponentIds}
+                status={dependencyStatus}
+                t={t}
+                targetComponentIds={targetComponentIds}
+              />
+            )}
+          </div>
+          <aside className="unit-inspector">
+            <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
+          </aside>
+        </section>
+
+        <section className="overview-grid" aria-label={t('overview')}>
           <MetricPanel component={selectedComponent} t={t} />
           <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
           <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
-        </section>
-
-        <section className="relationship-grid">
-          <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} t={t} />
           <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />
         </section>
 
-        <nav className="tabs" aria-label={t('reportView')}>
-          <button className={view === 'violations' ? 'active' : ''} onClick={() => setView('violations')} type="button">
-            <ShieldAlert size={16} />
-            {t('violations')}
-          </button>
-          <button className={view === 'units' ? 'active' : ''} onClick={() => setView('units')} type="button">
-            <FileCode2 size={16} />
-            {t('units')}
-          </button>
-          <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')} type="button">
-            <ArrowRight size={16} />
-            {t('dependencies')}
-          </button>
-        </nav>
-
-        {view === 'violations' && <ViolationsTable violations={visibleViolations} indexed={indexed} onSelectUnit={selectUnit} t={t} />}
-        {view === 'units' && <UnitsTable units={visibleUnits} selectedUnitId={selectedUnit?.id} onSelectUnit={selectUnit} t={t} />}
-        {view === 'dependencies' && (
-          <DependencyExplorer
-            components={report.components}
-            dependencies={report.dependencies}
-            direction={dependencyDirection}
-            indexed={indexed}
-            onDirectionChange={setDependencyDirection}
-            onSelectUnit={selectUnit}
-            onSourceComponentsChange={setSourceComponentIds}
-            onStatusChange={setDependencyStatus}
-            onTargetComponentsChange={setTargetComponentIds}
-            query={query}
-            sourceComponentIds={sourceComponentIds}
-            status={dependencyStatus}
-            t={t}
-            targetComponentIds={targetComponentIds}
-          />
-        )}
-
-        <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
+        <details className="component-map">
+          <summary>
+            <GitBranch size={16} />
+            <span>{t('dependencyOverview')}</span>
+          </summary>
+          <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} t={t} />
+        </details>
       </section>
     </main>
   );
@@ -743,7 +790,7 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit, t }) {
             <tr className={unit.id === selectedUnitId ? 'selected-row' : ''} key={unit.id} onClick={() => onSelectUnit(unit.id)}>
               <td>
                 <strong>{unit.shortName}</strong>
-                <span>{unit.name}</span>
+                <span title={unit.name}>{compactNamespace(unit.name, unit.shortName)}</span>
               </td>
               <td>{unit.type}</td>
               <td>{unit.isPublic ? t('publicApi') : t('privateApi')}</td>
@@ -802,41 +849,48 @@ function DependencyExplorer({
 
   return (
     <section className="dependency-explorer">
-      <div className="dependency-filter-panel">
-        <div className="filter-block">
-          <span>{t('dependencyDirection')}</span>
-          <button className="flip-button" onClick={() => onDirectionChange(direction === 'source' ? 'target' : 'source')} type="button">
-            <ChevronsLeftRight size={16} />
-            {direction === 'source' ? t('sourceFirst') : t('targetFirst')}
-          </button>
+      <details className="dependency-filter-panel">
+        <summary>
+          <SlidersHorizontal size={16} />
+          <span>{t('dependencyFilters')}</span>
+          <small>{filteredDependencies.length} {t('dependencyRows')}</small>
+        </summary>
+        <div className="dependency-filter-grid">
+          <div className="filter-block">
+            <span>{t('dependencyDirection')}</span>
+            <button className="flip-button" onClick={() => onDirectionChange(direction === 'source' ? 'target' : 'source')} type="button">
+              <ChevronsLeftRight size={16} />
+              {direction === 'source' ? t('sourceFirst') : t('targetFirst')}
+            </button>
+          </div>
+          <SegmentedFilter
+            label={t('dependencyStatus')}
+            onChange={onStatusChange}
+            options={[
+              ['all', t('all')],
+              ['blocked', t('blocked')],
+              ['allowed-state', t('allowedState')],
+              ['internal', t('internal')],
+              ['allowed', t('allowed')],
+            ]}
+            value={status}
+          />
+          <ComponentFilter
+            components={components}
+            label={t('fromComponents')}
+            onChange={onSourceComponentsChange}
+            selectedIds={sourceComponentIds}
+            t={t}
+          />
+          <ComponentFilter
+            components={components}
+            label={t('toComponents')}
+            onChange={onTargetComponentsChange}
+            selectedIds={targetComponentIds}
+            t={t}
+          />
         </div>
-        <SegmentedFilter
-          label={t('dependencyStatus')}
-          onChange={onStatusChange}
-          options={[
-            ['all', t('all')],
-            ['blocked', t('blocked')],
-            ['allowed-state', t('allowedState')],
-            ['internal', t('internal')],
-            ['allowed', t('allowed')],
-          ]}
-          value={status}
-        />
-        <ComponentFilter
-          components={components}
-          label={t('fromComponents')}
-          onChange={onSourceComponentsChange}
-          selectedIds={sourceComponentIds}
-          t={t}
-        />
-        <ComponentFilter
-          components={components}
-          label={t('toComponents')}
-          onChange={onTargetComponentsChange}
-          selectedIds={targetComponentIds}
-          t={t}
-        />
-      </div>
+      </details>
 
       <header className="dependency-explorer-header">
         <div>
@@ -979,6 +1033,10 @@ function DependencyTreeNode({ node, onSelectUnit, t }) {
 }
 
 function DependencyFileGroup({ file, onSelectUnit, t }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleDependencies = expanded ? file.dependencies : file.dependencies.slice(0, 12);
+  const hiddenCount = file.dependencies.length - visibleDependencies.length;
+
   return (
     <details className="dependency-file-group">
       <summary>
@@ -987,7 +1045,7 @@ function DependencyFileGroup({ file, onSelectUnit, t }) {
         <small>{file.dependencies.length} {t('dependencyRows')}</small>
       </summary>
       <div className="dependency-file-rows">
-        {file.dependencies.map((dependency) => (
+        {visibleDependencies.map((dependency) => (
           <article className={dependencyStatusKey(dependency) === 'blocked' ? 'dependency-row problem' : 'dependency-row'} key={dependency.id}>
             <CircleDot size={16} />
             <div>
@@ -997,6 +1055,11 @@ function DependencyFileGroup({ file, onSelectUnit, t }) {
             <mark>{dependencyStatusLabel(dependency, t)}</mark>
           </article>
         ))}
+        {hiddenCount > 0 && (
+          <button className="show-more-row" onClick={() => setExpanded(true)} type="button">
+            {t('showMore')} · {hiddenCount}
+          </button>
+        )}
       </div>
     </details>
   );
@@ -1009,16 +1072,16 @@ function DependencyEndpoints({ dependency, onSelectUnit, t }) {
 
   return (
     <span className="dependency-endpoints">
-      <button onClick={() => onSelectUnit(dependency.fromUnitId)} type="button">{dependency.fromUnitName}</button>
+      <button onClick={() => onSelectUnit(dependency.fromUnitId)} title={dependency.fromUnitName} type="button">{shortUnitName(dependency.fromUnitName)}</button>
       <span>{'->'}</span>
-      <button onClick={() => onSelectUnit(dependency.toUnitId)} type="button">{dependency.toUnitName}</button>
+      <button onClick={() => onSelectUnit(dependency.toUnitId)} title={dependency.toUnitName} type="button">{shortUnitName(dependency.toUnitName)}</button>
     </span>
   );
 }
 
 function UnitDetail({ unit, indexed, onSelectUnit, t }) {
   if (!unit) {
-    return null;
+    return <EmptyState icon={<FileCode2 size={22} />} title={t('noUnitSelected')} />;
   }
 
   const outgoing = indexed.dependenciesByFromUnit.get(unit.id) ?? [];
@@ -1030,7 +1093,7 @@ function UnitDetail({ unit, indexed, onSelectUnit, t }) {
         <div>
           <span>{t('selectedUnit')}</span>
           <h2>{unit.shortName}</h2>
-          <p>{unit.name}</p>
+          <p title={unit.name}>{compactNamespace(unit.name, unit.shortName)}</p>
         </div>
         <mark>{unit.componentName}</mark>
       </header>
@@ -1041,7 +1104,7 @@ function UnitDetail({ unit, indexed, onSelectUnit, t }) {
           <Fact label={t('abstract')} value={unit.isAbstract === null ? t('notApplicable') : unit.isAbstract ? t('yes') : t('no')} />
           <Fact label={t('instability')} value={formatRate(unit.metrics.instability)} />
           <Fact label={t('primitive')} value={formatRate(unit.metrics.primitiveness)} />
-          <Fact label={t('path')} value={unit.path ?? t('unknown')} />
+          <Fact label={t('path')} value={unit.path ?? t('unknown')} copyable />
         </div>
         <UnitGraph unit={unit} incoming={incoming} outgoing={outgoing} indexed={indexed} onSelectUnit={onSelectUnit} t={t} />
       </div>
@@ -1053,11 +1116,22 @@ function UnitDetail({ unit, indexed, onSelectUnit, t }) {
   );
 }
 
-function Fact({ label, value }) {
+function Fact({ label, value, copyable = false }) {
+  const copyValue = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(String(value));
+    }
+  };
+
   return (
     <div className="fact">
       <span>{label}</span>
-      <strong>{value}</strong>
+      <strong title={String(value)}>{value}</strong>
+      {copyable && (
+        <button aria-label="Copy" onClick={copyValue} type="button">
+          <Copy size={14} />
+        </button>
+      )}
     </div>
   );
 }
@@ -1097,20 +1171,29 @@ function UnitGraph({ unit, incoming, outgoing, indexed, onSelectUnit, t }) {
 }
 
 function UnitDependencyList({ title, dependencies, side, onSelectUnit, t }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleDependencies = expanded ? dependencies : dependencies.slice(0, 12);
+  const hiddenCount = dependencies.length - visibleDependencies.length;
+
   return (
     <div className="unit-dependency-list">
       <h3>{title}</h3>
-      {dependencies.length ? dependencies.map((dependency) => {
+      {dependencies.length ? visibleDependencies.map((dependency) => {
         const unitId = side === 'to' ? dependency.toUnitId : dependency.fromUnitId;
         const unitName = side === 'to' ? dependency.toUnitName : dependency.fromUnitName;
         const componentName = side === 'to' ? dependency.toComponentName : dependency.fromComponentName;
         return (
           <button className="unit-dependency-row" key={dependency.id} onClick={() => onSelectUnit(unitId)} type="button">
-            <span>{unitName}</span>
+            <span title={unitName}>{shortUnitName(unitName)}</span>
             <mark>{componentName}</mark>
           </button>
         );
       }) : <p>{t('noDependencies')}</p>}
+      {hiddenCount > 0 && (
+        <button className="show-more-row" onClick={() => setExpanded(true)} type="button">
+          {t('showMore')} · {hiddenCount}
+        </button>
+      )}
     </div>
   );
 }
@@ -1203,6 +1286,33 @@ function pushMapList(map, key, item) {
   map.set(key, list);
 }
 
+function buildDependencyComponentOptions(report, indexed) {
+  const components = new Map(report.components.map((component) => [component.id, component]));
+
+  report.dependencies.forEach((dependency) => {
+    if (!components.has(dependency.fromComponentId)) {
+      components.set(dependency.fromComponentId, {
+        id: dependency.fromComponentId,
+        name: dependency.fromComponentName,
+        metrics: { units: 0 },
+      });
+    }
+    if (!components.has(dependency.toComponentId)) {
+      components.set(dependency.toComponentId, {
+        id: dependency.toComponentId,
+        name: dependency.toComponentName,
+        metrics: { units: 0 },
+      });
+    }
+  });
+
+  return [...components.values()].sort((left, right) => {
+    const leftKnown = indexed.componentsById.has(left.id) ? 0 : 1;
+    const rightKnown = indexed.componentsById.has(right.id) ? 0 : 1;
+    return leftKnown - rightKnown || left.name.localeCompare(right.name);
+  });
+}
+
 function componentGraph(component, report, indexed) {
   if (!report.components.length) {
     return { nodes: [], edges: [] };
@@ -1275,6 +1385,17 @@ function matchesViolation(violation, indexed, query) {
 
 function normalizeQuery(query) {
   return query.trim().toLowerCase();
+}
+
+function shortUnitName(name) {
+  const parts = name.split('\\');
+  return parts[parts.length - 1] || name;
+}
+
+function compactNamespace(name, shortName) {
+  const suffix = shortName || shortUnitName(name);
+  const namespace = name.endsWith(suffix) ? name.slice(0, -suffix.length).replace(/\\$/, '') : '';
+  return namespace ? namespace : name;
 }
 
 function readEmbeddedReport() {
