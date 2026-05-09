@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Model;
 
-use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
+use Chetkov\PHPCleanArchitecture\Model\Helper\PathHelper;
 
 /**
  * Class Path

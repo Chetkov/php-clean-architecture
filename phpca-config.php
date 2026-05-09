@@ -135,6 +135,9 @@ return [
                     'namespace' => 'Chetkov\PHPCleanArchitecture\Infrastructure',
                 ],
             ],
+            'restrictions' => [
+                'allowed_dependencies' => ['infrastructure', 'service', 'model', 'twig/twig'],
+            ],
         ],
         'entry-points' => [
             'name' => 'entry-points',

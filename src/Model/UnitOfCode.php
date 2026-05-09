@@ -10,7 +10,7 @@ use Chetkov\PHPCleanArchitecture\Model\Type\TypeInterface;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypePrimitive;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypeTrait;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypeUndefined;
-use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
+use Chetkov\PHPCleanArchitecture\Model\Helper\PathHelper;
 
 /**
  * Class UnitOfCode

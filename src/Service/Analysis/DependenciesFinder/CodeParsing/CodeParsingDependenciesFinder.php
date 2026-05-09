@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing;
 
-use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
+use Chetkov\PHPCleanArchitecture\Model\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Service\Helper\StringHelper;
 use Chetkov\PHPCleanArchitecture\Model\Type\TypePrimitive;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
