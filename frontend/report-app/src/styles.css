@@ -91,6 +91,16 @@ td span,
   background: #18222c;
 }
 
+.summary-label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.summary-label svg {
+  flex: 0 0 auto;
+}
+
 .summary-item strong {
   display: block;
   margin-top: 8px;

@@ -422,8 +422,10 @@ function SummaryGrid({ summary, t }) {
     <div className="summary-grid">
       {items.map(([label, value, icon]) => (
         <div className="summary-item" key={label}>
-          {icon}
-          <span>{label}</span>
+          <div className="summary-label">
+            {icon}
+            <span>{label}</span>
+          </div>
           <strong>{value}</strong>
         </div>
       ))}
