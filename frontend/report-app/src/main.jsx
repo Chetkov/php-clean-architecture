@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   AlertTriangle,
   ArrowRight,
   Box,
   CheckCircle2,
   CircleDot,
+  ChevronsLeftRight,
   FileCode2,
   GitBranch,
   Layers3,
@@ -44,6 +46,7 @@ const dictionaries = {
     architectureReport: 'Architecture report',
     abstract: 'Abstract',
     abstractness: 'Abstractness',
+    all: 'All',
     allowed: 'allowed',
     allowedState: 'allowed state',
     blocked: 'blocked',
@@ -51,13 +54,21 @@ const dictionaries = {
     componentGraph: 'Component graph',
     componentMetrics: 'Component metrics',
     components: 'Components',
+    dependencyDirection: 'Direction',
+    dependencyFiles: 'files',
+    dependencyGroups: 'Dependency groups',
     dependencyBlockedViolation: '"{from}" must not depend on "{to}".',
     dependencyPrivateViolation: '"{from}" uses non-public "{to}".',
+    dependencyRows: 'dependencies',
+    dependencyStatus: 'Status',
+    directoryTree: 'Directory tree',
     dependencies: 'Dependencies',
     dependencyGraphLabel: 'Component dependency graph',
     dependencyUnavailable: 'Unknown dependency',
     distance: 'Distance',
     distanceRanking: 'Distance ranking',
+    flipDependencyDirection: 'Flip dependency direction',
+    fromComponents: 'From components',
     generatedReport: 'Generated report',
     incoming: 'Incoming',
     incomingDependencies: 'Incoming dependencies',
@@ -91,7 +102,11 @@ const dictionaries = {
     reportLanguage: 'Report language',
     reportView: 'Report view',
     searchPlaceholder: 'Search components, units, paths or dependencies',
+    selectAll: 'Select all',
     selectedUnit: 'Selected unit',
+    sourceFirst: 'Source first',
+    targetFirst: 'Target first',
+    toComponents: 'To components',
     type: 'Type',
     unitDependencyGraphLabel: 'Selected unit dependency graph',
     unitsCount: 'units',
@@ -106,6 +121,7 @@ const dictionaries = {
     architectureReport: 'Архитектурный отчет',
     abstract: 'Абстрактный',
     abstractness: 'Абстрактность',
+    all: 'Все',
     allowed: 'разрешено',
     allowedState: 'разрешенное состояние',
     blocked: 'запрещено',
@@ -113,13 +129,21 @@ const dictionaries = {
     componentGraph: 'Граф компонентов',
     componentMetrics: 'Метрики компонента',
     components: 'Компоненты',
+    dependencyDirection: 'Направление',
+    dependencyFiles: 'файлов',
+    dependencyGroups: 'Группы зависимостей',
     dependencyBlockedViolation: '"{from}" не должен зависеть от "{to}".',
     dependencyPrivateViolation: '"{from}" использует непубличный "{to}".',
+    dependencyRows: 'зависимостей',
+    dependencyStatus: 'Статус',
+    directoryTree: 'Дерево директорий',
     dependencies: 'Зависимости',
     dependencyGraphLabel: 'Граф зависимостей компонентов',
     dependencyUnavailable: 'Зависимость не найдена',
     distance: 'Расстояние',
     distanceRanking: 'Рейтинг расстояния',
+    flipDependencyDirection: 'Перевернуть направление зависимостей',
+    fromComponents: 'Исходные компоненты',
     generatedReport: 'Сформированный отчет',
     incoming: 'Входящие',
     incomingDependencies: 'Входящие зависимости',
@@ -153,7 +177,11 @@ const dictionaries = {
     reportLanguage: 'Язык отчета',
     reportView: 'Раздел отчета',
     searchPlaceholder: 'Поиск по компонентам, юнитам, путям или зависимостям',
+    selectAll: 'Выбрать все',
     selectedUnit: 'Выбранный юнит',
+    sourceFirst: 'Сначала кто зависит',
+    targetFirst: 'Сначала от чего зависят',
+    toComponents: 'Целевые компоненты',
     type: 'Тип',
     unitDependencyGraphLabel: 'Граф зависимостей выбранного юнита',
     unitsCount: 'юнитов',
@@ -168,6 +196,7 @@ const dictionaries = {
     architectureReport: '架构报告',
     abstract: '抽象',
     abstractness: '抽象度',
+    all: '全部',
     allowed: '允许',
     allowedState: '允许状态',
     blocked: '阻止',
@@ -175,13 +204,21 @@ const dictionaries = {
     componentGraph: '组件图',
     componentMetrics: '组件指标',
     components: '组件',
+    dependencyDirection: '方向',
+    dependencyFiles: '文件',
+    dependencyGroups: '依赖分组',
     dependencyBlockedViolation: '"{from}" 不应依赖 "{to}"。',
     dependencyPrivateViolation: '"{from}" 使用了非公开的 "{to}"。',
+    dependencyRows: '依赖',
+    dependencyStatus: '状态',
+    directoryTree: '目录树',
     dependencies: '依赖',
     dependencyGraphLabel: '组件依赖图',
     dependencyUnavailable: '未知依赖',
     distance: '距离',
     distanceRanking: '距离排名',
+    flipDependencyDirection: '切换依赖方向',
+    fromComponents: '来源组件',
     generatedReport: '已生成报告',
     incoming: '传入',
     incomingDependencies: '传入依赖',
@@ -215,7 +252,11 @@ const dictionaries = {
     reportLanguage: '报告语言',
     reportView: '报告视图',
     searchPlaceholder: '搜索组件、单元、路径或依赖',
+    selectAll: '全选',
     selectedUnit: '选中的单元',
+    sourceFirst: '来源优先',
+    targetFirst: '目标优先',
+    toComponents: '目标组件',
     type: '类型',
     unitDependencyGraphLabel: '选中单元的依赖图',
     unitsCount: '单元',
@@ -232,6 +273,10 @@ function App() {
   const [selectedComponentId, setSelectedComponentId] = useState(null);
   const [selectedUnitId, setSelectedUnitId] = useState(null);
   const [view, setView] = useState('violations');
+  const [dependencyDirection, setDependencyDirection] = useState('source');
+  const [dependencyStatus, setDependencyStatus] = useState('all');
+  const [sourceComponentIds, setSourceComponentIds] = useState([]);
+  const [targetComponentIds, setTargetComponentIds] = useState([]);
   const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'en');
   const t = useMemo(() => (key) => dictionaries[locale]?.[key] ?? dictionaries.en[key] ?? key, [locale]);
 
@@ -274,12 +319,6 @@ function App() {
       .filter((violation) => matchesViolation(violation, indexed, query)),
     [indexed, query, report.violations, selectedComponent],
   );
-  const visibleDependencies = useMemo(
-    () => report.dependencies
-      .filter((dependency) => !selectedComponent || dependency.fromComponentId === selectedComponent.id || dependency.toComponentId === selectedComponent.id)
-      .filter((dependency) => matchesDependency(dependency, query)),
-    [query, report.dependencies, selectedComponent],
-  );
 
   useEffect(() => {
     if (selectedUnit && selectedUnit.componentId === selectedComponent?.id) {
@@ -288,6 +327,12 @@ function App() {
 
     setSelectedUnitId(selectedComponentUnits[0]?.id ?? null);
   }, [selectedComponent?.id, selectedComponentUnits, selectedUnit]);
+
+  useEffect(() => {
+    const componentIds = report.components.map((component) => component.id);
+    setSourceComponentIds(componentIds);
+    setTargetComponentIds(componentIds);
+  }, [report.components]);
 
   const selectComponent = (componentId) => {
     setSelectedComponentId(componentId);
@@ -385,7 +430,24 @@ function App() {
 
         {view === 'violations' && <ViolationsTable violations={visibleViolations} indexed={indexed} onSelectUnit={selectUnit} t={t} />}
         {view === 'units' && <UnitsTable units={visibleUnits} selectedUnitId={selectedUnit?.id} onSelectUnit={selectUnit} t={t} />}
-        {view === 'dependencies' && <DependenciesTable dependencies={visibleDependencies} onSelectUnit={selectUnit} t={t} />}
+        {view === 'dependencies' && (
+          <DependencyExplorer
+            components={report.components}
+            dependencies={report.dependencies}
+            direction={dependencyDirection}
+            indexed={indexed}
+            onDirectionChange={setDependencyDirection}
+            onSelectUnit={selectUnit}
+            onSourceComponentsChange={setSourceComponentIds}
+            onStatusChange={setDependencyStatus}
+            onTargetComponentsChange={setTargetComponentIds}
+            query={query}
+            sourceComponentIds={sourceComponentIds}
+            status={dependencyStatus}
+            t={t}
+            targetComponentIds={targetComponentIds}
+          />
+        )}
 
         <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
       </section>
@@ -679,24 +741,248 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit, t }) {
   );
 }
 
-function DependenciesTable({ dependencies, onSelectUnit, t }) {
+function DependencyExplorer({
+  components,
+  dependencies,
+  direction,
+  indexed,
+  onDirectionChange,
+  onSelectUnit,
+  onSourceComponentsChange,
+  onStatusChange,
+  onTargetComponentsChange,
+  query,
+  sourceComponentIds,
+  status,
+  t,
+  targetComponentIds,
+}) {
+  const filteredDependencies = useMemo(() => {
+    const sourceIds = new Set(sourceComponentIds);
+    const targetIds = new Set(targetComponentIds);
+
+    return dependencies
+      .filter((dependency) => sourceIds.has(dependency.fromComponentId))
+      .filter((dependency) => targetIds.has(dependency.toComponentId))
+      .filter((dependency) => status === 'all' || dependencyStatusKey(dependency) === status)
+      .filter((dependency) => matchesDependencyWithUnits(dependency, indexed, query));
+  }, [dependencies, indexed, query, sourceComponentIds, status, targetComponentIds]);
+
+  const groups = useMemo(
+    () => buildDependencyGroups(filteredDependencies, indexed, direction),
+    [direction, filteredDependencies, indexed],
+  );
+  const listRef = useRef(null);
+  const rowVirtualizer = useVirtualizer({
+    count: groups.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 92,
+    overscan: 8,
+  });
+
   if (!dependencies.length) {
     return <EmptyState icon={<ArrowRight size={22} />} title={t('noMatchingDependencies')} />;
   }
 
   return (
-    <section className="table-shell">
-      {dependencies.map((dependency) => (
-        <article className={dependency.isComponentAllowed && dependency.isTargetPublic ? 'dependency-row' : 'dependency-row problem'} key={dependency.id}>
-          <CircleDot size={16} />
-          <div>
-            <strong>{dependency.fromComponentName} {'->'} {dependency.toComponentName}</strong>
-            <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
+    <section className="dependency-explorer">
+      <div className="dependency-filter-panel">
+        <div className="filter-block">
+          <span>{t('dependencyDirection')}</span>
+          <button className="flip-button" onClick={() => onDirectionChange(direction === 'source' ? 'target' : 'source')} type="button">
+            <ChevronsLeftRight size={16} />
+            {direction === 'source' ? t('sourceFirst') : t('targetFirst')}
+          </button>
+        </div>
+        <SegmentedFilter
+          label={t('dependencyStatus')}
+          onChange={onStatusChange}
+          options={[
+            ['all', t('all')],
+            ['blocked', t('blocked')],
+            ['allowed-state', t('allowedState')],
+            ['internal', t('internal')],
+            ['allowed', t('allowed')],
+          ]}
+          value={status}
+        />
+        <ComponentFilter
+          components={components}
+          label={t('fromComponents')}
+          onChange={onSourceComponentsChange}
+          selectedIds={sourceComponentIds}
+          t={t}
+        />
+        <ComponentFilter
+          components={components}
+          label={t('toComponents')}
+          onChange={onTargetComponentsChange}
+          selectedIds={targetComponentIds}
+          t={t}
+        />
+      </div>
+
+      <header className="dependency-explorer-header">
+        <div>
+          <h2>{t('dependencyGroups')}</h2>
+          <span>{groups.length} {t('dependencyGroups')} · {filteredDependencies.length} {t('dependencyRows')}</span>
+        </div>
+      </header>
+
+      {groups.length ? (
+        <div className="dependency-group-list" ref={listRef}>
+          <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const group = groups[virtualRow.index];
+              return (
+                <div
+                  data-index={virtualRow.index}
+                  key={group.id}
+                  ref={rowVirtualizer.measureElement}
+                  style={{
+                    left: 0,
+                    position: 'absolute',
+                    top: 0,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    width: '100%',
+                  }}
+                >
+                  <DependencyGroupCard group={group} onSelectUnit={onSelectUnit} t={t} />
+                </div>
+              );
+            })}
           </div>
-          <mark>{dependencyStatusLabel(dependency, t)}</mark>
-        </article>
-      ))}
+        </div>
+      ) : (
+        <EmptyState icon={<ArrowRight size={22} />} title={t('noMatchingDependencies')} />
+      )}
     </section>
+  );
+}
+
+function SegmentedFilter({ label, options, value, onChange }) {
+  return (
+    <div className="filter-block">
+      <span>{label}</span>
+      <div className="segmented-filter">
+        {options.map(([optionValue, optionLabel]) => (
+          <button className={optionValue === value ? 'active' : ''} key={optionValue} onClick={() => onChange(optionValue)} type="button">
+            {optionLabel}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ComponentFilter({ components, label, selectedIds, onChange, t }) {
+  const selected = new Set(selectedIds);
+  const allSelected = selectedIds.length === components.length;
+
+  const toggleComponent = (componentId) => {
+    const next = new Set(selected);
+    if (next.has(componentId)) {
+      next.delete(componentId);
+    } else {
+      next.add(componentId);
+    }
+    onChange([...next]);
+  };
+
+  return (
+    <div className="filter-block component-filter">
+      <div className="filter-heading">
+        <span>{label}</span>
+        <button onClick={() => onChange(components.map((component) => component.id))} type="button">{t('selectAll')}</button>
+      </div>
+      <div className="component-filter-options">
+        {components.map((component) => (
+          <label className={selected.has(component.id) ? 'checked' : ''} key={component.id}>
+            <input checked={selected.has(component.id)} onChange={() => toggleComponent(component.id)} type="checkbox" />
+            <span>{component.name}</span>
+          </label>
+        ))}
+      </div>
+      <small>{selectedIds.length}/{components.length} {allSelected ? t('all') : ''}</small>
+    </div>
+  );
+}
+
+function DependencyGroupCard({ group, onSelectUnit, t }) {
+  return (
+    <details className="dependency-group-card">
+      <summary>
+        <CircleDot size={16} />
+        <div>
+          <strong>{group.primaryName} {'->'} {group.secondaryName}</strong>
+          <span>{group.dependencies.length} {t('dependencyRows')} · {group.fileCount} {t('dependencyFiles')}</span>
+        </div>
+        <DependencyGroupBadges group={group} t={t} />
+      </summary>
+      <div className="dependency-tree">
+        <h3>{t('directoryTree')}</h3>
+        {group.tree.children.map((node) => (
+          <DependencyTreeNode key={node.id} node={node} onSelectUnit={onSelectUnit} t={t} />
+        ))}
+        {group.tree.files.map((file) => (
+          <DependencyFileGroup file={file} key={file.id} onSelectUnit={onSelectUnit} t={t} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function DependencyGroupBadges({ group, t }) {
+  return (
+    <div className="dependency-badges">
+      {group.counts.blocked > 0 && <mark className="problem">{group.counts.blocked} {t('blocked')}</mark>}
+      {group.counts.allowedState > 0 && <mark>{group.counts.allowedState} {t('allowedState')}</mark>}
+      {group.counts.internal > 0 && <mark>{group.counts.internal} {t('internal')}</mark>}
+      {group.counts.allowed > 0 && <mark>{group.counts.allowed} {t('allowed')}</mark>}
+    </div>
+  );
+}
+
+function DependencyTreeNode({ node, onSelectUnit, t }) {
+  return (
+    <details className="dependency-tree-node">
+      <summary>
+        <span>{node.name}</span>
+        <small>{node.count} {t('dependencyRows')}</small>
+      </summary>
+      <div className="dependency-tree-children">
+        {node.children.map((child) => (
+          <DependencyTreeNode key={child.id} node={child} onSelectUnit={onSelectUnit} t={t} />
+        ))}
+        {node.files.map((file) => (
+          <DependencyFileGroup file={file} key={file.id} onSelectUnit={onSelectUnit} t={t} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function DependencyFileGroup({ file, onSelectUnit, t }) {
+  return (
+    <details className="dependency-file-group">
+      <summary>
+        <FileCode2 size={15} />
+        <span>{file.name}</span>
+        <small>{file.dependencies.length} {t('dependencyRows')}</small>
+      </summary>
+      <div className="dependency-file-rows">
+        {file.dependencies.map((dependency) => (
+          <article className={dependencyStatusKey(dependency) === 'blocked' ? 'dependency-row problem' : 'dependency-row'} key={dependency.id}>
+            <CircleDot size={16} />
+            <div>
+              <strong>{dependency.fromComponentName} {'->'} {dependency.toComponentName}</strong>
+              <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
+            </div>
+            <mark>{dependencyStatusLabel(dependency, t)}</mark>
+          </article>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -945,6 +1231,20 @@ function matchesDependency(dependency, query) {
     || dependency.toComponentName.toLowerCase().includes(normalizedQuery);
 }
 
+function matchesDependencyWithUnits(dependency, indexed, query) {
+  const normalizedQuery = normalizeQuery(query);
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const fromUnit = indexed.unitsById.get(dependency.fromUnitId);
+  const toUnit = indexed.unitsById.get(dependency.toUnitId);
+
+  return matchesDependency(dependency, query)
+    || (fromUnit?.path ?? '').toLowerCase().includes(normalizedQuery)
+    || (toUnit?.path ?? '').toLowerCase().includes(normalizedQuery);
+}
+
 function matchesViolation(violation, indexed, query) {
   const normalizedQuery = normalizeQuery(query);
   if (!normalizedQuery) {
@@ -982,12 +1282,22 @@ function dependencyStatusLabel(dependency, t) {
   return dependency.isComponentAllowed && dependency.isTargetPublic ? t('allowed') : t('blocked');
 }
 
+function dependencyStatusKey(dependency) {
+  if (dependency.isInternal) {
+    return 'internal';
+  }
+  if (dependency.isAllowedState) {
+    return 'allowed-state';
+  }
+  return dependency.isComponentAllowed && dependency.isTargetPublic ? 'allowed' : 'blocked';
+}
+
 function violationMessage(violation, dependency, t) {
   if (!dependency) {
     return violation.message;
   }
 
-  const key = violation.type === 'private-unit-dependency'
+  const key = violation.type === 'private-unit'
     ? 'dependencyPrivateViolation'
     : 'dependencyBlockedViolation';
 
@@ -999,6 +1309,118 @@ function violationMessage(violation, dependency, t) {
 
 function interpolate(template, values) {
   return template.replace(/\{(\w+)}/g, (_, key) => values[key] ?? '');
+}
+
+function buildDependencyGroups(dependencies, indexed, direction) {
+  const groups = new Map();
+
+  for (const dependency of dependencies) {
+    const primaryComponentId = direction === 'source' ? dependency.fromComponentId : dependency.toComponentId;
+    const secondaryComponentId = direction === 'source' ? dependency.toComponentId : dependency.fromComponentId;
+    const primaryComponentName = direction === 'source' ? dependency.fromComponentName : dependency.toComponentName;
+    const secondaryComponentName = direction === 'source' ? dependency.toComponentName : dependency.fromComponentName;
+    const key = `${primaryComponentId}->${secondaryComponentId}`;
+    const group = groups.get(key) ?? {
+      id: key,
+      primaryName: primaryComponentName,
+      secondaryName: secondaryComponentName,
+      dependencies: [],
+      counts: { allowed: 0, allowedState: 0, blocked: 0, internal: 0 },
+      tree: createDirectoryNode('root', 'root'),
+      filePaths: new Set(),
+    };
+
+    group.dependencies.push(dependency);
+    incrementDependencyCount(group.counts, dependencyStatusKey(dependency));
+    addDependencyToTree(group.tree, dependency, indexed, direction);
+    group.filePaths.add(primaryUnitPath(dependency, indexed, direction) ?? 'unknown');
+    groups.set(key, group);
+  }
+
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      fileCount: group.filePaths.size,
+      tree: sortDirectoryNode(group.tree),
+    }))
+    .sort((left, right) => right.dependencies.length - left.dependencies.length || left.primaryName.localeCompare(right.primaryName));
+}
+
+function incrementDependencyCount(counts, status) {
+  if (status === 'allowed-state') {
+    counts.allowedState += 1;
+    return;
+  }
+  counts[status] += 1;
+}
+
+function addDependencyToTree(root, dependency, indexed, direction) {
+  const path = primaryUnitPath(dependency, indexed, direction);
+  const parts = normalizePathParts(path);
+  const fileName = parts.pop() ?? 'unknown';
+  let node = root;
+  node.count += 1;
+
+  for (const part of parts) {
+    let child = node.childMap.get(part);
+    if (!child) {
+      child = createDirectoryNode(`${node.id}/${part}`, part);
+      node.childMap.set(part, child);
+      node.children.push(child);
+    }
+    child.count += 1;
+    node = child;
+  }
+
+  let file = node.fileMap.get(fileName);
+  if (!file) {
+    file = { id: `${node.id}/${fileName}`, name: fileName, dependencies: [] };
+    node.fileMap.set(fileName, file);
+    node.files.push(file);
+  }
+  file.dependencies.push(dependency);
+}
+
+function createDirectoryNode(id, name) {
+  return {
+    id,
+    name,
+    count: 0,
+    children: [],
+    files: [],
+    childMap: new Map(),
+    fileMap: new Map(),
+  };
+}
+
+function sortDirectoryNode(node) {
+  return {
+    ...node,
+    children: node.children
+      .map(sortDirectoryNode)
+      .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name)),
+    files: [...node.files].sort((left, right) => right.dependencies.length - left.dependencies.length || left.name.localeCompare(right.name)),
+  };
+}
+
+function primaryUnitPath(dependency, indexed, direction) {
+  const unitId = direction === 'source' ? dependency.fromUnitId : dependency.toUnitId;
+  return indexed.unitsById.get(unitId)?.path;
+}
+
+function normalizePathParts(path) {
+  const parts = (path ?? 'unknown')
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter(Boolean);
+  const anchors = ['src', 'app', 'lib', 'tests', 'bin', 'vendor'];
+  const anchorIndex = parts.findIndex((part) => anchors.includes(part));
+
+  if (anchorIndex >= 0) {
+    return parts.slice(anchorIndex);
+  }
+
+  return parts.slice(Math.max(0, parts.length - 4));
 }
 
 function truncate(value, maxLength) {

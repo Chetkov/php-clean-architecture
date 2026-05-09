@@ -595,6 +595,217 @@ tr:last-child td {
   text-decoration: underline;
 }
 
+.dependency-explorer {
+  display: grid;
+  gap: 12px;
+}
+
+.dependency-filter-panel,
+.dependency-explorer-header,
+.dependency-group-card {
+  border: 1px solid #d4dde4;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.dependency-filter-panel {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(280px, 1fr) 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+
+.filter-block {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+
+.filter-block > span,
+.filter-heading span,
+.dependency-explorer-header span,
+.dependency-group-card summary span,
+.dependency-tree-node small,
+.dependency-file-group small {
+  color: #5d6c78;
+  font-size: 12px;
+}
+
+.flip-button,
+.segmented-filter button,
+.component-filter label,
+.filter-heading button {
+  min-height: 32px;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.flip-button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.segmented-filter,
+.component-filter-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.segmented-filter button {
+  padding: 0 9px;
+  color: #40515d;
+  cursor: pointer;
+}
+
+.segmented-filter button.active {
+  color: #ffffff;
+  border-color: #24485f;
+  background: #24485f;
+}
+
+.filter-heading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-heading button {
+  min-height: 26px;
+  padding: 0 8px;
+  color: #325a75;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.component-filter label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.component-filter label.checked {
+  border-color: #9ab3c5;
+  background: #f4f8fa;
+}
+
+.component-filter input {
+  width: 14px;
+  height: 14px;
+}
+
+.component-filter small {
+  color: #71808d;
+}
+
+.dependency-explorer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.dependency-explorer-header h2 {
+  margin: 0 0 3px;
+  color: #263540;
+  font-size: 15px;
+}
+
+.dependency-group-list {
+  height: min(720px, 65vh);
+  overflow: auto;
+  contain: strict;
+}
+
+.dependency-group-card {
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.dependency-group-card summary {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 74px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.dependency-group-card summary strong,
+.dependency-file-group summary span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.dependency-badges {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+mark.problem {
+  color: #8f3034;
+  background: #f6dddd;
+}
+
+.dependency-tree {
+  display: grid;
+  gap: 6px;
+  padding: 0 14px 14px 48px;
+}
+
+.dependency-tree h3 {
+  margin: 0 0 4px;
+  color: #526270;
+  font-size: 13px;
+}
+
+.dependency-tree-node,
+.dependency-file-group {
+  border-left: 2px solid #e1e8ee;
+  padding-left: 10px;
+}
+
+.dependency-tree-node summary,
+.dependency-file-group summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 30px;
+  cursor: pointer;
+}
+
+.dependency-tree-node summary span,
+.dependency-file-group summary span {
+  color: #263540;
+  font-weight: 700;
+}
+
+.dependency-tree-children,
+.dependency-file-rows {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 8px 10px;
+}
+
+.dependency-file-rows {
+  border: 1px solid #e4eaf0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
 mark {
   padding: 4px 8px;
   color: #31414d;
@@ -729,7 +940,8 @@ mark {
   .overview-grid,
   .relationship-grid,
   .unit-detail-grid,
-  .unit-dependency-grid {
+  .unit-dependency-grid,
+  .dependency-filter-panel {
     grid-template-columns: 1fr;
   }
 }
@@ -767,8 +979,18 @@ mark {
   }
 
   .issue-row,
-  .dependency-row {
+  .dependency-row,
+  .dependency-group-card summary {
     grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  .dependency-badges {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+
+  .dependency-tree {
+    padding-left: 18px;
   }
 
   mark {
