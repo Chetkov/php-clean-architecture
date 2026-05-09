@@ -7,17 +7,14 @@ use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\ComponentR
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\ReportBuildingEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\ReportRenderingEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report\UnitOfCodeReportRenderedEventListener;
-use Chetkov\PHPCleanArchitecture\Infrastructure\Render\TwigToTemplateRendererInterfaceAdapter;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\AnalysisEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\ComponentAnalysisEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\FileAnalyzedEventListener;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\Ast\AstDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\DependenciesFinderInterface;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ReportRenderingService;
+use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportRenderingService;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
-use Twig\Environment;
-use Twig\Loader\FilesystemLoader;
 
 return [
     // Директория в которую будут складываться файлы отчета
@@ -125,7 +122,7 @@ return [
                 ],
             ],
             'restrictions' => [
-                'allowed_dependencies' => ['infrastructure', 'service', 'model', 'twig/twig'],
+                'allowed_dependencies' => ['infrastructure', 'service', 'model'],
             ],
         ],
         'entry-points' => [
@@ -166,10 +163,7 @@ return [
         },
         //Фабрика, собирающая сервис рендеринга отчетов
         'report_rendering_service' => static function (EventManagerInterface $eventManager): ReportRenderingServiceInterface {
-            $templatesLoader = new FilesystemLoader(ReportRenderingService::templatesPath());
-            $twigRenderer = new Environment($templatesLoader);
-            $twigAdapter = new TwigToTemplateRendererInterfaceAdapter($twigRenderer);
-            return new ReportRenderingService($eventManager, $twigAdapter);
+            return new ReportRenderingService($eventManager);
         },
         //Фабрика, собирающая и настраивающая EventManager
         'event_manager' => static function (): EventManagerInterface {

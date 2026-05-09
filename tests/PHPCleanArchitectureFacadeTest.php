@@ -6,6 +6,8 @@ namespace Chetkov\PHPCleanArchitecture\Tests;
 
 use Chetkov\PHPCleanArchitecture\PHPCleanArchitectureFacade;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\Ast\AstDependenciesFinder;
+use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
+use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportRenderingService;
 use Chetkov\PHPCleanArchitecture\Tests\Support\NullEventManager;
 use Chetkov\PHPCleanArchitecture\Tests\Support\NullReportRenderingService;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -91,6 +93,46 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         unlink($storage);
     }
 
+    #[RunInSeparateProcess]
+    public function testGenerateReportCreatesSpaReportWithJsonData(): void
+    {
+        $reportPath = sys_get_temp_dir() . '/phpca-spa-report-' . bin2hex(random_bytes(8));
+        $config = $this->createConfig([
+            'component-a' => [
+                'allowed_dependencies' => ['component-a'],
+            ],
+            'component-b' => [
+                'private_elements' => [__DIR__ . '/Fixtures/Project/ComponentB/Internal'],
+            ],
+        ]);
+        $config['reports_dir'] = $reportPath;
+        $config['factories']['report_rendering_service'] = static function (
+            EventManagerInterface $eventManager
+        ): ReportRenderingService {
+            return new ReportRenderingService($eventManager);
+        };
+
+        $facade = new PHPCleanArchitectureFacade($config);
+        $facade->generateReport($reportPath);
+
+        self::assertFileExists($reportPath . '/index.html');
+        self::assertFileExists($reportPath . '/report.json');
+
+        $reportData = json_decode((string) file_get_contents($reportPath . '/report.json'), true);
+        self::assertIsArray($reportData);
+        self::assertSame(1, $reportData['schemaVersion']);
+        self::assertSame(2, $reportData['summary']['components']);
+        self::assertGreaterThanOrEqual(3, $reportData['summary']['units']);
+        self::assertGreaterThanOrEqual(1, $reportData['summary']['dependencies']);
+        self::assertGreaterThanOrEqual(1, $reportData['summary']['activeViolations']);
+        self::assertNotEmpty($reportData['components']);
+        self::assertNotEmpty($reportData['units']);
+        self::assertNotEmpty($reportData['dependencies']);
+        self::assertNotEmpty($reportData['violations']);
+
+        $this->removeDirectory($reportPath);
+    }
+
     /**
      * @param array<string, array<string, array<string>>> $restrictions
      * @param string|null $allowedStateStorage
@@ -149,5 +191,19 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
                 },
             ],
         ];
+    }
+
+    private function removeDirectory(string $path): void
+    {
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $files = glob($path . '/*');
+        self::assertIsArray($files);
+        foreach ($files as $file) {
+            is_dir($file) ? $this->removeDirectory($file) : unlink($file);
+        }
+        rmdir($path);
     }
 }

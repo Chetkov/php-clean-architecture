@@ -4,6 +4,7 @@
 
     <file>bin</file>
     <file>src</file>
+    <exclude-pattern>src/Service/Report/SpaReport/Assets/*</exclude-pattern>
 
     <arg name="colors"/>
     <arg value="p"/>

@@ -43,6 +43,27 @@ final class BinScriptsTest extends TestCase
         self::assertStringContainsString('No errors!', $result['output']);
     }
 
+    public function testPhpcaBuildReportsCreatesSpaReport(): void
+    {
+        $reportPath = sys_get_temp_dir() . '/phpca-bin-report-' . bin2hex(random_bytes(8));
+        $result = $this->runCommand(
+            implode(' ', [
+                'PHPCA_REPORTS_DIR=' . escapeshellarg($reportPath),
+                escapeshellarg(PHP_BINARY),
+                escapeshellarg(dirname(__DIR__) . '/bin/phpca-build-reports'),
+                escapeshellarg(__DIR__ . '/Fixtures/Project/report-config.php'),
+            ]),
+            dirname(__DIR__)
+        );
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertStringContainsString('Report: ' . $reportPath . '/index.html', $result['output']);
+        self::assertFileExists($reportPath . '/index.html');
+        self::assertFileExists($reportPath . '/report.json');
+
+        $this->removeDirectory($reportPath);
+    }
+
     /**
      * @return array{exitCode: int, output: string}
      */
@@ -103,5 +124,19 @@ final class BinScriptsTest extends TestCase
         ));
 
         return $consumerRoot;
+    }
+
+    private function removeDirectory(string $path): void
+    {
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $files = glob($path . '/*');
+        self::assertIsArray($files);
+        foreach ($files as $file) {
+            is_dir($file) ? $this->removeDirectory($file) : unlink($file);
+        }
+        rmdir($path);
     }
 }

@@ -14,8 +14,8 @@ use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\ComponentAnalyzer;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingFinishedEvent;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingStartedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
 use Chetkov\PHPCleanArchitecture\Service\VendorBasedComponentsCreationService;
 

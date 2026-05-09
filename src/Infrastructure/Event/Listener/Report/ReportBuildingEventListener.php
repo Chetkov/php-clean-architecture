@@ -7,8 +7,8 @@ namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingFinishedEvent;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingStartedEvent;
 
 class ReportBuildingEventListener implements EventListenerInterface
 {

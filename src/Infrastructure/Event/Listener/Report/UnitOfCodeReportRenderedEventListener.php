@@ -8,9 +8,9 @@ use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Console\ProgressBar;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingStartedEvent;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ReportBuildingStartedEvent;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\UnitOfCodeReportRenderedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ComponentReportRenderingStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\UnitOfCodeReportRenderedEvent;
 
 class UnitOfCodeReportRenderedEventListener implements EventListenerInterface
 {

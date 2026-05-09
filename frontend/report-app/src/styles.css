@@ -1,0 +1,415 @@
+:root {
+  color: #172026;
+  background: #eef2f5;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  letter-spacing: 0;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 22px;
+  color: #f8fafc;
+  background: #111820;
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.brand strong,
+.title-block h1 {
+  display: block;
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.brand span,
+.title-block span,
+.summary-item span,
+td span,
+.issue-row span,
+.dependency-row span,
+.node-meta {
+  color: #71808d;
+  font-size: 12px;
+}
+
+.sidebar .brand span,
+.sidebar .summary-item span {
+  color: #a9b7c2;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.summary-item {
+  min-height: 88px;
+  padding: 12px;
+  border: 1px solid #293643;
+  border-radius: 8px;
+  background: #18222c;
+}
+
+.summary-item strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+}
+
+.component-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.component-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  color: #dbe5ec;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.component-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.component-row small {
+  color: #9eb0bd;
+}
+
+.component-row:hover,
+.component-row.selected {
+  border-color: #385164;
+  background: #1e2b36;
+}
+
+.status-icon.ok {
+  color: #55c68e;
+}
+
+.status-icon.warning {
+  color: #d39b31;
+}
+
+.status-icon.problem {
+  color: #e46666;
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: 24px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title-block h1 {
+  max-width: 60vw;
+  overflow-wrap: anywhere;
+  font-size: 28px;
+}
+
+.search-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: min(420px, 100%);
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.search-box input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+}
+
+.inspector-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.panel,
+.table-shell,
+.empty-state {
+  border: 1px solid #d4dde4;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.metrics-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.metric div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.metric span {
+  color: #5b6874;
+}
+
+meter {
+  display: block;
+  width: 100%;
+  height: 10px;
+}
+
+.graph-panel {
+  min-height: 280px;
+  overflow: hidden;
+}
+
+.graph-panel svg {
+  display: block;
+  width: 100%;
+  height: 280px;
+}
+
+.edge {
+  stroke: #7d91a0;
+  stroke-width: 2;
+}
+
+.edge.problem {
+  stroke: #cf5f63;
+}
+
+.edge-arrow {
+  fill: #7d91a0;
+}
+
+.edge-arrow.problem {
+  fill: #cf5f63;
+}
+
+.node circle {
+  fill: #edf4f7;
+  stroke: #9bb3c3;
+  stroke-width: 2;
+}
+
+.node.selected circle {
+  fill: #e9f7f0;
+  stroke: #2b9a66;
+}
+
+.node text {
+  fill: #172026;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tabs button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  color: #40515d;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  color: #ffffff;
+  border-color: #24485f;
+  background: #24485f;
+}
+
+.table-shell {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-spacing: 0;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid #e4eaf0;
+}
+
+th {
+  color: #5d6c78;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+td strong,
+td span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.issue-row,
+.dependency-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 66px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e4eaf0;
+}
+
+.issue-row:last-child,
+.dependency-row:last-child,
+tr:last-child td {
+  border-bottom: 0;
+}
+
+.issue-row svg,
+.dependency-row.problem svg {
+  color: #cf5f63;
+}
+
+.dependency-row svg {
+  color: #2b9a66;
+}
+
+.issue-row strong,
+.issue-row span,
+.dependency-row strong,
+.dependency-row span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+mark {
+  padding: 4px 8px;
+  color: #31414d;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #e9eef2;
+}
+
+.empty-state,
+.shell-message {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 28px;
+  color: #5d6c78;
+  text-align: center;
+}
+
+.empty-state strong {
+  color: #263540;
+}
+
+.shell-message {
+  min-height: 100vh;
+}
+
+.shell-message h1 {
+  margin: 14px 0 4px;
+}
+
+.shell-message p {
+  margin: 0;
+}
+
+@media (max-width: 920px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    max-height: none;
+  }
+
+  .inspector-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .title-block h1 {
+    max-width: 100%;
+  }
+
+  .issue-row,
+  .dependency-row {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  mark {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

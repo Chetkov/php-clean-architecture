@@ -41,9 +41,9 @@ closures/first-class callables and casts in constant expressions, attributes on 
 ```shell script
 vendor/bin/phpca-build-reports {?path/to/phpca-config.php}
 ```
-The report visualizes the current state of the project, visually displays the relationships between components, their strength, the remoteness of components from the main sequence, and also highlights unwanted dependencies and other architectural problems detected based on the config.
-![image](https://user-images.githubusercontent.com/12594577/134708940-f53dc72e-8664-4e57-a3a7-4f6bb4ec965c.png)
-![image](https://user-images.githubusercontent.com/12594577/134709361-fbe654bd-70f4-460c-a107-fb3956f064b0.png)
+The command creates a static SPA: `index.html`, JS/CSS assets, and `report.json` with the full model of components,
+units, external dependencies, metrics, and violations. The report works locally without external CDNs and includes a
+component graph, unit search, component filtering, and dedicated violation/dependency views.
 
 2. Check for CI.
 ```shell script
