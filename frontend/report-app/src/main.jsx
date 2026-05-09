@@ -1341,6 +1341,7 @@ function DependencyExplorer({
   targetComponents,
   targetComponentIds,
 }) {
+  const [openComponentFilter, setOpenComponentFilter] = useState(null);
   const filteredDependencies = useMemo(() => {
     const sourceIds = new Set(sourceComponentIds);
     const targetIds = new Set(targetComponentIds);
@@ -1409,15 +1410,23 @@ function DependencyExplorer({
           />
           <ComponentFilter
             components={sourceComponents}
+            id="source"
+            isOpen={openComponentFilter === 'source'}
             label={t('fromComponents')}
             onChange={onSourceComponentsChange}
+            onClose={() => setOpenComponentFilter((current) => (current === 'source' ? null : current))}
+            onOpen={() => setOpenComponentFilter('source')}
             selectedIds={sourceComponentIds}
             t={t}
           />
           <ComponentFilter
             components={targetComponents}
+            id="target"
+            isOpen={openComponentFilter === 'target'}
             label={t('toComponents')}
             onChange={onTargetComponentsChange}
+            onClose={() => setOpenComponentFilter((current) => (current === 'target' ? null : current))}
+            onOpen={() => setOpenComponentFilter('target')}
             selectedIds={targetComponentIds}
             t={t}
           />
@@ -1482,8 +1491,9 @@ function SegmentedFilter({ label, options, value, onChange }) {
   );
 }
 
-function ComponentFilter({ components, label, selectedIds, onChange, t }) {
+function ComponentFilter({ components, id, isOpen, label, selectedIds, onChange, onClose, onOpen, t }) {
   const [componentQuery, setComponentQuery] = useState('');
+  const inputRef = useRef(null);
   const selected = new Set(selectedIds);
   const allSelected = selectedIds.length === components.length;
   const normalizedQuery = componentQuery.trim().toLowerCase();
@@ -1507,21 +1517,43 @@ function ComponentFilter({ components, label, selectedIds, onChange, t }) {
     onChange([...next]);
   };
 
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => inputRef.current?.focus(), 0);
+    return () => window.clearTimeout(timer);
+  }, [isOpen]);
+
   return (
     <div className="filter-block component-filter">
       <span>{label}</span>
-      <details className="component-filter-menu">
-        <summary>
+      <div className="component-filter-menu">
+        <button
+          className="component-filter-trigger"
+          onClick={() => {
+            if (isOpen) {
+              onClose();
+              return;
+            }
+            onOpen();
+          }}
+          type="button"
+        >
           <span title={summary}>{summary}</span>
           <small>{selectedIds.length}/{components.length}</small>
-        </summary>
-        <div className="component-filter-popover">
+        </button>
+        {isOpen && (
+          <div className="component-filter-popover">
           <label className="component-filter-search">
             <Search size={14} />
             <input
-              aria-label={t('componentFilterSearch')}
+              aria-label={`${label}: ${t('componentFilterSearch')}`}
+              id={`component-filter-search-${id}`}
               onChange={(event) => setComponentQuery(event.target.value)}
               placeholder={t('componentFilterSearch')}
+              ref={inputRef}
               type="search"
               value={componentQuery}
             />
@@ -1541,7 +1573,8 @@ function ComponentFilter({ components, label, selectedIds, onChange, t }) {
             )}
           </div>
         </div>
-      </details>
+        )}
+      </div>
     </div>
   );
 }
