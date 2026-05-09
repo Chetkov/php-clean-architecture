@@ -17,11 +17,14 @@ class ReflectionDependenciesFinder implements DependenciesFinderInterface
      */
     public function find(UnitOfCode $unitOfCode): array
     {
+        if (!$this->canReflect($unitOfCode)) {
+            return [];
+        }
+
         try {
-            assert(class_exists($unitOfCode->name(), false)
-                || trait_exists($unitOfCode->name(), false)
-                || interface_exists($unitOfCode->name(), false));
-            $class = new \ReflectionClass($unitOfCode->name());
+            $unitOfCodeName = $unitOfCode->name();
+            /** @var class-string $unitOfCodeName */
+            $class = new \ReflectionClass($unitOfCodeName);
 
             $dependencies = [];
 
@@ -72,5 +75,16 @@ class ReflectionDependenciesFinder implements DependenciesFinderInterface
         return array_filter(array_unique($dependencies), static function (string $dependency) {
             return !ExclusionChecker::isExclusion($dependency);
         });
+    }
+
+    /**
+     * @param UnitOfCode $unitOfCode
+     * @return bool
+     */
+    private function canReflect(UnitOfCode $unitOfCode): bool
+    {
+        return class_exists($unitOfCode->name(), false)
+            || trait_exists($unitOfCode->name(), false)
+            || interface_exists($unitOfCode->name(), false);
     }
 }

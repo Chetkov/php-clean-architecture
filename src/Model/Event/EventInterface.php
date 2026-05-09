@@ -6,5 +6,4 @@ namespace Chetkov\PHPCleanArchitecture\Model\Event;
 
 interface EventInterface
 {
-
 }

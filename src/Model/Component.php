@@ -123,7 +123,8 @@ class Component
                         return true;
                     }
                 }
-                if ($unitOfCode->path() !== null
+                if (
+                    $unitOfCode->path() !== null
                     && !empty($path->path())
                     && stripos($unitOfCode->path(), $path->path()) === 0
                 ) {
@@ -134,7 +135,8 @@ class Component
         };
 
         foreach (self::$instances as $existingComponent) {
-            if ($isLocatedInOneOfPaths($unitOfCode, ...$existingComponent->rootPaths())
+            if (
+                $isLocatedInOneOfPaths($unitOfCode, ...$existingComponent->rootPaths())
                 && !$isLocatedInOneOfPaths($unitOfCode, ...$existingComponent->excludedPaths())
             ) {
                 return $existingComponent;
@@ -377,7 +379,8 @@ class Component
             $uniqueDependencyComponents = [];
             foreach ($this->unitsOfCode as $unitOfCode) {
                 foreach ($unitOfCode->outputDependencies() as $dependency) {
-                    if (!$dependency->belongToComponent($this)
+                    if (
+                        !$dependency->belongToComponent($this)
                         && !$dependency->belongToGlobalNamespace()
                         && !$dependency->isPrimitive()
                     ) {
@@ -522,7 +525,8 @@ class Component
                     }
                 }
                 foreach ($unitOfCode->outputDependencies() as $dependency) {
-                    if ($dependency->belongToComponent($this)
+                    if (
+                        $dependency->belongToComponent($this)
                         || $dependency->belongToGlobalNamespace()
                         || $dependency->isPrimitive()
                     ) {
@@ -580,7 +584,7 @@ class Component
             return 0;
         }
 
-        return round($sumPrimitivenessRates/$numOfUnitOfCode, 3);
+        return round($sumPrimitivenessRates / $numOfUnitOfCode, 3);
     }
 
     /**

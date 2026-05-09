@@ -60,7 +60,8 @@ class PHPCleanArchitectureFacade
 
         $allowedState = [];
         $commonExclusionsConfig = $config['exclusions'] ?? [];
-        if (!empty($commonExclusionsConfig['allowed_state']['enabled'])
+        if (
+            !empty($commonExclusionsConfig['allowed_state']['enabled'])
             && !empty($commonExclusionsConfig['allowed_state']['storage'])
             && file_exists($commonExclusionsConfig['allowed_state']['storage'])
         ) {
