@@ -9,6 +9,11 @@ If you haven’t read it yet, you can get acquainted with its key ideas on which
 composer require v.chetkov/php-clean-architecture
 ```
 
+## Compatibility
+
+The current major version supports PHP 8.3, 8.4, and 8.5. The CI matrix runs tests, PHPCS, PHPStan, and
+`phpca-check` on each of these versions.
+
 ## Configuration
 Next, copy the sample config to the root of the project
 ```shell script
@@ -26,6 +31,9 @@ and discovered symbols are assigned to the component by the configured root path
 For files without declared symbols, such as executable scripts, the analyzer keeps the previous fallback based on the root
 `namespace` and relative path. When `vendor_based_components` is enabled, Composer `psr-4`, `psr-0`, `classmap`, `files`,
 `autoload-dev`, and `exclude-from-classmap` metadata are used.
+
+PHP 8.5 syntax is supported at the AST parsing level: pipe operator, `clone()` with property changes, `#[NoDiscard]`,
+closures/first-class callables and casts in constant expressions, attributes on constants, and final promoted properties.
 
 ## Usage
 

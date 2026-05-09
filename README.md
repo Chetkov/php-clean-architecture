@@ -12,6 +12,11 @@ To continue in English go to [README.en](README-EN.md)
 composer require v.chetkov/php-clean-architecture --dev
 ```
 
+## Совместимость
+
+Текущая major-версия поддерживает PHP 8.3, 8.4 и 8.5. CI-матрица запускает тесты, PHPCS, PHPStan и
+`phpca-check` на каждой из этих версий.
+
 ## Конфигурация
 Далее копируем образец конфига в корень проекта
 ```shell script
@@ -30,6 +35,9 @@ cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config
 Если в файле нет объявленных symbols, например это executable script, используется прежний fallback по `namespace` root-а и
 относительному пути. При включенном `vendor_based_components` учитываются Composer `psr-4`, `psr-0`, `classmap`, `files`,
 `autoload-dev` и `exclude-from-classmap`.
+
+Синтаксис PHP 8.5 поддерживается на уровне AST-парсинга: pipe operator, `clone()` с изменением свойств, `#[NoDiscard]`,
+closures/first-class callables и casts в constant expressions, attributes on constants и final promoted properties.
 
 ## Использование
 

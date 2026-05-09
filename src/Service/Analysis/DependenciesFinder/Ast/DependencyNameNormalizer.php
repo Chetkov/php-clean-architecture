@@ -13,12 +13,24 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\ExclusionCh
  */
 class DependencyNameNormalizer
 {
+    private const BUILT_IN_ATTRIBUTES = [
+        'AllowDynamicProperties',
+        'Attribute',
+        'Deprecated',
+        'DelayedTargetValidation',
+        'NoDiscard',
+        'Override',
+        'ReturnTypeWillChange',
+        'SensitiveParameter',
+    ];
+
     public function normalize(string $dependency): ?string
     {
         $dependency = trim($dependency, '\\');
         if (
             $dependency === ''
             || ExclusionChecker::isExclusion($dependency)
+            || in_array($dependency, self::BUILT_IN_ATTRIBUTES, true)
             || TypePrimitive::isThisType(strtolower($dependency))
         ) {
             return null;

@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing;
+
+use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\Php85AttributeDependency as Php85Attribute;
+
+#[Php85Attribute(static fn(Php85ConstantExpressionDependency $dependency): Php85ConstantExpressionDependency => $dependency)]
+const PHP85_CONSTANT = (int) 0.3;
+
+#[\NoDiscard]
+function php85Pipeline(Php85PipeDependency $dependency): Php85PipeDependency
+{
+    return $dependency;
+}
+
+#[Php85Attribute(Php85ConstantExpressionDependency::class)]
+class Php85Subject
+{
+    public const CALLABLE_DEPENDENCY = Php85ConstantExpressionDependency::class;
+
+    public const FIRST_CLASS_CALLABLE = Php85ConstantExpressionDependency::class(...);
+
+    public function __construct(
+        public final Php85FinalPromotedDependency $finalPromotedDependency,
+    ) {
+    }
+
+    public function handle(Php85PipeDependency $pipeDependency, Php85CloneDependency $cloneDependency): object
+    {
+        $pipeResult = $pipeDependency
+            |> php85Pipeline(...)
+            |> Php85PipeDependency::class(...);
+
+        return clone($cloneDependency, [
+            'pipeResult' => $pipeResult,
+            'dependency' => new Php85CloneDependency(),
+        ]);
+    }
+}

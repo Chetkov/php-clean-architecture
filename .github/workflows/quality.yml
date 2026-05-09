@@ -1,0 +1,46 @@
+name: Quality
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.3'
+          - '8.4'
+          - '8.5'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          extensions: json, mbstring
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run tests
+        run: vendor/bin/phpunit --display-deprecations
+
+      - name: Run code style
+        run: vendor/bin/phpcs bin src tests
+
+      - name: Run static analysis
+        run: php -d memory_limit=512M vendor/bin/phpstan analyse -l 8 bin src tests --error-format=table
+
+      - name: Run architecture check
+        run: bin/phpca-check ./phpca-config.php
