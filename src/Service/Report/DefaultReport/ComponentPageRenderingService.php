@@ -21,7 +21,7 @@ class ComponentPageRenderingService
     /** @var TemplateRendererInterface */
     private $templateRenderer;
 
-    /** @var ObjectsGraphBuilder */
+    /** @var ObjectsGraphBuilder<Component> */
     private $componentsGraphBuilder;
 
     /** @var DependencyComponentExtractor */

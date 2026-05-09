@@ -6,7 +6,7 @@ namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
 /**
  * @template T
- * @implements \Iterator<\Iterator<mixed, T>>
+ * @implements \Iterator<mixed, T>
  */
 class CompositeCountableIterator implements \Iterator, \Countable
 {

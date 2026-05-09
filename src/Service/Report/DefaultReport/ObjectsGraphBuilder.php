@@ -7,13 +7,14 @@ namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport;
 /**
  * Class ObjectsGraphBuilder
  * @package Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport
+ * @template T of object
  */
 class ObjectsGraphBuilder
 {
-    /** @var array<mixed> */
+    /** @var array<string, T> */
     private $nodes;
 
-    /** @var array<array> */
+    /** @var array<string, array{from: T, to: T}> */
     private $edges;
 
     public function reset(): void
@@ -23,11 +24,10 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @param mixed $node
+     * @param T $node
      */
-    public function addNode($node): void
+    public function addNode(object $node): void
     {
-        $this->validate($node);
         $nodeUid = $this->makeNodeUid($node);
         if (!isset($this->nodes[$nodeUid])) {
             $this->nodes[$nodeUid] = $node;
@@ -35,10 +35,10 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @param mixed $from
-     * @param mixed $to
+     * @param T $from
+     * @param T $to
      */
-    public function addEdge($from, $to): void
+    public function addEdge(object $from, object $to): void
     {
         $this->addNode($from);
         $this->addNode($to);
@@ -53,7 +53,7 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @return array<mixed>
+     * @return array<T>
      */
     public function getNodes(): array
     {
@@ -61,7 +61,7 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @return array<array>
+     * @return array<array{from: T, to: T}>
      */
     public function getEdges(): array
     {
@@ -69,21 +69,10 @@ class ObjectsGraphBuilder
     }
 
     /**
-     * @param mixed $node
      * @return string
      */
-    private function makeNodeUid($node): string
+    private function makeNodeUid(object $node): string
     {
         return spl_object_hash($node);
-    }
-
-    /**
-     * @param mixed $node
-     */
-    private function validate($node): void
-    {
-        if (!is_object($node)) {
-            throw new \InvalidArgumentException('$node must be of type object!');
-        }
     }
 }

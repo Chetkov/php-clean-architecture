@@ -26,7 +26,7 @@ class ComponentsGraphExtractor
     }
 
     /**
-     * @param ObjectsGraphBuilder $graphBuilder
+     * @param ObjectsGraphBuilder<Component> $graphBuilder
      * @return array<string, mixed>
      */
     public function extract(ObjectsGraphBuilder $graphBuilder): array

@@ -69,7 +69,7 @@ class VendorBasedComponentsCreationService
     }
 
     /**
-     * @param array<array> $autoloadSection
+     * @param array<string, array<string, string|array<string>>|mixed> $autoloadSection
      * @param string $currentPath
      * @return array<Path>
      */

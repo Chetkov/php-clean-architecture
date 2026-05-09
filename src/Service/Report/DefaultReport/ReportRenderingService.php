@@ -51,8 +51,13 @@ class ReportRenderingService implements ReportRenderingServiceInterface
     {
         $this->eventManager->notify(new ReportRenderingStartedEvent());
 
-        $totalComponents = count($components);
-        foreach ($components as $componentPosition => $component) {
+        $enabledComponents = array_filter($components, static function (Component $component): bool {
+            return $component->isEnabledForAnalysis();
+        });
+        $totalComponents = count($enabledComponents);
+
+        $componentPosition = 0;
+        foreach ($enabledComponents as $component) {
             if (!$component->isEnabledForAnalysis()) {
                 continue;
             }
@@ -67,6 +72,7 @@ class ReportRenderingService implements ReportRenderingServiceInterface
 
             $this->componentPageRenderingService->render($reportPath, $component, ...$components);
             $this->eventManager->notify(new ComponentReportRenderingFinishedEvent($componentPosition, $totalComponents, $component));
+            $componentPosition++;
         }
 
         $this->indexPageRenderingService->render($reportPath, ...$components);
