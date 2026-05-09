@@ -631,6 +631,10 @@ marker#arrow-problem path {
   align-items: start;
 }
 
+.workbench.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .workbench-main,
 .unit-inspector {
   min-width: 0;

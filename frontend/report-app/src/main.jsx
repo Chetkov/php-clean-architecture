@@ -335,7 +335,7 @@ function App() {
       .then((data) => {
         setReport(data);
         setSelectedComponentId(data.components[0]?.id ?? null);
-        setSelectedUnitId(data.units[0]?.id ?? null);
+        setSelectedUnitId(null);
         setLoadingState('ready');
       })
       .catch(() => setLoadingState('failed'));
@@ -361,12 +361,14 @@ function App() {
   );
 
   useEffect(() => {
-    if (selectedUnit && selectedUnit.componentId === selectedComponent?.id && matchesUnit(selectedUnit, query)) {
+    if (!selectedUnit) {
       return;
     }
 
-    setSelectedUnitId(visibleUnits[0]?.id ?? null);
-  }, [query, selectedComponent?.id, selectedUnit, visibleUnits]);
+    if (selectedUnit.componentId !== selectedComponent?.id || !matchesUnit(selectedUnit, query)) {
+      setSelectedUnitId(null);
+    }
+  }, [query, selectedComponent?.id, selectedUnit]);
 
   useEffect(() => {
     const componentIds = dependencyComponentOptions.map((component) => component.id);
@@ -464,7 +466,7 @@ function App() {
           <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} t={t} />
         </details>
 
-        <section className="workbench">
+        <section className={view === 'units' ? 'workbench' : 'workbench single'}>
           <div className="workbench-main">
             <nav className="tabs" aria-label={t('reportView')}>
               <button className={view === 'violations' ? 'active' : ''} onClick={() => setView('violations')} type="button">
@@ -472,15 +474,15 @@ function App() {
                 {t('violations')}
                 <strong>{visibleViolations.length}</strong>
               </button>
-              <button className={view === 'units' ? 'active' : ''} onClick={() => setView('units')} type="button">
-                <FileCode2 size={16} />
-                {t('units')}
-                <strong>{visibleUnits.length}</strong>
-              </button>
               <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')} type="button">
                 <ArrowRight size={16} />
                 {t('dependencies')}
                 <strong>{report.dependencies.length}</strong>
+              </button>
+              <button className={view === 'units' ? 'active' : ''} onClick={() => setView('units')} type="button">
+                <FileCode2 size={16} />
+                {t('units')}
+                <strong>{visibleUnits.length}</strong>
               </button>
             </nav>
 
@@ -505,9 +507,11 @@ function App() {
               />
             )}
           </div>
-          <aside className="unit-inspector">
-            <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
-          </aside>
+          {view === 'units' && (
+            <aside className="unit-inspector">
+              <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
+            </aside>
+          )}
         </section>
       </section>
     </main>
