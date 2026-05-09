@@ -23,7 +23,7 @@ final class ReportDataBuilder
             foreach ($component->unitsOfCode() as $unitOfCode) {
                 $units[$this->unitId($unitOfCode)] = $this->unitData($unitOfCode);
                 foreach ($unitOfCode->outputDependencies() as $dependencyUnitOfCode) {
-                    if ($this->shouldSkipDependency($unitOfCode, $dependencyUnitOfCode)) {
+                    if ($this->shouldSkipDependency($dependencyUnitOfCode)) {
                         continue;
                     }
 
@@ -130,7 +130,7 @@ final class ReportDataBuilder
     }
 
     /**
-     * @return array{id: string, fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, fromUnitName: string, toUnitName: string, fromComponentName: string, toComponentName: string, isComponentAllowed: bool, isTargetPublic: bool, isAllowedState: bool}
+     * @return array{id: string, fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, fromUnitName: string, toUnitName: string, fromComponentName: string, toComponentName: string, isInternal: bool, isComponentAllowed: bool, isTargetPublic: bool, isAllowedState: bool}
      */
     private function dependencyData(UnitOfCode $unitOfCode, UnitOfCode $dependencyUnitOfCode): array
     {
@@ -147,6 +147,7 @@ final class ReportDataBuilder
             'toUnitName' => $dependencyUnitOfCode->name(),
             'fromComponentName' => $component->name(),
             'toComponentName' => $dependencyComponent->name(),
+            'isInternal' => $dependencyUnitOfCode->belongToComponent($component),
             'isComponentAllowed' => $component->isDependencyAllowed($dependencyComponent),
             'isTargetPublic' => $dependencyUnitOfCode->isAccessibleFromOutside(),
             'isAllowedState' => $unitOfCode->isDependencyInAllowedState($dependencyUnitOfCode),
@@ -213,10 +214,9 @@ final class ReportDataBuilder
         ];
     }
 
-    private function shouldSkipDependency(UnitOfCode $unitOfCode, UnitOfCode $dependencyUnitOfCode): bool
+    private function shouldSkipDependency(UnitOfCode $dependencyUnitOfCode): bool
     {
-        return $dependencyUnitOfCode->belongToComponent($unitOfCode->component())
-            || $dependencyUnitOfCode->belongToGlobalNamespace()
+        return $dependencyUnitOfCode->belongToGlobalNamespace()
             || $dependencyUnitOfCode->isPrimitive();
     }
 
