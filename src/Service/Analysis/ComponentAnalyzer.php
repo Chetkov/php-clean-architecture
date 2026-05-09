@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
-use Chetkov\PHPCleanArchitecture\Service\Helper\PathHelper;
+use Chetkov\PHPCleanArchitecture\Model\Helper\PathHelper;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\FileAnalyzedEvent;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
