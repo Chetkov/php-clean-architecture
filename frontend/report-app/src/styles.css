@@ -286,9 +286,14 @@ td span,
   background: #385164;
 }
 
+.search-shell {
+  position: relative;
+  flex: 1 1 420px;
+  width: 100%;
+}
+
 .search-box {
   display: flex;
-  flex: 1 1 420px;
   gap: 8px;
   align-items: center;
   width: 100%;
@@ -322,6 +327,87 @@ td span,
 
 .search-box button:hover {
   background: #edf2f5;
+}
+
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 50;
+  display: grid;
+  gap: 8px;
+  max-height: min(520px, 70vh);
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgba(24, 34, 44, 0.2);
+}
+
+.search-suggestions p,
+.search-suggestion-group h3 {
+  margin: 0;
+  color: #71808d;
+  font-size: 12px;
+}
+
+.search-suggestion-group {
+  display: grid;
+  gap: 4px;
+}
+
+.search-suggestion-group button {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  justify-content: stretch;
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: 8px;
+  color: #263540;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.search-suggestion-group button:hover,
+.search-suggestion-group button.active {
+  border-color: #9cb7c9;
+  background: #eef5f8;
+}
+
+.search-suggestion-group button > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.search-suggestion-group strong,
+.search-suggestion-group small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-suggestion-group small {
+  color: #5d6c78;
+}
+
+.search-suggestion-group mark {
+  color: inherit;
+  border-radius: 3px;
+  background: #ffe58a;
+}
+
+.focused-search-target {
+  outline: 2px solid #24485f;
+  outline-offset: 2px;
 }
 
 .overview-grid {

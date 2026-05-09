@@ -60,6 +60,7 @@ const dictionaries = {
     componentMetrics: 'Component metrics',
     components: 'Components',
     componentDependsOn: 'Depends on components',
+    componentResults: 'Components',
     clearSearch: 'Clear search',
     clearSelection: 'Clear',
     componentFilterSearch: 'Search components',
@@ -128,6 +129,8 @@ const dictionaries = {
     reportLanguage: 'Report language',
     reportView: 'Report view',
     searchPlaceholder: 'Search components, units, paths or dependencies',
+    searchResults: 'Search results',
+    noSearchResults: 'No matches',
     selectAll: 'Select all',
     selectedUnit: 'Selected unit',
     sourceFirst: 'Source first',
@@ -135,6 +138,9 @@ const dictionaries = {
     toComponents: 'To components',
     type: 'Type',
     unitDependencyGraphLabel: 'Selected unit dependency graph',
+    unitResults: 'Units',
+    dependencyResults: 'Dependencies',
+    violationResults: 'Issues',
     unitsCount: 'units',
     units: 'Units',
     violations: 'Violations',
@@ -156,6 +162,7 @@ const dictionaries = {
     componentMetrics: 'Метрики компонента',
     components: 'Компоненты',
     componentDependsOn: 'Зависит от компонентов',
+    componentResults: 'Компоненты',
     clearSearch: 'Очистить поиск',
     clearSelection: 'Сбросить',
     componentFilterSearch: 'Поиск компонентов',
@@ -224,6 +231,8 @@ const dictionaries = {
     reportLanguage: 'Язык отчета',
     reportView: 'Раздел отчета',
     searchPlaceholder: 'Поиск по компонентам, юнитам, путям или зависимостям',
+    searchResults: 'Результаты поиска',
+    noSearchResults: 'Ничего не найдено',
     selectAll: 'Выбрать все',
     selectedUnit: 'Выбранный юнит',
     sourceFirst: 'Сначала кто зависит',
@@ -231,6 +240,9 @@ const dictionaries = {
     toComponents: 'Целевые компоненты',
     type: 'Тип',
     unitDependencyGraphLabel: 'Граф зависимостей выбранного юнита',
+    unitResults: 'Юниты',
+    dependencyResults: 'Зависимости',
+    violationResults: 'Проблемы',
     unitsCount: 'юнитов',
     units: 'Юниты',
     violations: 'Нарушения',
@@ -252,6 +264,7 @@ const dictionaries = {
     componentMetrics: '组件指标',
     components: '组件',
     componentDependsOn: '依赖组件',
+    componentResults: '组件',
     clearSearch: '清除搜索',
     clearSelection: '清除',
     componentFilterSearch: '搜索组件',
@@ -320,6 +333,8 @@ const dictionaries = {
     reportLanguage: '报告语言',
     reportView: '报告视图',
     searchPlaceholder: '搜索组件、单元、路径或依赖',
+    searchResults: '搜索结果',
+    noSearchResults: '没有匹配项',
     selectAll: '全选',
     selectedUnit: '选中的单元',
     sourceFirst: '来源优先',
@@ -327,6 +342,9 @@ const dictionaries = {
     toComponents: '目标组件',
     type: '类型',
     unitDependencyGraphLabel: '选中单元的依赖图',
+    unitResults: '单元',
+    dependencyResults: '依赖',
+    violationResults: '问题',
     unitsCount: '单元',
     units: '单元',
     violations: '违规',
@@ -347,6 +365,9 @@ function App() {
   const [sourceComponentIds, setSourceComponentIds] = useState([]);
   const [targetComponentIds, setTargetComponentIds] = useState([]);
   const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'ru');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [activeSearchIndex, setActiveSearchIndex] = useState(0);
+  const [scrollTarget, setScrollTarget] = useState(null);
   const navigationReady = useRef(false);
   const applyingNavigation = useRef(false);
   const lastNavigationHash = useRef(null);
@@ -417,6 +438,32 @@ function App() {
     () => countComponentDependencyLinks(visibleDependencies),
     [visibleDependencies],
   );
+  const searchSuggestions = useMemo(
+    () => buildSearchSuggestions(query, report, indexed, t),
+    [indexed, query, report, t],
+  );
+  const flatSearchSuggestions = useMemo(
+    () => searchSuggestions.flatMap((group) => group.items),
+    [searchSuggestions],
+  );
+
+  useEffect(() => {
+    setActiveSearchIndex(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (!scrollTarget || scrollTarget.type === 'dependency') {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      document
+        .querySelector(`[data-search-target="${escapeCssAttribute(scrollTarget.id)}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [scrollTarget, view, visibleUnits, visibleViolations]);
 
   useEffect(() => {
     if (!selectedUnit) {
@@ -542,6 +589,73 @@ function App() {
     setSelectedUnitId(unitId);
     setView('units');
   };
+  const selectSearchResult = (result) => {
+    setSearchOpen(false);
+
+    if (result.type === 'component') {
+      setSelectedComponentId(result.componentId);
+      setSelectedUnitId(null);
+      setScrollTarget(null);
+      return;
+    }
+
+    if (result.type === 'unit') {
+      setSelectedComponentId(result.componentId);
+      setSelectedUnitId(result.unitId);
+      setView('units');
+      setScrollTarget({ type: 'unit', id: result.unitId });
+      return;
+    }
+
+    if (result.type === 'violation') {
+      setSelectedComponentId(result.componentId);
+      setSelectedUnitId(null);
+      setView('violations');
+      setScrollTarget({ type: 'violation', id: result.violationId });
+      return;
+    }
+
+    if (result.type === 'dependency') {
+      keepManualDependencyFilters.current = true;
+      setSelectedComponentId(result.fromComponentId);
+      setSelectedUnitId(null);
+      setSourceComponentIds([result.fromComponentId]);
+      setTargetComponentIds([result.toComponentId]);
+      setDependencyStatus('all');
+      setView('dependencies');
+      setScrollTarget({ type: 'dependency', id: result.dependencyId });
+    }
+  };
+  const handleSearchKeyDown = (event) => {
+    if (!flatSearchSuggestions.length) {
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setSearchOpen(true);
+      setActiveSearchIndex((index) => (index + 1) % flatSearchSuggestions.length);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setSearchOpen(true);
+      setActiveSearchIndex((index) => (index - 1 + flatSearchSuggestions.length) % flatSearchSuggestions.length);
+      return;
+    }
+
+    if (event.key === 'Enter' && searchOpen) {
+      event.preventDefault();
+      selectSearchResult(flatSearchSuggestions[activeSearchIndex]);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setSearchOpen(false);
+    }
+  };
 
   if (loadingState === 'loading') {
     return <ShellMessage title={t('loadingReport')} text={t('readingReport')} />;
@@ -612,22 +726,43 @@ function App() {
             <h1>{selectedComponent?.name ?? t('overview')}</h1>
           </div>
           <div className="toolbar-actions">
-            <label className="search-box">
-              <Search size={16} />
-              <input
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t('searchPlaceholder')}
-                aria-label={t('openSearch')}
-                role="searchbox"
-                type="text"
-                value={query}
-              />
-              {query && (
-                <button aria-label={t('clearSearch')} onClick={() => setQuery('')} type="button">
-                  <X size={16} />
-                </button>
+            <div className="search-shell">
+              <label className="search-box">
+                <Search size={16} />
+                <input
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setSearchOpen(true);
+                  }}
+                  onFocus={() => setSearchOpen(true)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder={t('searchPlaceholder')}
+                  aria-label={t('openSearch')}
+                  aria-expanded={searchOpen && Boolean(query)}
+                  role="searchbox"
+                  type="text"
+                  value={query}
+                />
+                {query && (
+                  <button aria-label={t('clearSearch')} onClick={() => {
+                    setQuery('');
+                    setSearchOpen(false);
+                  }} type="button">
+                    <X size={16} />
+                  </button>
+                )}
+              </label>
+              {query && searchOpen && (
+                <SearchSuggestions
+                  activeIndex={activeSearchIndex}
+                  groups={searchSuggestions}
+                  onHover={setActiveSearchIndex}
+                  onSelect={selectSearchResult}
+                  query={query}
+                  t={t}
+                />
               )}
-            </label>
+            </div>
           </div>
         </header>
 
@@ -669,12 +804,29 @@ function App() {
               </button>
             </nav>
 
-            {view === 'violations' && <ViolationsTable violations={visibleViolations} indexed={indexed} onSelectUnit={selectUnit} t={t} />}
-            {view === 'units' && <UnitsTable units={visibleUnits} selectedUnitId={selectedUnit?.id} onSelectUnit={selectUnit} t={t} />}
+            {view === 'violations' && (
+              <ViolationsTable
+                focusedViolationId={scrollTarget?.type === 'violation' ? scrollTarget.id : null}
+                indexed={indexed}
+                onSelectUnit={selectUnit}
+                t={t}
+                violations={visibleViolations}
+              />
+            )}
+            {view === 'units' && (
+              <UnitsTable
+                focusedUnitId={scrollTarget?.type === 'unit' ? scrollTarget.id : null}
+                onSelectUnit={selectUnit}
+                selectedUnitId={selectedUnit?.id}
+                t={t}
+                units={visibleUnits}
+              />
+            )}
             {view === 'dependencies' && (
               <DependencyExplorer
                 dependencies={report.dependencies}
                 direction={dependencyDirection}
+                focusedDependencyId={scrollTarget?.type === 'dependency' ? scrollTarget.id : null}
                 indexed={indexed}
                 onDirectionChange={setDependencyDirection}
                 onSelectUnit={selectUnit}
@@ -1038,7 +1190,72 @@ function FanList({ title, items, direction, indexed, onSelectComponent, t }) {
   );
 }
 
-function ViolationsTable({ violations, indexed, onSelectUnit, t }) {
+function SearchSuggestions({ activeIndex, groups, onHover, onSelect, query, t }) {
+  let optionIndex = 0;
+
+  return (
+    <div className="search-suggestions" role="listbox" aria-label={t('searchResults')}>
+      {groups.length ? groups.map((group) => (
+        <section className="search-suggestion-group" key={group.id}>
+          <h3>{group.label}</h3>
+          {group.items.map((item) => {
+            const currentIndex = optionIndex;
+            optionIndex += 1;
+
+            return (
+              <button
+                className={currentIndex === activeIndex ? 'active' : ''}
+                key={item.id}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  onSelect(item);
+                }}
+                onMouseEnter={() => onHover(currentIndex)}
+                role="option"
+                type="button"
+              >
+                {item.icon}
+                <span>
+                  <strong><SearchHighlight text={item.title} query={query} /></strong>
+                  <small><SearchHighlight text={item.subtitle} query={query} /></small>
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      )) : (
+        <p>{t('noSearchResults')}</p>
+      )}
+    </div>
+  );
+}
+
+function SearchHighlight({ text, query }) {
+  const normalizedQuery = normalizeQuery(query);
+  if (!normalizedQuery || !text) {
+    return text;
+  }
+
+  const lowerText = text.toLowerCase();
+  const matchIndex = lowerText.indexOf(normalizedQuery);
+  if (matchIndex === -1) {
+    return text;
+  }
+
+  const before = text.slice(0, matchIndex);
+  const match = text.slice(matchIndex, matchIndex + normalizedQuery.length);
+  const after = text.slice(matchIndex + normalizedQuery.length);
+
+  return (
+    <>
+      {before}
+      <mark>{match}</mark>
+      {after}
+    </>
+  );
+}
+
+function ViolationsTable({ focusedViolationId, violations, indexed, onSelectUnit, t }) {
   if (!violations.length) {
     return <EmptyState icon={<CheckCircle2 size={22} />} title={t('noActiveIssues')} />;
   }
@@ -1049,7 +1266,11 @@ function ViolationsTable({ violations, indexed, onSelectUnit, t }) {
         const dependency = indexed.dependenciesById.get(violation.dependencyId);
         const status = violation.status === 'allowed-state' ? 'allowed-state' : violation.type === 'private-unit' ? 'private' : 'blocked';
         return (
-          <article className={`issue-row ${status}`} key={violation.id}>
+          <article
+            className={`issue-row ${status}${violation.id === focusedViolationId ? ' focused-search-target' : ''}`}
+            data-search-target={violation.id}
+            key={violation.id}
+          >
             <AlertTriangle size={18} />
             <div>
               <strong>{violationMessage(violation, dependency, t)}</strong>
@@ -1063,7 +1284,7 @@ function ViolationsTable({ violations, indexed, onSelectUnit, t }) {
   );
 }
 
-function UnitsTable({ units, selectedUnitId, onSelectUnit, t }) {
+function UnitsTable({ focusedUnitId, units, selectedUnitId, onSelectUnit, t }) {
   if (!units.length) {
     return <EmptyState icon={<FileCode2 size={22} />} title={t('noMatchingUnits')} />;
   }
@@ -1082,7 +1303,12 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit, t }) {
         </thead>
         <tbody>
           {units.map((unit) => (
-            <tr className={unit.id === selectedUnitId ? 'selected-row' : ''} key={unit.id} onClick={() => onSelectUnit(unit.id)}>
+            <tr
+              className={`${unit.id === selectedUnitId ? 'selected-row' : ''}${unit.id === focusedUnitId ? ' focused-search-target' : ''}`}
+              data-search-target={unit.id}
+              key={unit.id}
+              onClick={() => onSelectUnit(unit.id)}
+            >
               <td>
                 <strong>{unit.shortName}</strong>
                 <span title={unit.name}>{compactNamespace(unit.name, unit.shortName)}</span>
@@ -1102,6 +1328,7 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit, t }) {
 function DependencyExplorer({
   dependencies,
   direction,
+  focusedDependencyId,
   indexed,
   onDirectionChange,
   onSelectUnit,
@@ -1138,6 +1365,16 @@ function DependencyExplorer({
     estimateSize: () => 92,
     overscan: 8,
   });
+  const focusedGroupIndex = useMemo(
+    () => focusedDependencyId ? groups.findIndex((group) => group.dependencies.some((dependency) => dependency.id === focusedDependencyId)) : -1,
+    [focusedDependencyId, groups],
+  );
+
+  useEffect(() => {
+    if (focusedGroupIndex >= 0) {
+      rowVirtualizer.scrollToIndex(focusedGroupIndex, { align: 'center' });
+    }
+  }, [focusedGroupIndex, rowVirtualizer]);
 
   if (!dependencies.length) {
     return <EmptyState icon={<ArrowRight size={22} />} title={t('noMatchingDependencies')} />;
@@ -1214,7 +1451,12 @@ function DependencyExplorer({
                     width: '100%',
                   }}
                 >
-                  <DependencyGroupCard group={group} onSelectUnit={onSelectUnit} t={t} />
+                  <DependencyGroupCard
+                    focused={group.dependencies.some((dependency) => dependency.id === focusedDependencyId)}
+                    group={group}
+                    onSelectUnit={onSelectUnit}
+                    t={t}
+                  />
                 </div>
               );
             })}
@@ -1306,9 +1548,9 @@ function ComponentFilter({ components, label, selectedIds, onChange, t }) {
   );
 }
 
-function DependencyGroupCard({ group, onSelectUnit, t }) {
+function DependencyGroupCard({ focused, group, onSelectUnit, t }) {
   return (
-    <details className={`dependency-group-card ${group.status}`}>
+    <details className={`dependency-group-card ${group.status}${focused ? ' focused-search-target' : ''}`} open={focused || undefined}>
       <summary>
         <CircleDot size={16} />
         <div>
@@ -1827,6 +2069,87 @@ function countComponentDependencyLinks(dependencies) {
   return links.size;
 }
 
+function buildSearchSuggestions(query, report, indexed, t) {
+  const normalizedQuery = normalizeQuery(query);
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const groups = [];
+  const matchingComponents = report.components
+    .filter((component) => component.name.toLowerCase().includes(normalizedQuery))
+    .slice(0, 5)
+    .map((component) => ({
+      id: `component:${component.id}`,
+      type: 'component',
+      componentId: component.id,
+      icon: <Layers3 size={15} />,
+      title: component.name,
+      subtitle: `${component.metrics.units} ${t('unitsCount')} · ${component.metrics.outgoingComponents} ${t('componentDependsOn')}`,
+    }));
+
+  if (matchingComponents.length) {
+    groups.push({ id: 'components', label: t('componentResults'), items: matchingComponents });
+  }
+
+  const matchingUnits = report.units
+    .filter((unit) => matchesUnit(unit, query))
+    .slice(0, 6)
+    .map((unit) => ({
+      id: `unit:${unit.id}`,
+      type: 'unit',
+      componentId: unit.componentId,
+      unitId: unit.id,
+      icon: <FileCode2 size={15} />,
+      title: unit.shortName,
+      subtitle: `${unit.componentName} · ${compactNamespace(unit.name, unit.shortName)}`,
+    }));
+
+  if (matchingUnits.length) {
+    groups.push({ id: 'units', label: t('unitResults'), items: matchingUnits });
+  }
+
+  const matchingViolations = report.violations
+    .filter((violation) => matchesViolation(violation, indexed, query))
+    .slice(0, 5)
+    .map((violation) => {
+      const dependency = indexed.dependenciesById.get(violation.dependencyId);
+      return {
+        id: `violation:${violation.id}`,
+        type: 'violation',
+        componentId: violation.fromComponentId,
+        violationId: violation.id,
+        icon: <ShieldAlert size={15} />,
+        title: violationMessage(violation, dependency, t),
+        subtitle: dependency ? `${dependency.fromComponentName} -> ${dependency.toComponentName}` : violation.type,
+      };
+    });
+
+  if (matchingViolations.length) {
+    groups.push({ id: 'violations', label: t('violationResults'), items: matchingViolations });
+  }
+
+  const matchingDependencies = report.dependencies
+    .filter((dependency) => matchesDependencyWithUnits(dependency, indexed, query))
+    .slice(0, 6)
+    .map((dependency) => ({
+      id: `dependency:${dependency.id}`,
+      type: 'dependency',
+      dependencyId: dependency.id,
+      fromComponentId: dependency.fromComponentId,
+      toComponentId: dependency.toComponentId,
+      icon: <ArrowRight size={15} />,
+      title: `${dependency.fromComponentName} -> ${dependency.toComponentName}`,
+      subtitle: `${shortUnitName(dependency.fromUnitName)} -> ${shortUnitName(dependency.toUnitName)} · ${dependencyStatusLabel(dependency, t)}`,
+    }));
+
+  if (matchingDependencies.length) {
+    groups.push({ id: 'dependencies', label: t('dependencyResults'), items: matchingDependencies });
+  }
+
+  return groups;
+}
+
 function matchesViolation(violation, indexed, query) {
   const normalizedQuery = normalizeQuery(query);
   if (!normalizedQuery) {
@@ -1890,6 +2213,14 @@ function normalizeReportView(view) {
 
 function normalizeQuery(query) {
   return query.trim().toLowerCase();
+}
+
+function escapeCssAttribute(value) {
+  if (window.CSS?.escape) {
+    return window.CSS.escape(value);
+  }
+
+  return value.replace(/["\\]/g, '\\$&');
 }
 
 function shortUnitName(name) {
