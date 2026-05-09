@@ -1232,12 +1232,10 @@ function ComponentFilter({ components, label, selectedIds, onChange, t }) {
     : components;
   const selectedComponents = components.filter((component) => selected.has(component.id));
   const summary = allSelected
-    ? t('all')
+    ? components.map((component) => component.name).join(', ')
     : selectedComponents.length === 0
       ? t('noComponentsSelected')
-      : selectedComponents.length === 1
-        ? selectedComponents[0].name
-        : `${selectedComponents.length} ${t('componentFilterSelected')}`;
+      : selectedComponents.map((component) => component.name).join(', ');
 
   const toggleComponent = (componentId) => {
     const next = new Set(selected);
@@ -1254,7 +1252,7 @@ function ComponentFilter({ components, label, selectedIds, onChange, t }) {
       <span>{label}</span>
       <details className="component-filter-menu">
         <summary>
-          <span>{summary}</span>
+          <span title={summary}>{summary}</span>
           <small>{selectedIds.length}/{components.length}</small>
         </summary>
         <div className="component-filter-popover">

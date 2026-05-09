@@ -981,11 +981,19 @@ tr:last-child td {
   list-style: none;
 }
 
+.component-filter-menu summary span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .component-filter-menu summary::-webkit-details-marker {
   display: none;
 }
 
 .component-filter-menu summary small {
+  flex: 0 0 auto;
   color: #71808d;
   font-size: 12px;
 }
