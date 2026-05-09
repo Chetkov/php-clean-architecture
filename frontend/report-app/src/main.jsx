@@ -326,6 +326,7 @@ function App() {
   const navigationReady = useRef(false);
   const applyingNavigation = useRef(false);
   const lastNavigationHash = useRef(null);
+  const keepManualDependencyFilters = useRef(false);
   const t = useMemo(() => (key) => dictionaries[locale]?.[key] ?? dictionaries.en[key] ?? key, [locale]);
 
   useEffect(() => {
@@ -357,6 +358,10 @@ function App() {
 
   const indexed = useMemo(() => buildIndex(report), [report]);
   const dependencyComponentOptions = useMemo(() => buildDependencyComponentOptions(report, indexed), [indexed, report]);
+  const dependencyComponentIds = useMemo(
+    () => dependencyComponentOptions.map((component) => component.id),
+    [dependencyComponentOptions],
+  );
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? null;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
   const selectedComponentUnits = useMemo(
@@ -391,10 +396,26 @@ function App() {
   }, [query, selectedComponent?.id, selectedUnit]);
 
   useEffect(() => {
-    const componentIds = dependencyComponentOptions.map((component) => component.id);
-    setSourceComponentIds(componentIds);
-    setTargetComponentIds(componentIds);
-  }, [dependencyComponentOptions]);
+    if (keepManualDependencyFilters.current) {
+      keepManualDependencyFilters.current = false;
+      return;
+    }
+
+    if (!dependencyComponentIds.length) {
+      setSourceComponentIds([]);
+      setTargetComponentIds([]);
+      return;
+    }
+
+    if (selectedComponentId && dependencyComponentIds.includes(selectedComponentId)) {
+      setSourceComponentIds([selectedComponentId]);
+      setTargetComponentIds(dependencyComponentIds.filter((componentId) => componentId !== selectedComponentId));
+      return;
+    }
+
+    setSourceComponentIds(dependencyComponentIds);
+    setTargetComponentIds(dependencyComponentIds);
+  }, [dependencyComponentIds, selectedComponentId]);
 
   useEffect(() => {
     if (loadingState !== 'ready' || navigationReady.current) {
@@ -459,10 +480,25 @@ function App() {
   const selectOverview = () => {
     setSelectedComponentId(null);
     setSelectedUnitId(null);
+    setSourceComponentIds(dependencyComponentIds);
+    setTargetComponentIds(dependencyComponentIds);
   };
   const selectComponent = (componentId) => {
     setSelectedComponentId(componentId);
     setSelectedUnitId(null);
+  };
+  const changeSourceComponents = (componentIds) => {
+    setSourceComponentIds(componentIds);
+    setSelectedUnitId(null);
+
+    if (componentIds.length === 1 && indexed.componentsById.has(componentIds[0])) {
+      setTargetComponentIds(dependencyComponentIds.filter((componentId) => componentId !== componentIds[0]));
+      setSelectedComponentId(componentIds[0]);
+      return;
+    }
+
+    keepManualDependencyFilters.current = true;
+    setSelectedComponentId(null);
   };
   const selectUnit = (unitId) => {
     const unit = indexed.unitsById.get(unitId);
@@ -590,7 +626,7 @@ function App() {
                 indexed={indexed}
                 onDirectionChange={setDependencyDirection}
                 onSelectUnit={selectUnit}
-                onSourceComponentsChange={setSourceComponentIds}
+                onSourceComponentsChange={changeSourceComponents}
                 onStatusChange={setDependencyStatus}
                 onTargetComponentsChange={setTargetComponentIds}
                 query={query}
