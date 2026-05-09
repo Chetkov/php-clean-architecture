@@ -2020,11 +2020,7 @@ function shapeGraphEdges(edges) {
     }
   });
 
-  return edges.map((edge) => {
-    const isReciprocal = reciprocalPairs.has(edge.id);
-    const directionOrder = edge.fromComponentId.localeCompare(edge.toComponentId) <= 0 ? 1 : -1;
-    return shapeGraphEdge(edge, isReciprocal ? 28 * directionOrder : 0);
-  });
+  return edges.map((edge) => shapeGraphEdge(edge, reciprocalPairs.has(edge.id) ? 28 : 0));
 }
 
 function shapeGraphEdge(edge, curveOffset) {
@@ -2398,7 +2394,7 @@ function dependencyStatusKey(dependency) {
   if (dependency.isInternal) {
     return 'internal';
   }
-  if (dependency.isAllowedState) {
+  if (dependency.isAllowedState && (!dependency.isComponentAllowed || !dependency.isTargetPublic)) {
     return 'allowed-state';
   }
   if (!dependency.isComponentAllowed) {

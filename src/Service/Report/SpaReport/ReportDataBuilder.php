@@ -136,6 +136,8 @@ final class ReportDataBuilder
     {
         $component = $unitOfCode->component();
         $dependencyComponent = $dependencyUnitOfCode->component();
+        $isComponentAllowed = $component->isDependencyAllowed($dependencyComponent);
+        $isTargetPublic = $dependencyUnitOfCode->isAccessibleFromOutside();
 
         return [
             'id' => $this->dependencyId($unitOfCode, $dependencyUnitOfCode),
@@ -148,9 +150,9 @@ final class ReportDataBuilder
             'fromComponentName' => $component->name(),
             'toComponentName' => $dependencyComponent->name(),
             'isInternal' => $dependencyUnitOfCode->belongToComponent($component),
-            'isComponentAllowed' => $component->isDependencyAllowed($dependencyComponent),
-            'isTargetPublic' => $dependencyUnitOfCode->isAccessibleFromOutside(),
-            'isAllowedState' => $unitOfCode->isDependencyInAllowedState($dependencyUnitOfCode),
+            'isComponentAllowed' => $isComponentAllowed,
+            'isTargetPublic' => $isTargetPublic,
+            'isAllowedState' => $this->isAllowedStateViolation($unitOfCode, $dependencyUnitOfCode, $isComponentAllowed, $isTargetPublic),
         ];
     }
 
@@ -177,11 +179,10 @@ final class ReportDataBuilder
         if (
             $component->isDependencyAllowed($dependencyComponent)
             && !$dependencyUnitOfCode->isAccessibleFromOutside()
-            && !$isAllowedState
         ) {
             $violations[] = $this->violationData(
                 'private-unit',
-                false,
+                $isAllowedState,
                 $unitOfCode,
                 $dependencyUnitOfCode,
                 sprintf('"%s" uses non public "%s".', $component->name(), $dependencyUnitOfCode->name())
@@ -189,6 +190,19 @@ final class ReportDataBuilder
         }
 
         return $violations;
+    }
+
+    private function isAllowedStateViolation(
+        UnitOfCode $unitOfCode,
+        UnitOfCode $dependencyUnitOfCode,
+        bool $isComponentAllowed,
+        bool $isTargetPublic
+    ): bool {
+        if (!$unitOfCode->isDependencyInAllowedState($dependencyUnitOfCode)) {
+            return false;
+        }
+
+        return !$isComponentAllowed || !$isTargetPublic;
     }
 
     /**
