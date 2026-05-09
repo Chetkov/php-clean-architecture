@@ -81,7 +81,7 @@ const dictionaries = {
     dependencyGraphLabel: 'Component dependency graph',
     dependencyUnavailable: 'Unknown dependency',
     distance: 'Distance',
-    distanceRanking: 'Distance ranking',
+    distanceRanking: 'Distance from Main Sequence',
     external: 'external',
     flipDependencyDirection: 'Flip dependency direction',
     fromComponents: 'From components',
@@ -169,7 +169,7 @@ const dictionaries = {
     dependencyGraphLabel: 'Граф зависимостей компонентов',
     dependencyUnavailable: 'Зависимость не найдена',
     distance: 'Расстояние',
-    distanceRanking: 'Рейтинг расстояния',
+    distanceRanking: 'Distance from Main Sequence',
     external: 'внешняя',
     flipDependencyDirection: 'Перевернуть направление зависимостей',
     fromComponents: 'Исходные компоненты',
@@ -257,7 +257,7 @@ const dictionaries = {
     dependencyGraphLabel: '组件依赖图',
     dependencyUnavailable: '未知依赖',
     distance: '距离',
-    distanceRanking: '距离排名',
+    distanceRanking: 'Distance from Main Sequence',
     external: '外部',
     flipDependencyDirection: '切换依赖方向',
     fromComponents: '来源组件',
@@ -658,25 +658,42 @@ function MetricPanel({ component, t }) {
   }
 
   const metrics = [
-    [t('abstractness'), component.metrics.abstractness],
-    [t('instability'), component.metrics.instability],
-    [t('distance'), component.metrics.distance],
-    [t('primitive'), component.metrics.primitiveness],
+    [t('abstractness'), component.metrics.abstractness, componentMetricQuality(component, 'abstractness')],
+    [t('instability'), component.metrics.instability, componentMetricQuality(component, 'instability')],
+    [t('distance'), component.metrics.distance, componentMetricQuality(component, 'distance')],
+    [t('primitive'), component.metrics.primitiveness, componentMetricQuality(component, 'primitiveness')],
   ];
 
   return (
     <section className="panel metrics-panel">
       <h2>{t('componentMetrics')}</h2>
-      {metrics.map(([label, value]) => (
+      {metrics.map(([label, value, quality]) => (
         <div className="metric" key={label}>
           <div>
             <span>{label}</span>
             <strong>{formatRate(value)}</strong>
           </div>
-          <meter max="1" min="0" value={value} />
+          <ProgressMeter value={value} quality={quality} />
         </div>
       ))}
     </section>
+  );
+}
+
+function ProgressMeter({ value, quality }) {
+  const clampedValue = clamp01(value);
+  const clampedQuality = clamp01(quality);
+
+  return (
+    <div
+      className="metric-meter"
+      style={{
+        '--metric-color': qualityColor(clampedQuality),
+        '--metric-width': `${Math.max(clampedValue * 100, 2)}%`,
+      }}
+    >
+      <i />
+    </div>
   );
 }
 
@@ -749,11 +766,85 @@ function DistanceRanking({ components, selectedComponentId, onSelectComponent, t
 
 function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t }) {
   const graph = useMemo(() => componentGraph(component, report, indexed), [component, indexed, report]);
+  const graphKey = useMemo(() => graph.nodes.map((node) => node.id).sort().join('|'), [graph.nodes]);
+  const [nodePositions, setNodePositions] = useState(() => readGraphPositions(report, graphKey));
+  const dragState = useRef(null);
+  const suppressNodeClick = useRef(false);
+
+  useEffect(() => {
+    setNodePositions(readGraphPositions(report, graphKey));
+  }, [graphKey, report]);
+
+  const positionedGraph = useMemo(() => ({
+    nodes: graph.nodes.map((node) => nodePositions[node.id] ? { ...node, ...nodePositions[node.id] } : node),
+    edges: graph.edges,
+  }), [graph, nodePositions]);
+  const positionedNodes = useMemo(() => new Map(positionedGraph.nodes.map((node) => [node.id, node])), [positionedGraph.nodes]);
+  const positionedEdges = useMemo(() => positionedGraph.edges.map((edge) => ({
+    ...edge,
+    from: positionedNodes.get(edge.fromComponentId) ?? edge.from,
+    to: positionedNodes.get(edge.toComponentId) ?? edge.to,
+  })), [positionedGraph.edges, positionedNodes]);
+
+  const startDrag = (event, node) => {
+    if (node.isExternal) {
+      return;
+    }
+
+    event.preventDefault();
+    const pointer = svgPoint(event.currentTarget.ownerSVGElement, event);
+    dragState.current = {
+      hasMoved: false,
+      nodeId: node.id,
+      offsetX: pointer.x - node.x,
+      offsetY: pointer.y - node.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const moveDrag = (event) => {
+    if (!dragState.current) {
+      return;
+    }
+
+    const pointer = svgPoint(event.currentTarget, event);
+    const nextPosition = {
+      x: clamp(pointer.x - dragState.current.offsetX, 48, 672),
+      y: clamp(pointer.y - dragState.current.offsetY, 48, 272),
+    };
+    const nodeId = dragState.current.nodeId;
+    dragState.current.hasMoved = true;
+    suppressNodeClick.current = true;
+    setNodePositions((positions) => ({ ...positions, [nodeId]: nextPosition }));
+  };
+
+  const endDrag = () => {
+    if (!dragState.current) {
+      return;
+    }
+
+    suppressNodeClick.current = dragState.current.hasMoved;
+    dragState.current = null;
+    saveGraphPositions(report, graphKey, nodePositions);
+  };
+
+  useEffect(() => {
+    if (!dragState.current) {
+      saveGraphPositions(report, graphKey, nodePositions);
+    }
+  }, [graphKey, nodePositions, report]);
 
   return (
     <section className="panel graph-panel">
       <h2>{component ? t('componentGraph') : t('globalComponentGraph')}</h2>
-      <svg viewBox="0 0 720 320" role="img" aria-label={t('dependencyGraphLabel')}>
+      <svg
+        viewBox="0 0 720 320"
+        role="img"
+        aria-label={t('dependencyGraphLabel')}
+        onPointerMove={moveDrag}
+        onPointerLeave={endDrag}
+        onPointerUp={endDrag}
+      >
         <defs>
           {dependencyStatuses.map((status) => (
             <marker id={`arrow-${status}`} key={status} markerHeight="8" markerWidth="8" orient="auto" refX="8" refY="4">
@@ -761,7 +852,7 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t 
             </marker>
           ))}
         </defs>
-        {graph.edges.map((edge) => (
+        {positionedEdges.map((edge) => (
           <g key={edge.id}>
             <title>{`${edge.from.name} -> ${edge.to.name}: ${edge.sourceUnitCount}->${edge.targetUnitCount} (${edge.weight} ${t('dependencyRows')}, ${edgeStatusLabel(edge.status, t)})`}</title>
             <line
@@ -777,13 +868,22 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t 
             </text>
           </g>
         ))}
-        {graph.nodes.map((node) => {
+        {positionedGraph.nodes.map((node) => {
           const violations = indexed.violationsByComponent.get(node.id) ?? [];
           return (
             <g
               className={graphNodeClassName(node, component)}
               key={node.id}
-              onClick={() => !node.isExternal && onSelectComponent(node.id)}
+              onClick={() => {
+                if (suppressNodeClick.current) {
+                  suppressNodeClick.current = false;
+                  return;
+                }
+                if (!node.isExternal) {
+                  onSelectComponent(node.id);
+                }
+              }}
+              onPointerDown={(event) => startDrag(event, node)}
               role={node.isExternal ? undefined : 'button'}
               tabIndex={node.isExternal ? undefined : '0'}
               transform={`translate(${node.x} ${node.y})`}
@@ -1666,6 +1766,54 @@ function formatDate(value, locale) {
     return dictionaries[locale]?.generatedReport ?? dictionaries.en.generatedReport;
   }
   return new Intl.DateTimeFormat(localeToIntl[locale] ?? localeToIntl.en, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+}
+
+function componentMetricQuality(component, metric) {
+  if (metric === 'distance' || metric === 'primitiveness') {
+    return 1 - component.metrics[metric];
+  }
+
+  return 1 - component.metrics.distance;
+}
+
+function qualityColor(quality) {
+  const hue = clamp01(quality) * 120;
+
+  return `hsl(${hue}deg 72% 38%)`;
+}
+
+function svgPoint(svg, event) {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+
+  return point.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+function readGraphPositions(report, graphKey) {
+  try {
+    return JSON.parse(localStorage.getItem(graphPositionStorageKey(report, graphKey)) ?? '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveGraphPositions(report, graphKey, positions) {
+  localStorage.setItem(graphPositionStorageKey(report, graphKey), JSON.stringify(positions));
+}
+
+function graphPositionStorageKey(report, graphKey) {
+  const reportKey = report.components.map((component) => component.id).join('|');
+
+  return `phpca-report-graph:${reportKey}:${graphKey}`;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function clamp01(value) {
+  return clamp(Number(value) || 0, 0, 1);
 }
 
 function dependencyStatusLabel(dependency, t) {
