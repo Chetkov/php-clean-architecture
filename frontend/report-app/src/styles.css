@@ -625,8 +625,10 @@ td span,
 }
 
 .edge {
+  fill: none;
   stroke: #7d91a0;
   stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .edge.allowed {

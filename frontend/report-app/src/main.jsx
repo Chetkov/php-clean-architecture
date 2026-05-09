@@ -1028,6 +1028,7 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t 
     from: positionedNodes.get(edge.fromComponentId) ?? edge.from,
     to: positionedNodes.get(edge.toComponentId) ?? edge.to,
   })), [positionedGraph.edges, positionedNodes]);
+  const graphEdgeShapes = useMemo(() => shapeGraphEdges(positionedEdges), [positionedEdges]);
 
   const startDrag = (event, node) => {
     if (node.isExternal) {
@@ -1095,19 +1096,16 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t 
             </marker>
           ))}
         </defs>
-        {positionedEdges.map((edge) => (
-          <g key={edge.id}>
-            <title>{`${edge.from.name} -> ${edge.to.name}: ${edge.sourceUnitCount}->${edge.targetUnitCount} (${edge.weight} ${t('dependencyRows')}, ${edgeStatusLabel(edge.status, t)})`}</title>
-            <line
-              className={graphEdgeClassName(edge)}
-              markerEnd={`url(#arrow-${edge.status})`}
-              x1={edge.from.x}
-              x2={edge.to.x}
-              y1={edge.from.y}
-              y2={edge.to.y}
+        {graphEdgeShapes.map((shape) => (
+          <g key={shape.edge.id}>
+            <title>{`${shape.edge.from.name} -> ${shape.edge.to.name}: ${shape.edge.sourceUnitCount}->${shape.edge.targetUnitCount} (${shape.edge.weight} ${t('dependencyRows')}, ${edgeStatusLabel(shape.edge.status, t)})`}</title>
+            <path
+              className={graphEdgeClassName(shape.edge)}
+              d={shape.path}
+              markerEnd={`url(#arrow-${shape.edge.status})`}
             />
-            <text className={edge.isSelected ? 'edge-label selected' : 'edge-label'} x={(edge.from.x + edge.to.x) / 2} y={(edge.from.y + edge.to.y) / 2 - 6}>
-              {edge.sourceUnitCount}-&gt;{edge.targetUnitCount}
+            <text className={shape.edge.isSelected ? 'edge-label selected' : 'edge-label'} x={shape.label.x} y={shape.label.y}>
+              {shape.edge.sourceUnitCount}-&gt;{shape.edge.targetUnitCount}
             </text>
           </g>
         ))}
@@ -1916,7 +1914,7 @@ function componentGraph(component, report, indexed) {
   }
 
   const graphEdges = component
-    ? indexed.componentEdges.filter((edge) => edge.fromComponentId === component.id || edge.toComponentId === component.id)
+    ? indexed.componentEdges.filter((edge) => edge.fromComponentId === component.id)
     : indexed.componentEdges;
   const componentOrder = new Map(report.components.map((item, index) => [item.id, index]));
   const analyzedComponents = new Map(report.components.map((item) => [item.id, item]));
@@ -1974,11 +1972,64 @@ function componentGraph(component, report, indexed) {
       ...edge,
       from: nodesById.get(edge.fromComponentId),
       to: nodesById.get(edge.toComponentId),
-      isSelected: component ? edge.fromComponentId === component.id || edge.toComponentId === component.id : false,
+      isSelected: component ? edge.fromComponentId === component.id : false,
     }))
     .filter((edge) => edge.from && edge.to);
 
   return { nodes, edges };
+}
+
+function shapeGraphEdges(edges) {
+  const reciprocalPairs = new Set();
+  edges.forEach((edge) => {
+    if (edges.some((candidate) => candidate.fromComponentId === edge.toComponentId && candidate.toComponentId === edge.fromComponentId)) {
+      reciprocalPairs.add(edge.id);
+    }
+  });
+
+  return edges.map((edge) => {
+    const isReciprocal = reciprocalPairs.has(edge.id);
+    const directionOrder = edge.fromComponentId.localeCompare(edge.toComponentId) <= 0 ? 1 : -1;
+    return shapeGraphEdge(edge, isReciprocal ? 28 * directionOrder : 0);
+  });
+}
+
+function shapeGraphEdge(edge, curveOffset) {
+  const nodeRadius = 42;
+  const dx = edge.to.x - edge.from.x;
+  const dy = edge.to.y - edge.from.y;
+  const length = Math.max(Math.hypot(dx, dy), 1);
+  const unitX = dx / length;
+  const unitY = dy / length;
+  const start = {
+    x: edge.from.x + unitX * nodeRadius,
+    y: edge.from.y + unitY * nodeRadius,
+  };
+  const end = {
+    x: edge.to.x - unitX * nodeRadius,
+    y: edge.to.y - unitY * nodeRadius,
+  };
+  const mid = {
+    x: (start.x + end.x) / 2,
+    y: (start.y + end.y) / 2,
+  };
+  const normal = { x: -unitY, y: unitX };
+  const control = {
+    x: mid.x + normal.x * curveOffset,
+    y: mid.y + normal.y * curveOffset,
+  };
+  const label = {
+    x: 0.25 * start.x + 0.5 * control.x + 0.25 * end.x,
+    y: 0.25 * start.y + 0.5 * control.y + 0.25 * end.y - 7,
+  };
+
+  return {
+    edge,
+    label,
+    path: curveOffset
+      ? `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`
+      : `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+  };
 }
 
 function graphEdgeClassName(edge) {
