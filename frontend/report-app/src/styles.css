@@ -28,7 +28,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -46,9 +46,17 @@ button {
 
 .brand {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.brand > div {
+  min-width: 0;
+}
+
+.brand svg {
+  flex: 0 0 auto;
 }
 
 .brand strong,
@@ -79,6 +87,13 @@ td span,
 .sidebar .brand span,
 .sidebar .summary-item span {
   color: #a9b7c2;
+}
+
+.sidebar .brand span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .summary-grid {
@@ -211,8 +226,8 @@ td span,
 }
 
 .locale-switcher button {
-  min-width: 36px;
-  padding: 0 9px;
+  min-width: 34px;
+  padding: 0 8px;
   border: 0;
   border-radius: 6px;
   background: transparent;
