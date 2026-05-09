@@ -480,6 +480,43 @@ td span,
   overflow: hidden;
 }
 
+.graph-panel-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.graph-scope-switcher {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #d4dde4;
+  border-radius: 999px;
+  background: #f4f7f9;
+}
+
+.graph-scope-switcher button {
+  min-height: 24px;
+  padding: 0 9px;
+  color: #526270;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.graph-scope-switcher button.active {
+  color: #ffffff;
+  background: #24485f;
+}
+
+.graph-scope-switcher button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .graph-panel svg {
   height: 260px;
 }
@@ -1109,10 +1146,14 @@ tr:last-child td {
 }
 
 .component-filter-popover {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
   display: grid;
   gap: 8px;
-  margin-top: 6px;
-  min-width: 260px;
+  box-sizing: border-box;
+  width: max(100%, 260px);
   padding: 10px;
   border: 1px solid #c9d2d9;
   border-radius: 8px;
@@ -1172,7 +1213,7 @@ tr:last-child td {
   background: #f4f8fa;
 }
 
-.component-filter input {
+.component-filter-options input {
   width: 14px;
   height: 14px;
 }
@@ -1523,6 +1564,10 @@ mark {
 
   .search-box {
     flex-basis: auto;
+  }
+
+  .search-shell {
+    flex: 0 1 auto;
   }
 
   .title-block h1 {

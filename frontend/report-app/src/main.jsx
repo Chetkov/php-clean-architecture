@@ -66,7 +66,10 @@ const dictionaries = {
     componentFilterSearch: 'Search components',
     componentFilterSelected: 'selected',
     componentLinksShort: 'comp',
+    componentLinksSummary: '{count} component links',
     copy: 'Copy',
+    dependedOnByComponentsSummary: '{count} components depend here',
+    dependsOnComponentsSummary: 'Depends on {count} components',
     dependencyOverview: 'Dependency map',
     filtered: 'filtered',
     noUnitSelected: 'Select a unit to inspect its dependencies',
@@ -141,6 +144,7 @@ const dictionaries = {
     unitResults: 'Units',
     dependencyResults: 'Dependencies',
     violationResults: 'Issues',
+    unitDependenciesSummary: '{count} unit dependencies',
     unitsCount: 'units',
     units: 'Units',
     violations: 'Violations',
@@ -168,7 +172,10 @@ const dictionaries = {
     componentFilterSearch: 'Поиск компонентов',
     componentFilterSelected: 'выбрано',
     componentLinksShort: 'комп',
+    componentLinksSummary: '{count} связей компонентов',
     copy: 'Копировать',
+    dependedOnByComponentsSummary: '{count} компонентов зависят',
+    dependsOnComponentsSummary: 'Зависит от {count} компонентов',
     dependencyOverview: 'Карта зависимостей',
     filtered: 'отфильтровано',
     noUnitSelected: 'Выберите юнит, чтобы посмотреть его зависимости',
@@ -243,6 +250,7 @@ const dictionaries = {
     unitResults: 'Юниты',
     dependencyResults: 'Зависимости',
     violationResults: 'Проблемы',
+    unitDependenciesSummary: '{count} зависимостей юнитов',
     unitsCount: 'юнитов',
     units: 'Юниты',
     violations: 'Нарушения',
@@ -270,7 +278,10 @@ const dictionaries = {
     componentFilterSearch: '搜索组件',
     componentFilterSelected: '已选',
     componentLinksShort: '组件',
+    componentLinksSummary: '{count} 个组件连接',
     copy: '复制',
+    dependedOnByComponentsSummary: '{count} 个组件依赖这里',
+    dependsOnComponentsSummary: '依赖 {count} 个组件',
     dependencyOverview: '依赖地图',
     filtered: '已筛选',
     noUnitSelected: '选择一个单元以查看其依赖',
@@ -345,6 +356,7 @@ const dictionaries = {
     unitResults: '单元',
     dependencyResults: '依赖',
     violationResults: '问题',
+    unitDependenciesSummary: '{count} 个单元依赖',
     unitsCount: '单元',
     units: '单元',
     violations: '违规',
@@ -360,6 +372,7 @@ function App() {
   const [selectedComponentId, setSelectedComponentId] = useState(null);
   const [selectedUnitId, setSelectedUnitId] = useState(null);
   const [view, setView] = useState('violations');
+  const [componentGraphScope, setComponentGraphScope] = useState('all');
   const [dependencyDirection, setDependencyDirection] = useState('source');
   const [dependencyStatus, setDependencyStatus] = useState('all');
   const [sourceComponentIds, setSourceComponentIds] = useState([]);
@@ -431,8 +444,17 @@ function App() {
     [indexed, query, violationsForCurrentSearch],
   );
   const visibleDependencies = useMemo(
-    () => filterDependencies(report.dependencies, indexed, query, sourceComponentIds, targetComponentIds, dependencyStatus),
-    [dependencyStatus, indexed, query, report.dependencies, sourceComponentIds, targetComponentIds],
+    () => filterDependencies(
+      report.dependencies,
+      indexed,
+      query,
+      sourceComponentIds,
+      targetComponentIds,
+      dependencyStatus,
+      selectedComponentId,
+      componentGraphScope,
+    ),
+    [componentGraphScope, dependencyStatus, indexed, query, report.dependencies, selectedComponentId, sourceComponentIds, targetComponentIds],
   );
   const visibleDependencyLinks = useMemo(
     () => countComponentDependencyLinks(visibleDependencies),
@@ -488,14 +510,26 @@ function App() {
     }
 
     if (selectedComponentId && sourceComponentIdsAll.includes(selectedComponentId)) {
-      setSourceComponentIds([selectedComponentId]);
-      setTargetComponentIds(targetComponentIdsAll.filter((componentId) => componentId !== selectedComponentId));
+      if (componentGraphScope === 'outgoing') {
+        setSourceComponentIds([selectedComponentId]);
+        setTargetComponentIds(targetComponentIdsAll.filter((componentId) => componentId !== selectedComponentId));
+        return;
+      }
+
+      if (componentGraphScope === 'incoming') {
+        setSourceComponentIds(sourceComponentIdsAll.filter((componentId) => componentId !== selectedComponentId));
+        setTargetComponentIds([selectedComponentId]);
+        return;
+      }
+
+      setSourceComponentIds(sourceComponentIdsAll);
+      setTargetComponentIds(targetComponentIdsAll);
       return;
     }
 
     setSourceComponentIds(sourceComponentIdsAll);
     setTargetComponentIds(targetComponentIdsAll);
-  }, [sourceComponentIdsAll, targetComponentIdsAll, selectedComponentId]);
+  }, [componentGraphScope, sourceComponentIdsAll, targetComponentIdsAll, selectedComponentId]);
 
   useEffect(() => {
     if (loadingState !== 'ready' || navigationReady.current) {
@@ -560,12 +594,43 @@ function App() {
   const selectOverview = () => {
     setSelectedComponentId(null);
     setSelectedUnitId(null);
+    setComponentGraphScope('all');
     setSourceComponentIds(sourceComponentIdsAll);
     setTargetComponentIds(targetComponentIdsAll);
   };
   const selectComponent = (componentId) => {
     setSelectedComponentId(componentId);
     setSelectedUnitId(null);
+    setComponentGraphScope('all');
+  };
+  const changeComponentGraphScope = (scope) => {
+    setComponentGraphScope(scope);
+    if (!selectedComponentId) {
+      return;
+    }
+
+    keepManualDependencyFilters.current = true;
+    setSelectedUnitId(null);
+    setDependencyStatus('all');
+    setView('dependencies');
+
+    if (scope === 'outgoing') {
+      setDependencyDirection('source');
+      setSourceComponentIds([selectedComponentId]);
+      setTargetComponentIds(targetComponentIdsAll.filter((componentId) => componentId !== selectedComponentId));
+      return;
+    }
+
+    if (scope === 'incoming') {
+      setDependencyDirection('target');
+      setSourceComponentIds(sourceComponentIdsAll.filter((componentId) => componentId !== selectedComponentId));
+      setTargetComponentIds([selectedComponentId]);
+      return;
+    }
+
+    setDependencyDirection('source');
+    setSourceComponentIds(sourceComponentIdsAll);
+    setTargetComponentIds(targetComponentIdsAll);
   };
   const changeSourceComponents = (componentIds) => {
     setSourceComponentIds(componentIds);
@@ -778,7 +843,15 @@ function App() {
             <GitBranch size={16} />
             <span>{t('dependencyOverview')}</span>
           </summary>
-          <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} t={t} />
+          <ComponentGraphPanel
+            component={selectedComponent}
+            indexed={indexed}
+            onScopeChange={changeComponentGraphScope}
+            onSelectComponent={selectComponent}
+            report={report}
+            scope={componentGraphScope}
+            t={t}
+          />
         </details>
 
         <section className={view === 'units' ? 'workbench' : 'workbench single'}>
@@ -834,6 +907,8 @@ function App() {
                 onStatusChange={setDependencyStatus}
                 onTargetComponentsChange={setTargetComponentIds}
                 query={query}
+                relationComponentId={selectedComponentId}
+                relationScope={componentGraphScope}
                 sourceComponents={sourceComponentOptions}
                 sourceComponentIds={sourceComponentIds}
                 status={dependencyStatus}
@@ -1007,8 +1082,8 @@ function DistanceRanking({ components, selectedComponentId, onSelectComponent, t
   );
 }
 
-function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t }) {
-  const graph = useMemo(() => componentGraph(component, report, indexed), [component, indexed, report]);
+function ComponentGraphPanel({ component, report, indexed, onScopeChange, onSelectComponent, scope, t }) {
+  const graph = useMemo(() => componentGraph(component, report, indexed, scope), [component, indexed, report, scope]);
   const graphKey = useMemo(() => graph.nodes.map((node) => node.id).sort().join('|'), [graph.nodes]);
   const [nodePositions, setNodePositions] = useState(() => readGraphPositions(report, graphKey));
   const dragState = useRef(null);
@@ -1080,7 +1155,30 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t 
 
   return (
     <section className="panel graph-panel">
-      <h2>{component ? t('componentGraph') : t('globalComponentGraph')}</h2>
+      <header className="graph-panel-header">
+        <h2>{component ? t('componentGraph') : t('globalComponentGraph')}</h2>
+        <div className="graph-scope-switcher" aria-label={t('dependencyDirection')}>
+          {[
+            ['all', t('all')],
+            ['outgoing', t('outgoing')],
+            ['incoming', t('incoming')],
+          ].map(([value, label]) => (
+            <button
+              className={scope === value ? 'active' : ''}
+              disabled={!component && value !== 'all'}
+              key={value}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onScopeChange(value);
+              }}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </header>
       <svg
         viewBox="0 0 720 320"
         role="img"
@@ -1334,6 +1432,8 @@ function DependencyExplorer({
   onStatusChange,
   onTargetComponentsChange,
   query,
+  relationComponentId,
+  relationScope,
   sourceComponents,
   sourceComponentIds,
   status,
@@ -1347,11 +1447,12 @@ function DependencyExplorer({
     const targetIds = new Set(targetComponentIds);
 
     return dependencies
+      .filter((dependency) => matchesDependencyRelationScope(dependency, relationComponentId, relationScope))
       .filter((dependency) => sourceIds.has(dependency.fromComponentId))
       .filter((dependency) => targetIds.has(dependency.toComponentId))
       .filter((dependency) => status === 'all' || dependencyStatusKey(dependency) === status)
       .filter((dependency) => matchesDependencyWithUnits(dependency, indexed, query));
-  }, [dependencies, indexed, query, sourceComponentIds, status, targetComponentIds]);
+  }, [dependencies, indexed, query, relationComponentId, relationScope, sourceComponentIds, status, targetComponentIds]);
 
   const groups = useMemo(
     () => buildDependencyGroups(filteredDependencies, indexed, direction),
@@ -1367,6 +1468,10 @@ function DependencyExplorer({
   const focusedGroupIndex = useMemo(
     () => focusedDependencyId ? groups.findIndex((group) => group.dependencies.some((dependency) => dependency.id === focusedDependencyId)) : -1,
     [focusedDependencyId, groups],
+  );
+  const semanticSummary = useMemo(
+    () => buildDependencyListSummary(filteredDependencies, direction, sourceComponentIds, targetComponentIds, t),
+    [direction, filteredDependencies, sourceComponentIds, t, targetComponentIds],
   );
 
   useEffect(() => {
@@ -1436,10 +1541,9 @@ function DependencyExplorer({
       {groups.length ? (
         <>
         <div className="dependency-list-summary">
-          <strong>{groups.length}</strong>
-          <span>{t('dependencyGroups')}</span>
-          <strong>{filteredDependencies.length}</strong>
-          <span>{t('dependencyRows')}</span>
+          <strong>{semanticSummary.componentText}</strong>
+          <span>·</span>
+          <span>{semanticSummary.unitText}</span>
         </div>
         <div className="dependency-group-list" ref={listRef}>
           <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
@@ -1496,6 +1600,7 @@ function SegmentedFilter({ label, options, value, onChange }) {
 function ComponentFilter({ components, id, isOpen, label, selectedIds, onChange, onClose, onOpen, t }) {
   const [componentQuery, setComponentQuery] = useState('');
   const inputRef = useRef(null);
+  const menuRef = useRef(null);
   const selected = new Set(selectedIds);
   const allSelected = selectedIds.length === components.length;
   const normalizedQuery = componentQuery.trim().toLowerCase();
@@ -1528,10 +1633,38 @@ function ComponentFilter({ components, id, isOpen, label, selectedIds, onChange,
     return () => window.clearTimeout(timer);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const isInsideMenu = (target) => target instanceof Node && menuRef.current?.contains(target);
+    const closeOnOutsideInteraction = (event) => {
+      if (!isInsideMenu(event.target)) {
+        onClose();
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsideInteraction);
+    document.addEventListener('focusin', closeOnOutsideInteraction);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideInteraction);
+      document.removeEventListener('focusin', closeOnOutsideInteraction);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isOpen, onClose]);
+
   return (
     <div className="filter-block component-filter">
       <span>{label}</span>
-      <div className="component-filter-menu">
+      <div className="component-filter-menu" ref={menuRef}>
         <button
           className="component-filter-trigger"
           onClick={() => {
@@ -1945,13 +2078,13 @@ function buildDependencyComponentOptions(report, indexed) {
   });
 }
 
-function componentGraph(component, report, indexed) {
+function componentGraph(component, report, indexed, scope = 'all') {
   if (!report.components.length && !indexed.componentEdges.length) {
     return { nodes: [], edges: [] };
   }
 
   const graphEdges = component
-    ? indexed.componentEdges.filter((edge) => edge.fromComponentId === component.id)
+    ? indexed.componentEdges.filter((edge) => matchesComponentGraphScope(edge, component.id, scope))
     : indexed.componentEdges;
   const componentOrder = new Map(report.components.map((item, index) => [item.id, index]));
   const analyzedComponents = new Map(report.components.map((item) => [item.id, item]));
@@ -2009,11 +2142,22 @@ function componentGraph(component, report, indexed) {
       ...edge,
       from: nodesById.get(edge.fromComponentId),
       to: nodesById.get(edge.toComponentId),
-      isSelected: component ? edge.fromComponentId === component.id : false,
+      isSelected: component ? edge.fromComponentId === component.id || edge.toComponentId === component.id : false,
     }))
     .filter((edge) => edge.from && edge.to);
 
   return { nodes, edges };
+}
+
+function matchesComponentGraphScope(edge, componentId, scope) {
+  if (scope === 'outgoing') {
+    return edge.fromComponentId === componentId;
+  }
+  if (scope === 'incoming') {
+    return edge.toComponentId === componentId;
+  }
+
+  return edge.fromComponentId === componentId || edge.toComponentId === componentId;
 }
 
 function shapeGraphEdges(edges) {
@@ -2131,15 +2275,72 @@ function matchesDependencyWithUnits(dependency, indexed, query) {
     || (toUnit?.path ?? '').toLowerCase().includes(normalizedQuery);
 }
 
-function filterDependencies(dependencies, indexed, query, sourceComponentIds, targetComponentIds, status) {
+function filterDependencies(
+  dependencies,
+  indexed,
+  query,
+  sourceComponentIds,
+  targetComponentIds,
+  status,
+  relationComponentId = null,
+  relationScope = 'all',
+) {
   const sourceIds = new Set(sourceComponentIds);
   const targetIds = new Set(targetComponentIds);
 
   return dependencies
+    .filter((dependency) => matchesDependencyRelationScope(dependency, relationComponentId, relationScope))
     .filter((dependency) => sourceIds.has(dependency.fromComponentId))
     .filter((dependency) => targetIds.has(dependency.toComponentId))
     .filter((dependency) => status === 'all' || dependencyStatusKey(dependency) === status)
     .filter((dependency) => matchesDependencyWithUnits(dependency, indexed, query));
+}
+
+function matchesDependencyRelationScope(dependency, componentId, scope) {
+  if (!componentId) {
+    return true;
+  }
+  if (dependency.fromComponentId === dependency.toComponentId) {
+    return false;
+  }
+  if (scope === 'outgoing') {
+    return dependency.fromComponentId === componentId;
+  }
+  if (scope === 'incoming') {
+    return dependency.toComponentId === componentId;
+  }
+
+  return dependency.fromComponentId === componentId || dependency.toComponentId === componentId;
+}
+
+function buildDependencyListSummary(dependencies, direction, sourceComponentIds, targetComponentIds, t) {
+  let componentKey = 'componentLinksSummary';
+  let componentCount = countComponentDependencyLinks(dependencies);
+
+  if (direction === 'source' && sourceComponentIds.length === 1) {
+    componentKey = 'dependsOnComponentsSummary';
+    componentCount = countUniqueDependencySide(dependencies, 'toComponentId', sourceComponentIds[0]);
+  } else if (direction === 'target' && targetComponentIds.length === 1) {
+    componentKey = 'dependedOnByComponentsSummary';
+    componentCount = countUniqueDependencySide(dependencies, 'fromComponentId', targetComponentIds[0]);
+  }
+
+  return {
+    componentText: interpolate(t(componentKey), { count: componentCount }),
+    unitText: interpolate(t('unitDependenciesSummary'), { count: dependencies.length }),
+  };
+}
+
+function countUniqueDependencySide(dependencies, key, excludedComponentId) {
+  const ids = new Set();
+  dependencies.forEach((dependency) => {
+    const componentId = dependency[key];
+    if (componentId !== excludedComponentId) {
+      ids.add(componentId);
+    }
+  });
+
+  return ids.size;
 }
 
 function countComponentDependencyLinks(dependencies) {
