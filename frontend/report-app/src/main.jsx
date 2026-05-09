@@ -1644,6 +1644,7 @@ function componentGraph(component, report, indexed) {
     ? indexed.componentEdges.filter((edge) => edge.fromComponentId === component.id || edge.toComponentId === component.id)
     : indexed.componentEdges;
   const componentOrder = new Map(report.components.map((item, index) => [item.id, index]));
+  const analyzedComponents = new Map(report.components.map((item) => [item.id, item]));
   const graphComponents = new Map();
 
   if (!component) {
@@ -1656,20 +1657,22 @@ function componentGraph(component, report, indexed) {
 
   graphEdges.forEach((edge) => {
     if (!graphComponents.has(edge.fromComponentId)) {
-      graphComponents.set(edge.fromComponentId, {
-        id: edge.fromComponentId,
-        name: edge.fromComponentName,
-        units: 0,
-        isExternal: true,
-      });
+      const analyzedComponent = analyzedComponents.get(edge.fromComponentId);
+      graphComponents.set(
+        edge.fromComponentId,
+        analyzedComponent
+          ? componentGraphNode(analyzedComponent, false)
+          : componentGraphExternalNode(edge.fromComponentId, edge.fromComponentName),
+      );
     }
     if (!graphComponents.has(edge.toComponentId)) {
-      graphComponents.set(edge.toComponentId, {
-        id: edge.toComponentId,
-        name: edge.toComponentName,
-        units: 0,
-        isExternal: true,
-      });
+      const analyzedComponent = analyzedComponents.get(edge.toComponentId);
+      graphComponents.set(
+        edge.toComponentId,
+        analyzedComponent
+          ? componentGraphNode(analyzedComponent, false)
+          : componentGraphExternalNode(edge.toComponentId, edge.toComponentName),
+      );
     }
   });
 
@@ -1725,6 +1728,15 @@ function componentGraphNode(component, isExternal) {
     name: component.name,
     units: component.metrics.units,
     isExternal,
+  };
+}
+
+function componentGraphExternalNode(id, name) {
+  return {
+    id,
+    name,
+    units: 0,
+    isExternal: true,
   };
 }
 
