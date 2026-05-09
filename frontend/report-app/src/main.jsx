@@ -283,7 +283,7 @@ function App() {
   const [dependencyStatus, setDependencyStatus] = useState('all');
   const [sourceComponentIds, setSourceComponentIds] = useState([]);
   const [targetComponentIds, setTargetComponentIds] = useState([]);
-  const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'en');
+  const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'ru');
   const t = useMemo(() => (key) => dictionaries[locale]?.[key] ?? dictionaries.en[key] ?? key, [locale]);
 
   useEffect(() => {
@@ -370,6 +370,7 @@ function App() {
             <strong>PHPCA</strong>
             <span>{t('architectureReport')}</span>
           </div>
+          <LocaleSwitcher locale={locale} onChange={setLocale} label={t('reportLanguage')} />
         </div>
         <SummaryGrid summary={report.summary} t={t} />
         <div className="component-list">
@@ -395,7 +396,6 @@ function App() {
             <h1>{selectedComponent?.name ?? t('noComponents')}</h1>
           </div>
           <div className="toolbar-actions">
-            <LocaleSwitcher locale={locale} onChange={setLocale} label={t('reportLanguage')} />
             <label className="search-box">
               <Search size={16} />
               <input

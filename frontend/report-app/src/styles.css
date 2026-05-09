@@ -45,6 +45,7 @@ button {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .brand strong,
@@ -185,13 +186,13 @@ td span,
   gap: 12px;
   align-items: center;
   justify-content: flex-end;
-  width: min(680px, 100%);
+  width: min(520px, 100%);
 }
 
 .locale-switcher {
   display: inline-flex;
   flex: 0 0 auto;
-  min-height: 42px;
+  min-height: 34px;
   padding: 3px;
   border: 1px solid #c9d2d9;
   border-radius: 8px;
@@ -199,7 +200,7 @@ td span,
 }
 
 .locale-switcher button {
-  min-width: 44px;
+  min-width: 36px;
   padding: 0 9px;
   border: 0;
   border-radius: 6px;
@@ -210,6 +211,21 @@ td span,
 .locale-switcher button.active {
   color: #ffffff;
   background: #24485f;
+}
+
+.sidebar .locale-switcher {
+  margin-left: auto;
+  border-color: #293643;
+  background: #18222c;
+}
+
+.sidebar .locale-switcher button {
+  color: #dbe5ec;
+}
+
+.sidebar .locale-switcher button.active {
+  color: #ffffff;
+  background: #385164;
 }
 
 .search-box {
@@ -986,10 +1002,6 @@ mark {
     align-items: stretch;
     flex-direction: column;
     width: 100%;
-  }
-
-  .locale-switcher {
-    align-self: flex-start;
   }
 
   .search-box {
