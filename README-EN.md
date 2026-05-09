@@ -1,61 +1,98 @@
-# PHP Clean Architecture [EN]
-A tool for automating quality control over the architecture of applications written in PHP, as well as simplifying the analysis and visualization of some metrics.
+# PHP Clean Architecture
 
-The idea of its creation was inspired by the book "Clean Architecture" (by Robert Martin).
-If you haven’t read it yet, you can get acquainted with its key ideas on which the tool is based https://habr.com/en/post/504590/
+A tool for automating architecture quality control in PHP applications, as well as analyzing and visualizing
+architecture metrics.
 
-## Installation
+The idea was inspired by Robert C. Martin's "Clean Architecture".
+If you have not read it yet, you can start with the key ideas behind this tool:
+https://habr.com/en/post/504590/
+
+## Quick Start
+
 ```shell script
-composer require v.chetkov/php-clean-architecture
+composer require v.chetkov/php-clean-architecture --dev
+cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config.php
+vendor/bin/phpca-check phpca-config.php
+vendor/bin/phpca-build-reports phpca-config.php
 ```
 
+## Compatibility
+
+The current major version supports PHP 8.3, 8.4, and 8.5.
+
 ## Configuration
-Next, copy the sample config to the root of the project
+
+Copy the sample config to the project root:
+
 ```shell script
 cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config.php
 ```
 
-All configuration details are described in detail in the config sample https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php, as well as in articles https://habr.com/ru/post/504590/ and https://habr.com/ru/post/686236/
+Configuration details are described in the sample config:
+https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php
 
-## Source discovery
+These articles may also be useful:
+
+- https://habr.com/ru/post/504590/
+- https://habr.com/ru/post/686236/
+
+## Source Discovery
 
 The analyzer reads PHP files through AST and discovers declared `class`, `interface`, `trait`, and `enum` symbols from file
 contents. A unit name no longer has to match its PSR-4 path: a component can point to a legacy directory or a single file,
 and discovered symbols are assigned to the component by the configured root path.
 
-For files without declared symbols, such as executable scripts, the analyzer keeps the previous fallback based on the root
-`namespace` and relative path. When `vendor_based_components` is enabled, Composer `psr-4`, `psr-0`, `classmap`, `files`,
+For files without declared symbols, such as executable scripts, the analyzer uses a fallback based on the root `namespace`
+and relative path. When `vendor_based_components` is enabled, Composer `psr-4`, `psr-0`, `classmap`, `files`,
 `autoload-dev`, and `exclude-from-classmap` metadata are used.
+
+PHP 8.5 syntax is supported at the AST parsing level: pipe operator, `clone()` with property changes, `#[NoDiscard]`,
+closures/first-class callables and casts in constant expressions, attributes on constants, and final promoted properties.
 
 ## Usage
 
-1. Generating a report for analysis.
+1. Generate a report for analysis.
+
 ```shell script
-vendor/bin/phpca-build-reports {?path/to/phpca-config.php}
+vendor/bin/phpca-build-reports phpca-config.php
 ```
-The report visualizes the current state of the project, visually displays the relationships between components, their strength, the remoteness of components from the main sequence, and also highlights unwanted dependencies and other architectural problems detected based on the config.
-![image](https://user-images.githubusercontent.com/12594577/134708940-f53dc72e-8664-4e57-a3a7-4f6bb4ec965c.png)
-![image](https://user-images.githubusercontent.com/12594577/134709361-fbe654bd-70f4-460c-a107-fb3956f064b0.png)
+
+The command creates a static HTML report with a component graph, unit search, dependency filters, violation lists, and
+architecture metrics. The report can be opened locally in a browser without running a server.
+
+The config path can be omitted when using the standard `phpca-config.php` file in the current directory.
 
 2. Check for CI.
+
 ```shell script
-vendor/bin/phpca-check {?path/to/phpca-config.php}
+vendor/bin/phpca-check phpca-config.php
 ```
-In case of violation by the code of restrictions specified by the config, informs of the discovered problems and completes the execution with the error.
-It is recommended to add the launch of this command in the CI process (this guarantees the correspondence of the code that gets into the assembly, configured restrictions)
+
+If the code violates restrictions defined in the config, the command prints the detected problems and exits with an error.
+It is recommended to run `phpca-check` in CI so that code entering the build matches the project's architecture rules.
 
 3. Allowed state.
+
 ```shell script
-vendor/bin/phpca-allow-current-state {?path/to/phpca-config.php}
+vendor/bin/phpca-allow-current-state phpca-config.php
 ```
-The command will record the current state of the project, the relationship between existing classes, to the file. With subsequent phpca-check launches, problems related to the preserved state will be ignored.
 
-This makes it possible to easily connect php-clean-architecture not only to new projects, but also to already workers, which already have many problems, the solving of which takes time.
+The command stores the current project state and dependencies between existing classes in a separate file. On later
+`phpca-check` runs, problems related to the stored state will be ignored.
 
-4. Report/Check on the file list
+For `phpca-check` to use the stored state, `exclusions.allowed_state.enabled` must be enabled in the config and
+`exclusions.allowed_state.storage` must point to the storage file.
 
-If you want to check for problems or build a dependence graph and conduct an analysis not on the entire project, but by some part of it (for example, according to the list of changed files), you can set the value of the environment variable *PHPCA_ALLOWED_PATHS*
-Example of use:
+This makes it possible to connect php-clean-architecture not only to new projects, but also to existing projects where
+architecture problems need to be fixed gradually.
+
+4. Report/Check by file list
+
+If you need to check only part of a project, for example a list of changed files, pass the restriction through the
+`PHPCA_ALLOWED_PATHS` environment variable.
+
+Example:
+
 ```shell
-export PHPCA_ALLOWED_PATHS=`git diff master --name-only` PHPCA_REPORTS_DIR='phpca-report'; vendor/bin/phpca-build-reports {?path/to/phpca-config.php}
+PHPCA_ALLOWED_PATHS="$(git diff master --name-only)" PHPCA_REPORTS_DIR="phpca-report" vendor/bin/phpca-build-reports phpca-config.php
 ```
