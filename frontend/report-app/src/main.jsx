@@ -369,10 +369,15 @@ function App() {
   }, [initialReport]);
 
   const indexed = useMemo(() => buildIndex(report), [report]);
-  const dependencyComponentOptions = useMemo(() => buildDependencyComponentOptions(report, indexed), [indexed, report]);
-  const dependencyComponentIds = useMemo(
-    () => dependencyComponentOptions.map((component) => component.id),
-    [dependencyComponentOptions],
+  const sourceComponentOptions = useMemo(() => [...report.components].sort((left, right) => left.name.localeCompare(right.name)), [report.components]);
+  const targetComponentOptions = useMemo(() => buildDependencyComponentOptions(report, indexed), [indexed, report]);
+  const sourceComponentIdsAll = useMemo(
+    () => sourceComponentOptions.map((component) => component.id),
+    [sourceComponentOptions],
+  );
+  const targetComponentIdsAll = useMemo(
+    () => targetComponentOptions.map((component) => component.id),
+    [targetComponentOptions],
   );
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? null;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
@@ -413,21 +418,21 @@ function App() {
       return;
     }
 
-    if (!dependencyComponentIds.length) {
+    if (!sourceComponentIdsAll.length || !targetComponentIdsAll.length) {
       setSourceComponentIds([]);
       setTargetComponentIds([]);
       return;
     }
 
-    if (selectedComponentId && dependencyComponentIds.includes(selectedComponentId)) {
+    if (selectedComponentId && sourceComponentIdsAll.includes(selectedComponentId)) {
       setSourceComponentIds([selectedComponentId]);
-      setTargetComponentIds(dependencyComponentIds.filter((componentId) => componentId !== selectedComponentId));
+      setTargetComponentIds(targetComponentIdsAll.filter((componentId) => componentId !== selectedComponentId));
       return;
     }
 
-    setSourceComponentIds(dependencyComponentIds);
-    setTargetComponentIds(dependencyComponentIds);
-  }, [dependencyComponentIds, selectedComponentId]);
+    setSourceComponentIds(sourceComponentIdsAll);
+    setTargetComponentIds(targetComponentIdsAll);
+  }, [sourceComponentIdsAll, targetComponentIdsAll, selectedComponentId]);
 
   useEffect(() => {
     if (loadingState !== 'ready' || navigationReady.current) {
@@ -492,8 +497,8 @@ function App() {
   const selectOverview = () => {
     setSelectedComponentId(null);
     setSelectedUnitId(null);
-    setSourceComponentIds(dependencyComponentIds);
-    setTargetComponentIds(dependencyComponentIds);
+    setSourceComponentIds(sourceComponentIdsAll);
+    setTargetComponentIds(targetComponentIdsAll);
   };
   const selectComponent = (componentId) => {
     setSelectedComponentId(componentId);
@@ -504,7 +509,7 @@ function App() {
     setSelectedUnitId(null);
 
     if (componentIds.length === 1 && indexed.componentsById.has(componentIds[0])) {
-      setTargetComponentIds(dependencyComponentIds.filter((componentId) => componentId !== componentIds[0]));
+      setTargetComponentIds(targetComponentIdsAll.filter((componentId) => componentId !== componentIds[0]));
       setSelectedComponentId(componentIds[0]);
       return;
     }
@@ -632,7 +637,6 @@ function App() {
             {view === 'units' && <UnitsTable units={visibleUnits} selectedUnitId={selectedUnit?.id} onSelectUnit={selectUnit} t={t} />}
             {view === 'dependencies' && (
               <DependencyExplorer
-                components={dependencyComponentOptions}
                 dependencies={report.dependencies}
                 direction={dependencyDirection}
                 indexed={indexed}
@@ -642,9 +646,11 @@ function App() {
                 onStatusChange={setDependencyStatus}
                 onTargetComponentsChange={setTargetComponentIds}
                 query={query}
+                sourceComponents={sourceComponentOptions}
                 sourceComponentIds={sourceComponentIds}
                 status={dependencyStatus}
                 t={t}
+                targetComponents={targetComponentOptions}
                 targetComponentIds={targetComponentIds}
               />
             )}
@@ -1058,7 +1064,6 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit, t }) {
 }
 
 function DependencyExplorer({
-  components,
   dependencies,
   direction,
   indexed,
@@ -1068,9 +1073,11 @@ function DependencyExplorer({
   onStatusChange,
   onTargetComponentsChange,
   query,
+  sourceComponents,
   sourceComponentIds,
   status,
   t,
+  targetComponents,
   targetComponentIds,
 }) {
   const filteredDependencies = useMemo(() => {
@@ -1130,14 +1137,14 @@ function DependencyExplorer({
             value={status}
           />
           <ComponentFilter
-            components={components}
+            components={sourceComponents}
             label={t('fromComponents')}
             onChange={onSourceComponentsChange}
             selectedIds={sourceComponentIds}
             t={t}
           />
           <ComponentFilter
-            components={components}
+            components={targetComponents}
             label={t('toComponents')}
             onChange={onTargetComponentsChange}
             selectedIds={targetComponentIds}
