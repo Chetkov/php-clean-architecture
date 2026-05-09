@@ -170,11 +170,44 @@ td span,
   font-size: 28px;
 }
 
+.toolbar-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  width: min(680px, 100%);
+}
+
+.locale-switcher {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 3px;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.locale-switcher button {
+  min-width: 44px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.locale-switcher button.active {
+  color: #ffffff;
+  background: #24485f;
+}
+
 .search-box {
   display: flex;
+  flex: 1 1 420px;
   gap: 8px;
   align-items: center;
-  width: min(520px, 100%);
+  width: 100%;
   min-height: 42px;
   padding: 0 12px;
   border: 1px solid #c9d2d9;
@@ -703,6 +736,20 @@ mark {
   .toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .toolbar-actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .locale-switcher {
+    align-self: flex-start;
+  }
+
+  .search-box {
+    flex-basis: auto;
   }
 
   .title-block h1 {

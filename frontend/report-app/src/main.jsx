@@ -24,6 +24,207 @@ const fallbackReport = {
   violations: [],
 };
 
+const locales = [
+  { code: 'en', label: 'EN' },
+  { code: 'ru', label: 'RU' },
+  { code: 'zh', label: '中文' },
+];
+
+const localeToIntl = {
+  en: 'en',
+  ru: 'ru',
+  zh: 'zh-CN',
+};
+
+const dictionaries = {
+  en: {
+    activeIssues: 'Active issues',
+    aiMatrix: 'A/I matrix',
+    api: 'API',
+    architectureReport: 'Architecture report',
+    abstract: 'Abstract',
+    abstractness: 'Abstractness',
+    allowed: 'allowed',
+    allowedState: 'allowed state',
+    blocked: 'blocked',
+    componentDependencyDistribution: 'Component dependency distribution',
+    componentGraph: 'Component graph',
+    componentMetrics: 'Component metrics',
+    components: 'Components',
+    dependencyBlockedViolation: '"{from}" must not depend on "{to}".',
+    dependencyPrivateViolation: '"{from}" uses non-public "{to}".',
+    dependencies: 'Dependencies',
+    dependencyGraphLabel: 'Component dependency graph',
+    dependencyUnavailable: 'Unknown dependency',
+    distance: 'Distance',
+    distanceRanking: 'Distance ranking',
+    generatedReport: 'Generated report',
+    incoming: 'Incoming',
+    incomingDependencies: 'Incoming dependencies',
+    in: 'In',
+    instability: 'Instability',
+    internal: 'internal',
+    issues: 'issues',
+    loadingReport: 'Loading report',
+    name: 'Name',
+    noComponents: 'No components',
+    notApplicable: 'n/a',
+    unknown: 'unknown',
+    no: 'no',
+    noActiveIssues: 'No active architecture issues for the current filters',
+    noComponentData: 'No component data',
+    noDependencies: 'No dependencies',
+    noDependencyDistribution: 'No dependency distribution',
+    noExternalDependencies: 'No external component dependencies',
+    noMatchingDependencies: 'No dependencies match the current filters',
+    noMatchingUnits: 'No units match the current filters',
+    out: 'Out',
+    outgoing: 'Outgoing',
+    outgoingDependencies: 'Outgoing dependencies',
+    path: 'Path',
+    primitive: 'Primitiveness',
+    privateApi: 'private',
+    publicApi: 'public',
+    readingReport: 'Reading report.json...',
+    reportDataUnavailable: 'Report data unavailable',
+    reportJsonNotFound: 'report.json was not found near index.html.',
+    reportLanguage: 'Report language',
+    reportView: 'Report view',
+    searchPlaceholder: 'Search components, units, paths or dependencies',
+    selectedUnit: 'Selected unit',
+    type: 'Type',
+    unitDependencyGraphLabel: 'Selected unit dependency graph',
+    unitsCount: 'units',
+    units: 'Units',
+    violations: 'Violations',
+    yes: 'yes',
+  },
+  ru: {
+    activeIssues: 'Активные проблемы',
+    aiMatrix: 'Матрица A/I',
+    api: 'API',
+    architectureReport: 'Архитектурный отчет',
+    abstract: 'Абстрактный',
+    abstractness: 'Абстрактность',
+    allowed: 'разрешено',
+    allowedState: 'разрешенное состояние',
+    blocked: 'запрещено',
+    componentDependencyDistribution: 'Распределение зависимостей компонента',
+    componentGraph: 'Граф компонентов',
+    componentMetrics: 'Метрики компонента',
+    components: 'Компоненты',
+    dependencyBlockedViolation: '"{from}" не должен зависеть от "{to}".',
+    dependencyPrivateViolation: '"{from}" использует непубличный "{to}".',
+    dependencies: 'Зависимости',
+    dependencyGraphLabel: 'Граф зависимостей компонентов',
+    dependencyUnavailable: 'Зависимость не найдена',
+    distance: 'Расстояние',
+    distanceRanking: 'Рейтинг расстояния',
+    generatedReport: 'Сформированный отчет',
+    incoming: 'Входящие',
+    incomingDependencies: 'Входящие зависимости',
+    in: 'Вх.',
+    instability: 'Неустойчивость',
+    internal: 'внутренняя',
+    issues: 'проблем',
+    loadingReport: 'Загрузка отчета',
+    name: 'Имя',
+    noComponents: 'Нет компонентов',
+    notApplicable: 'н/д',
+    unknown: 'неизвестно',
+    no: 'нет',
+    noActiveIssues: 'Для текущих фильтров нет активных архитектурных проблем',
+    noComponentData: 'Нет данных компонента',
+    noDependencies: 'Нет зависимостей',
+    noDependencyDistribution: 'Нет распределения зависимостей',
+    noExternalDependencies: 'Нет внешних зависимостей компонентов',
+    noMatchingDependencies: 'Нет зависимостей по текущим фильтрам',
+    noMatchingUnits: 'Нет юнитов по текущим фильтрам',
+    out: 'Исх.',
+    outgoing: 'Исходящие',
+    outgoingDependencies: 'Исходящие зависимости',
+    path: 'Путь',
+    primitive: 'Примитивность',
+    privateApi: 'приватный',
+    publicApi: 'публичный',
+    readingReport: 'Читаю report.json...',
+    reportDataUnavailable: 'Данные отчета недоступны',
+    reportJsonNotFound: 'report.json не найден рядом с index.html.',
+    reportLanguage: 'Язык отчета',
+    reportView: 'Раздел отчета',
+    searchPlaceholder: 'Поиск по компонентам, юнитам, путям или зависимостям',
+    selectedUnit: 'Выбранный юнит',
+    type: 'Тип',
+    unitDependencyGraphLabel: 'Граф зависимостей выбранного юнита',
+    unitsCount: 'юнитов',
+    units: 'Юниты',
+    violations: 'Нарушения',
+    yes: 'да',
+  },
+  zh: {
+    activeIssues: '活跃问题',
+    aiMatrix: 'A/I 矩阵',
+    api: 'API',
+    architectureReport: '架构报告',
+    abstract: '抽象',
+    abstractness: '抽象度',
+    allowed: '允许',
+    allowedState: '允许状态',
+    blocked: '阻止',
+    componentDependencyDistribution: '组件依赖分布',
+    componentGraph: '组件图',
+    componentMetrics: '组件指标',
+    components: '组件',
+    dependencyBlockedViolation: '"{from}" 不应依赖 "{to}"。',
+    dependencyPrivateViolation: '"{from}" 使用了非公开的 "{to}"。',
+    dependencies: '依赖',
+    dependencyGraphLabel: '组件依赖图',
+    dependencyUnavailable: '未知依赖',
+    distance: '距离',
+    distanceRanking: '距离排名',
+    generatedReport: '已生成报告',
+    incoming: '传入',
+    incomingDependencies: '传入依赖',
+    in: '入',
+    instability: '不稳定度',
+    internal: '内部',
+    issues: '问题',
+    loadingReport: '正在加载报告',
+    name: '名称',
+    noComponents: '没有组件',
+    notApplicable: '不适用',
+    unknown: '未知',
+    no: '否',
+    noActiveIssues: '当前筛选没有活跃架构问题',
+    noComponentData: '没有组件数据',
+    noDependencies: '没有依赖',
+    noDependencyDistribution: '没有依赖分布',
+    noExternalDependencies: '没有外部组件依赖',
+    noMatchingDependencies: '没有匹配当前筛选的依赖',
+    noMatchingUnits: '没有匹配当前筛选的单元',
+    out: '出',
+    outgoing: '传出',
+    outgoingDependencies: '传出依赖',
+    path: '路径',
+    primitive: '原始度',
+    privateApi: '私有',
+    publicApi: '公开',
+    readingReport: '正在读取 report.json...',
+    reportDataUnavailable: '报告数据不可用',
+    reportJsonNotFound: 'index.html 旁边没有找到 report.json。',
+    reportLanguage: '报告语言',
+    reportView: '报告视图',
+    searchPlaceholder: '搜索组件、单元、路径或依赖',
+    selectedUnit: '选中的单元',
+    type: '类型',
+    unitDependencyGraphLabel: '选中单元的依赖图',
+    unitsCount: '单元',
+    units: '单元',
+    violations: '违规',
+    yes: '是',
+  },
+};
+
 function App() {
   const [report, setReport] = useState(fallbackReport);
   const [loadingState, setLoadingState] = useState('loading');
@@ -31,6 +232,13 @@ function App() {
   const [selectedComponentId, setSelectedComponentId] = useState(null);
   const [selectedUnitId, setSelectedUnitId] = useState(null);
   const [view, setView] = useState('violations');
+  const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'en');
+  const t = useMemo(() => (key) => dictionaries[locale]?.[key] ?? dictionaries.en[key] ?? key, [locale]);
+
+  useEffect(() => {
+    localStorage.setItem('phpca-report-locale', locale);
+    document.documentElement.lang = localeToIntl[locale];
+  }, [locale]);
 
   useEffect(() => {
     fetch('./report.json', { cache: 'no-store' })
@@ -95,11 +303,11 @@ function App() {
   };
 
   if (loadingState === 'loading') {
-    return <ShellMessage title="Loading report" text="Reading report.json..." />;
+    return <ShellMessage title={t('loadingReport')} text={t('readingReport')} />;
   }
 
   if (loadingState === 'failed') {
-    return <ShellMessage title="Report data unavailable" text="report.json was not found near index.html." />;
+    return <ShellMessage title={t('reportDataUnavailable')} text={t('reportJsonNotFound')} />;
   }
 
   return (
@@ -109,10 +317,10 @@ function App() {
           <GitBranch size={24} />
           <div>
             <strong>PHPCA</strong>
-            <span>Architecture report</span>
+            <span>{t('architectureReport')}</span>
           </div>
         </div>
-        <SummaryGrid summary={report.summary} />
+        <SummaryGrid summary={report.summary} t={t} />
         <div className="component-list">
           {report.components.map((component) => (
             <button
@@ -132,62 +340,82 @@ function App() {
       <section className="workspace">
         <header className="toolbar">
           <div className="title-block">
-            <span>{formatDate(report.generatedAt)}</span>
-            <h1>{selectedComponent?.name ?? 'No components'}</h1>
+            <span>{formatDate(report.generatedAt, locale)}</span>
+            <h1>{selectedComponent?.name ?? t('noComponents')}</h1>
           </div>
-          <label className="search-box">
-            <Search size={16} />
-            <input
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search components, units, paths or dependencies"
-              type="search"
-              value={query}
-            />
-          </label>
+          <div className="toolbar-actions">
+            <LocaleSwitcher locale={locale} onChange={setLocale} label={t('reportLanguage')} />
+            <label className="search-box">
+              <Search size={16} />
+              <input
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t('searchPlaceholder')}
+                type="search"
+                value={query}
+              />
+            </label>
+          </div>
         </header>
 
         <section className="overview-grid">
-          <MetricPanel component={selectedComponent} />
-          <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} />
-          <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} />
+          <MetricPanel component={selectedComponent} t={t} />
+          <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
+          <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
         </section>
 
         <section className="relationship-grid">
-          <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} />
-          <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} />
+          <ComponentGraphPanel component={selectedComponent} report={report} indexed={indexed} onSelectComponent={selectComponent} t={t} />
+          <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />
         </section>
 
-        <nav className="tabs" aria-label="Report view">
+        <nav className="tabs" aria-label={t('reportView')}>
           <button className={view === 'violations' ? 'active' : ''} onClick={() => setView('violations')} type="button">
             <ShieldAlert size={16} />
-            Violations
+            {t('violations')}
           </button>
           <button className={view === 'units' ? 'active' : ''} onClick={() => setView('units')} type="button">
             <FileCode2 size={16} />
-            Units
+            {t('units')}
           </button>
           <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')} type="button">
             <ArrowRight size={16} />
-            Dependencies
+            {t('dependencies')}
           </button>
         </nav>
 
-        {view === 'violations' && <ViolationsTable violations={visibleViolations} indexed={indexed} onSelectUnit={selectUnit} />}
-        {view === 'units' && <UnitsTable units={visibleUnits} selectedUnitId={selectedUnit?.id} onSelectUnit={selectUnit} />}
-        {view === 'dependencies' && <DependenciesTable dependencies={visibleDependencies} onSelectUnit={selectUnit} />}
+        {view === 'violations' && <ViolationsTable violations={visibleViolations} indexed={indexed} onSelectUnit={selectUnit} t={t} />}
+        {view === 'units' && <UnitsTable units={visibleUnits} selectedUnitId={selectedUnit?.id} onSelectUnit={selectUnit} t={t} />}
+        {view === 'dependencies' && <DependenciesTable dependencies={visibleDependencies} onSelectUnit={selectUnit} t={t} />}
 
-        <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} />
+        <UnitDetail unit={selectedUnit} indexed={indexed} onSelectUnit={selectUnit} t={t} />
       </section>
     </main>
   );
 }
 
-function SummaryGrid({ summary }) {
+function LocaleSwitcher({ locale, onChange, label }) {
+  return (
+    <div className="locale-switcher" role="group" aria-label={label}>
+      {locales.map((item) => (
+        <button
+          className={item.code === locale ? 'active' : ''}
+          key={item.code}
+          onClick={() => onChange(item.code)}
+          type="button"
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SummaryGrid({ summary, t }) {
   const items = [
-    ['Components', summary.components, <Layers3 size={18} />],
-    ['Units', summary.units, <FileCode2 size={18} />],
-    ['Dependencies', summary.dependencies, <ArrowRight size={18} />],
-    ['Active issues', summary.activeViolations, <ShieldAlert size={18} />],
+    [t('components'), summary.components, <Layers3 size={18} />],
+    [t('units'), summary.units, <FileCode2 size={18} />],
+    [t('dependencies'), summary.dependencies, <ArrowRight size={18} />],
+    [t('activeIssues'), summary.activeViolations, <ShieldAlert size={18} />],
   ];
 
   return (
@@ -203,21 +431,21 @@ function SummaryGrid({ summary }) {
   );
 }
 
-function MetricPanel({ component }) {
+function MetricPanel({ component, t }) {
   if (!component) {
-    return <section className="panel">No component data</section>;
+    return <section className="panel">{t('noComponentData')}</section>;
   }
 
   const metrics = [
-    ['Abstractness', component.metrics.abstractness],
-    ['Instability', component.metrics.instability],
-    ['Distance', component.metrics.distance],
-    ['Primitiveness', component.metrics.primitiveness],
+    [t('abstractness'), component.metrics.abstractness],
+    [t('instability'), component.metrics.instability],
+    [t('distance'), component.metrics.distance],
+    [t('primitive'), component.metrics.primitiveness],
   ];
 
   return (
     <section className="panel metrics-panel">
-      <h2>Component metrics</h2>
+      <h2>{t('componentMetrics')}</h2>
       {metrics.map(([label, value]) => (
         <div className="metric" key={label}>
           <div>
@@ -231,11 +459,11 @@ function MetricPanel({ component }) {
   );
 }
 
-function AIMatrix({ components, selectedComponentId, onSelectComponent }) {
+function AIMatrix({ components, selectedComponentId, onSelectComponent, t }) {
   return (
     <section className="panel chart-panel">
-      <h2>A/I matrix</h2>
-      <svg viewBox="0 0 360 240" role="img" aria-label="Abstractness instability matrix">
+      <h2>{t('aiMatrix')}</h2>
+      <svg viewBox="0 0 360 240" role="img" aria-label={t('aiMatrix')}>
         <line className="chart-grid strong" x1="40" x2="320" y1="200" y2="200" />
         <line className="chart-grid strong" x1="40" x2="40" y1="24" y2="200" />
         {[0.25, 0.5, 0.75, 1].map((value) => (
@@ -263,19 +491,19 @@ function AIMatrix({ components, selectedComponentId, onSelectComponent }) {
             </g>
           );
         })}
-        <text className="axis-label" x="170" y="228">Instability</text>
-        <text className="axis-label vertical" x="-140" y="14">Abstractness</text>
+        <text className="axis-label" x="170" y="228">{t('instability')}</text>
+        <text className="axis-label vertical" x="-140" y="14">{t('abstractness')}</text>
       </svg>
     </section>
   );
 }
 
-function DistanceRanking({ components, selectedComponentId, onSelectComponent }) {
+function DistanceRanking({ components, selectedComponentId, onSelectComponent, t }) {
   const sortedComponents = [...components].sort((left, right) => right.metrics.distance - left.metrics.distance);
 
   return (
     <section className="panel chart-panel">
-      <h2>Distance ranking</h2>
+      <h2>{t('distanceRanking')}</h2>
       <div className="ranking-list">
         {sortedComponents.map((component) => (
           <button
@@ -294,13 +522,13 @@ function DistanceRanking({ components, selectedComponentId, onSelectComponent })
   );
 }
 
-function ComponentGraphPanel({ component, report, indexed, onSelectComponent }) {
+function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t }) {
   const graph = useMemo(() => componentGraph(component, report, indexed), [component, indexed, report]);
 
   return (
     <section className="panel graph-panel">
-      <h2>Component graph</h2>
-      <svg viewBox="0 0 720 320" role="img" aria-label="Component dependency graph">
+      <h2>{t('componentGraph')}</h2>
+      <svg viewBox="0 0 720 320" role="img" aria-label={t('dependencyGraphLabel')}>
         <defs>
           <marker id="arrow" markerHeight="8" markerWidth="8" orient="auto" refX="8" refY="4">
             <path d="M0,0 L8,4 L0,8 Z" />
@@ -335,7 +563,7 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent }) 
             >
               <circle r="38" />
               <text textAnchor="middle" y="-3">{truncate(node.name, 14)}</text>
-              <text className="node-meta" textAnchor="middle" y="15">{violations.length ? `${violations.length} issues` : `${node.units} units`}</text>
+              <text className="node-meta" textAnchor="middle" y="15">{violations.length ? `${violations.length} ${t('issues')}` : `${node.units} ${t('unitsCount')}`}</text>
             </g>
           );
         })}
@@ -344,9 +572,9 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent }) 
   );
 }
 
-function FanPanel({ component, indexed, onSelectComponent }) {
+function FanPanel({ component, indexed, onSelectComponent, t }) {
   if (!component) {
-    return <section className="panel fan-panel">No dependency distribution</section>;
+    return <section className="panel fan-panel">{t('noDependencyDistribution')}</section>;
   }
 
   const outgoing = indexed.outgoingComponentEdges.get(component.id) ?? [];
@@ -354,14 +582,14 @@ function FanPanel({ component, indexed, onSelectComponent }) {
 
   return (
     <section className="panel fan-panel">
-      <h2>Component dependency distribution</h2>
-      <FanList title="Outgoing" items={outgoing} direction="to" indexed={indexed} onSelectComponent={onSelectComponent} />
-      <FanList title="Incoming" items={incoming} direction="from" indexed={indexed} onSelectComponent={onSelectComponent} />
+      <h2>{t('componentDependencyDistribution')}</h2>
+      <FanList title={t('outgoing')} items={outgoing} direction="to" indexed={indexed} onSelectComponent={onSelectComponent} t={t} />
+      <FanList title={t('incoming')} items={incoming} direction="from" indexed={indexed} onSelectComponent={onSelectComponent} t={t} />
     </section>
   );
 }
 
-function FanList({ title, items, direction, indexed, onSelectComponent }) {
+function FanList({ title, items, direction, indexed, onSelectComponent, t }) {
   const max = Math.max(...items.map((item) => item.weight), 1);
 
   return (
@@ -384,14 +612,14 @@ function FanList({ title, items, direction, indexed, onSelectComponent }) {
             <i style={{ width: `${Math.max((item.weight / max) * 100, 4)}%` }} />
           </button>
         );
-      }) : <p>No external component dependencies</p>}
+      }) : <p>{t('noExternalDependencies')}</p>}
     </div>
   );
 }
 
-function ViolationsTable({ violations, indexed, onSelectUnit }) {
+function ViolationsTable({ violations, indexed, onSelectUnit, t }) {
   if (!violations.length) {
-    return <EmptyState icon={<CheckCircle2 size={22} />} title="No active architecture issues for the current filters" />;
+    return <EmptyState icon={<CheckCircle2 size={22} />} title={t('noActiveIssues')} />;
   }
 
   return (
@@ -402,10 +630,10 @@ function ViolationsTable({ violations, indexed, onSelectUnit }) {
           <article className="issue-row" key={violation.id}>
             <AlertTriangle size={18} />
             <div>
-              <strong>{violation.message}</strong>
-              <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} />
+              <strong>{violationMessage(violation, dependency, t)}</strong>
+              <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
             </div>
-            <mark>{violation.status === 'allowed-state' ? 'allowed state' : violation.type}</mark>
+            <mark>{violation.status === 'allowed-state' ? t('allowedState') : violation.type}</mark>
           </article>
         );
       })}
@@ -413,9 +641,9 @@ function ViolationsTable({ violations, indexed, onSelectUnit }) {
   );
 }
 
-function UnitsTable({ units, selectedUnitId, onSelectUnit }) {
+function UnitsTable({ units, selectedUnitId, onSelectUnit, t }) {
   if (!units.length) {
-    return <EmptyState icon={<FileCode2 size={22} />} title="No units match the current filters" />;
+    return <EmptyState icon={<FileCode2 size={22} />} title={t('noMatchingUnits')} />;
   }
 
   return (
@@ -423,11 +651,11 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit }) {
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>API</th>
-            <th>In</th>
-            <th>Out</th>
+            <th>{t('name')}</th>
+            <th>{t('type')}</th>
+            <th>{t('api')}</th>
+            <th>{t('in')}</th>
+            <th>{t('out')}</th>
           </tr>
         </thead>
         <tbody>
@@ -438,7 +666,7 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit }) {
                 <span>{unit.name}</span>
               </td>
               <td>{unit.type}</td>
-              <td>{unit.isPublic ? 'public' : 'private'}</td>
+              <td>{unit.isPublic ? t('publicApi') : t('privateApi')}</td>
               <td>{unit.metrics.incoming}</td>
               <td>{unit.metrics.outgoing}</td>
             </tr>
@@ -449,9 +677,9 @@ function UnitsTable({ units, selectedUnitId, onSelectUnit }) {
   );
 }
 
-function DependenciesTable({ dependencies, onSelectUnit }) {
+function DependenciesTable({ dependencies, onSelectUnit, t }) {
   if (!dependencies.length) {
-    return <EmptyState icon={<ArrowRight size={22} />} title="No dependencies match the current filters" />;
+    return <EmptyState icon={<ArrowRight size={22} />} title={t('noMatchingDependencies')} />;
   }
 
   return (
@@ -461,18 +689,18 @@ function DependenciesTable({ dependencies, onSelectUnit }) {
           <CircleDot size={16} />
           <div>
             <strong>{dependency.fromComponentName} {'->'} {dependency.toComponentName}</strong>
-            <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} />
+            <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
           </div>
-          <mark>{dependency.isInternal ? 'internal' : dependency.isAllowedState ? 'allowed state' : dependency.isComponentAllowed ? 'allowed' : 'blocked'}</mark>
+          <mark>{dependencyStatusLabel(dependency, t)}</mark>
         </article>
       ))}
     </section>
   );
 }
 
-function DependencyEndpoints({ dependency, onSelectUnit }) {
+function DependencyEndpoints({ dependency, onSelectUnit, t }) {
   if (!dependency) {
-    return <span>Unknown dependency</span>;
+    return <span>{t('dependencyUnavailable')}</span>;
   }
 
   return (
@@ -484,7 +712,7 @@ function DependencyEndpoints({ dependency, onSelectUnit }) {
   );
 }
 
-function UnitDetail({ unit, indexed, onSelectUnit }) {
+function UnitDetail({ unit, indexed, onSelectUnit, t }) {
   if (!unit) {
     return null;
   }
@@ -496,7 +724,7 @@ function UnitDetail({ unit, indexed, onSelectUnit }) {
     <section className="panel unit-detail">
       <header>
         <div>
-          <span>Selected unit</span>
+          <span>{t('selectedUnit')}</span>
           <h2>{unit.shortName}</h2>
           <p>{unit.name}</p>
         </div>
@@ -504,18 +732,18 @@ function UnitDetail({ unit, indexed, onSelectUnit }) {
       </header>
       <div className="unit-detail-grid">
         <div className="unit-facts">
-          <Fact label="Type" value={unit.type} />
-          <Fact label="API" value={unit.isPublic ? 'public' : 'private'} />
-          <Fact label="Abstract" value={unit.isAbstract === null ? 'n/a' : unit.isAbstract ? 'yes' : 'no'} />
-          <Fact label="Instability" value={formatRate(unit.metrics.instability)} />
-          <Fact label="Primitiveness" value={formatRate(unit.metrics.primitiveness)} />
-          <Fact label="Path" value={unit.path ?? 'unknown'} />
+          <Fact label={t('type')} value={unit.type} />
+          <Fact label={t('api')} value={unit.isPublic ? t('publicApi') : t('privateApi')} />
+          <Fact label={t('abstract')} value={unit.isAbstract === null ? t('notApplicable') : unit.isAbstract ? t('yes') : t('no')} />
+          <Fact label={t('instability')} value={formatRate(unit.metrics.instability)} />
+          <Fact label={t('primitive')} value={formatRate(unit.metrics.primitiveness)} />
+          <Fact label={t('path')} value={unit.path ?? t('unknown')} />
         </div>
-        <UnitGraph unit={unit} incoming={incoming} outgoing={outgoing} indexed={indexed} onSelectUnit={onSelectUnit} />
+        <UnitGraph unit={unit} incoming={incoming} outgoing={outgoing} indexed={indexed} onSelectUnit={onSelectUnit} t={t} />
       </div>
       <div className="unit-dependency-grid">
-        <UnitDependencyList title="Outgoing dependencies" dependencies={outgoing} side="to" onSelectUnit={onSelectUnit} />
-        <UnitDependencyList title="Incoming dependencies" dependencies={incoming} side="from" onSelectUnit={onSelectUnit} />
+        <UnitDependencyList title={t('outgoingDependencies')} dependencies={outgoing} side="to" onSelectUnit={onSelectUnit} t={t} />
+        <UnitDependencyList title={t('incomingDependencies')} dependencies={incoming} side="from" onSelectUnit={onSelectUnit} t={t} />
       </div>
     </section>
   );
@@ -530,7 +758,7 @@ function Fact({ label, value }) {
   );
 }
 
-function UnitGraph({ unit, incoming, outgoing, indexed, onSelectUnit }) {
+function UnitGraph({ unit, incoming, outgoing, indexed, onSelectUnit, t }) {
   const related = [
     ...incoming.slice(0, 5).map((dependency, index) => ({ dependency, id: dependency.fromUnitId, angle: Math.PI + (index - 2) * 0.32 })),
     ...outgoing.slice(0, 5).map((dependency, index) => ({ dependency, id: dependency.toUnitId, angle: (index - 2) * 0.32 })),
@@ -539,7 +767,7 @@ function UnitGraph({ unit, incoming, outgoing, indexed, onSelectUnit }) {
 
   return (
     <div className="unit-graph">
-      <svg viewBox="0 0 520 260" role="img" aria-label="Selected unit dependency graph">
+      <svg viewBox="0 0 520 260" role="img" aria-label={t('unitDependencyGraphLabel')}>
         {related.map((item) => {
           const relatedUnit = indexed.unitsById.get(item.id);
           const x = center.x + Math.cos(item.angle) * 190;
@@ -564,7 +792,7 @@ function UnitGraph({ unit, incoming, outgoing, indexed, onSelectUnit }) {
   );
 }
 
-function UnitDependencyList({ title, dependencies, side, onSelectUnit }) {
+function UnitDependencyList({ title, dependencies, side, onSelectUnit, t }) {
   return (
     <div className="unit-dependency-list">
       <h3>{title}</h3>
@@ -578,7 +806,7 @@ function UnitDependencyList({ title, dependencies, side, onSelectUnit }) {
             <mark>{componentName}</mark>
           </button>
         );
-      }) : <p>No dependencies</p>}
+      }) : <p>{t('noDependencies')}</p>}
     </div>
   );
 }
@@ -735,11 +963,40 @@ function formatRate(value) {
   return Number(value ?? 0).toFixed(3);
 }
 
-function formatDate(value) {
+function formatDate(value, locale) {
   if (!value) {
-    return 'Generated report';
+    return dictionaries[locale]?.generatedReport ?? dictionaries.en.generatedReport;
   }
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat(localeToIntl[locale] ?? localeToIntl.en, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+}
+
+function dependencyStatusLabel(dependency, t) {
+  if (dependency.isInternal) {
+    return t('internal');
+  }
+  if (dependency.isAllowedState) {
+    return t('allowedState');
+  }
+  return dependency.isComponentAllowed && dependency.isTargetPublic ? t('allowed') : t('blocked');
+}
+
+function violationMessage(violation, dependency, t) {
+  if (!dependency) {
+    return violation.message;
+  }
+
+  const key = violation.type === 'private-unit-dependency'
+    ? 'dependencyPrivateViolation'
+    : 'dependencyBlockedViolation';
+
+  return interpolate(t(key), {
+    from: dependency.fromUnitName,
+    to: dependency.toUnitName,
+  });
+}
+
+function interpolate(template, values) {
+  return template.replace(/\{(\w+)}/g, (_, key) => values[key] ?? '');
 }
 
 function truncate(value, maxLength) {
