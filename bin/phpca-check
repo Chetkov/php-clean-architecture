@@ -3,9 +3,9 @@
 
 use Chetkov\PHPCleanArchitecture\PHPCleanArchitectureFacade;
 
-require_once dirname(__DIR__, 3) . '/autoload.php';
+require_once resolveAutoloadPath();
 
-$configPath = $argv[1] ?? dirname(__DIR__, 4) . '/phpca-config.php';
+$configPath = $argv[1] ?? resolveDefaultConfigPath();
 $config = require $configPath;
 
 $analyzer = new PHPCleanArchitectureFacade($config);
@@ -22,3 +22,35 @@ foreach ($errors as $index => $error) {
     echo "$number. $error" . PHP_EOL;
 }
 exit(1);
+
+function resolveAutoloadPath(): string
+{
+    $candidates = [
+        dirname(__DIR__) . '/vendor/autoload.php',
+        dirname(__DIR__, 3) . '/autoload.php',
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate)) {
+            return $candidate;
+        }
+    }
+
+    throw new \RuntimeException('Composer autoload.php was not found.');
+}
+
+function resolveDefaultConfigPath(): string
+{
+    $candidates = [
+        dirname(__DIR__) . '/phpca-config.php',
+        dirname(__DIR__, 4) . '/phpca-config.php',
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate)) {
+            return $candidate;
+        }
+    }
+
+    return dirname(__DIR__) . '/phpca-config.php';
+}

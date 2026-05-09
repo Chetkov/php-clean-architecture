@@ -27,6 +27,7 @@ class CompositeCountableIterator implements \Iterator, \Countable
     /**
      * @return T
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         return $this->getCurrentIterator()->current();
@@ -45,6 +46,7 @@ class CompositeCountableIterator implements \Iterator, \Countable
     /**
      * @return bool|float|int|string|null
      */
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->getCurrentIterator()->key();
