@@ -42,8 +42,9 @@ closures/first-class callables and casts in constant expressions, attributes on 
 vendor/bin/phpca-build-reports {?path/to/phpca-config.php}
 ```
 The command creates a static SPA: `index.html`, JS/CSS assets, and `report.json` with the full model of components,
-units, external dependencies, metrics, and violations. The report works locally without external CDNs and includes a
-component graph, unit search, component filtering, and dedicated violation/dependency views.
+units, external dependencies, metrics, and violations. The same data is embedded into `index.html`, so the report can be
+opened as a regular local HTML file without running a server. The report works locally without external CDNs and includes
+a component graph, unit search, component filtering, and dedicated violation/dependency views.
 
 2. Check for CI.
 ```shell script

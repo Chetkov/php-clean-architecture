@@ -117,9 +117,19 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
 
         self::assertFileExists($reportPath . '/index.html');
         self::assertFileExists($reportPath . '/report.json');
+        $indexHtml = (string) file_get_contents($reportPath . '/index.html');
+        self::assertSame(
+            1,
+            preg_match('/<script id="phpca-report-data" type="application\/json">(.+)<\/script>/', $indexHtml, $matches)
+        );
+        $embeddedJson = $matches[1] ?? null;
+        self::assertIsString($embeddedJson);
 
         $reportData = json_decode((string) file_get_contents($reportPath . '/report.json'), true);
         self::assertIsArray($reportData);
+        $embeddedReportData = json_decode($embeddedJson, true);
+        self::assertIsArray($embeddedReportData);
+        self::assertSame($reportData['summary'], $embeddedReportData['summary']);
         self::assertSame(1, $reportData['schemaVersion']);
         self::assertSame(2, $reportData['summary']['components']);
         self::assertGreaterThanOrEqual(3, $reportData['summary']['units']);

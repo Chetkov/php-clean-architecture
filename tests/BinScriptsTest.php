@@ -60,6 +60,10 @@ final class BinScriptsTest extends TestCase
         self::assertStringContainsString('Report: ' . $reportPath . '/index.html', $result['output']);
         self::assertFileExists($reportPath . '/index.html');
         self::assertFileExists($reportPath . '/report.json');
+        self::assertStringContainsString(
+            '<script id="phpca-report-data" type="application/json">',
+            (string) file_get_contents($reportPath . '/index.html')
+        );
 
         $this->removeDirectory($reportPath);
     }

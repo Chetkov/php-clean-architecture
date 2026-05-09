@@ -50,8 +50,11 @@ final class ReportRenderingService implements ReportRenderingServiceInterface
             $componentPosition++;
         }
 
+        $reportData = $this->reportDataBuilder->build(...$components);
+
         $this->copyAssets($reportPath);
-        $this->writeJson($reportPath . '/report.json', $this->reportDataBuilder->build(...$components));
+        $this->writeJson($reportPath . '/report.json', $reportData);
+        $this->embedReportData($reportPath . '/index.html', $reportData);
         $this->eventManager->notify(new ReportRenderingFinishedEvent());
     }
 
@@ -114,6 +117,42 @@ final class ReportRenderingService implements ReportRenderingServiceInterface
 
         if (file_put_contents($path, $json . PHP_EOL) === false) {
             throw new \RuntimeException(sprintf('File "%s" was not written', $path));
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function embedReportData(string $indexPath, array $data): void
+    {
+        $html = file_get_contents($indexPath);
+        if (!is_string($html)) {
+            throw new \RuntimeException(sprintf('File "%s" can not be read', $indexPath));
+        }
+
+        $json = json_encode(
+            $data,
+            JSON_UNESCAPED_SLASHES
+            | JSON_UNESCAPED_UNICODE
+            | JSON_HEX_TAG
+            | JSON_HEX_AMP
+            | JSON_HEX_APOS
+            | JSON_HEX_QUOT
+        );
+        if (!is_string($json)) {
+            throw new \RuntimeException('Report data can not be encoded to JSON.');
+        }
+
+        $position = strpos($html, '</head>');
+        if ($position === false) {
+            throw new \RuntimeException('SPA report index.html can not be prepared for inline report data.');
+        }
+
+        $script = '    <script id="phpca-report-data" type="application/json">' . $json . '</script>' . PHP_EOL;
+        $html = substr($html, 0, $position) . $script . substr($html, $position);
+
+        if (file_put_contents($indexPath, $html) === false) {
+            throw new \RuntimeException(sprintf('File "%s" was not written', $indexPath));
         }
     }
 }

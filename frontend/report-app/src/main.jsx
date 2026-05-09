@@ -273,8 +273,9 @@ const dictionaries = {
 };
 
 function App() {
-  const [report, setReport] = useState(fallbackReport);
-  const [loadingState, setLoadingState] = useState('loading');
+  const [initialReport] = useState(() => readEmbeddedReport());
+  const [report, setReport] = useState(() => initialReport ?? fallbackReport);
+  const [loadingState, setLoadingState] = useState(initialReport ? 'ready' : 'loading');
   const [query, setQuery] = useState('');
   const [selectedComponentId, setSelectedComponentId] = useState(null);
   const [selectedUnitId, setSelectedUnitId] = useState(null);
@@ -292,6 +293,11 @@ function App() {
   }, [locale]);
 
   useEffect(() => {
+    if (initialReport) {
+      setReport(initialReport);
+      return;
+    }
+
     fetch('./report.json', { cache: 'no-store' })
       .then((response) => {
         if (!response.ok) {
@@ -306,7 +312,7 @@ function App() {
         setLoadingState('ready');
       })
       .catch(() => setLoadingState('failed'));
-  }, []);
+  }, [initialReport]);
 
   const indexed = useMemo(() => buildIndex(report), [report]);
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? report.components[0] ?? null;
@@ -1269,6 +1275,19 @@ function matchesViolation(violation, indexed, query) {
 
 function normalizeQuery(query) {
   return query.trim().toLowerCase();
+}
+
+function readEmbeddedReport() {
+  const element = document.getElementById('phpca-report-data');
+  if (!element?.textContent) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(element.textContent);
+  } catch {
+    return null;
+  }
 }
 
 function formatRate(value) {
