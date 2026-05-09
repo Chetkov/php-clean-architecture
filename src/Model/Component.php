@@ -595,9 +595,15 @@ class Component
         }
 
         foreach ($this->unitsOfCode as $index => $unitOfCode) {
+            $unitOfCodePath = $unitOfCode->path();
+            if ($unitOfCodePath === null) {
+                unset($this->unitsOfCode[$index]);
+                continue;
+            }
+
             $isAllowed = false;
             foreach ($allowedPaths as $allowedPath) {
-                if ($allowedPath->isPartOfPath($unitOfCode->path())) {
+                if ($allowedPath->isPartOfPath($unitOfCodePath)) {
                     $isAllowed = true;
                     break;
                 }

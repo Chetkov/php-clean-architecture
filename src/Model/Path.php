@@ -43,7 +43,7 @@ class Path
         }
 
         if (file_exists($value) || is_dir($value)) {
-            $value = realpath($value);
+            $value = (string) realpath($value);
         }
 
         return new self($value);

@@ -378,7 +378,8 @@ class UnitOfCode
 
             $isAllowed = false;
             foreach ($allowedPaths as $allowedPath) {
-                if ($allowedPath->isPartOfPath($dependent->path())) {
+                $dependentPath = $dependent->path();
+                if ($dependentPath !== null && $allowedPath->isPartOfPath($dependentPath)) {
                     $isAllowed = true;
                     break;
                 }
