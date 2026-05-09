@@ -7,9 +7,9 @@ namespace Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Report;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Console\Console;
 use Chetkov\PHPCleanArchitecture\Model\Event\EventInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventListenerInterface;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingEvent;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingFinishedEvent;
-use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event\ComponentReportRenderingStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ComponentReportRenderingEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ComponentReportRenderingFinishedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Report\Event\ComponentReportRenderingStartedEvent;
 
 class ComponentReportRenderingEventListener implements EventListenerInterface
 {

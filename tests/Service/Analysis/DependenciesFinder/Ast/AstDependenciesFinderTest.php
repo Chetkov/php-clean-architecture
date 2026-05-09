@@ -18,6 +18,11 @@ use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\NestedDependen
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\ParamDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\ParentDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\PromotedDependency;
+use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\Php85AttributeDependency;
+use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\Php85CloneDependency;
+use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\Php85ConstantExpressionDependency;
+use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\Php85FinalPromotedDependency;
+use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\Php85PipeDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\ReturnDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\SampleSubject;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\ServiceDependency;
@@ -79,6 +84,8 @@ final class AstDependenciesFinderTest extends TestCase
             TraitDependency::class,
             UnionDependency::class,
             VarDependency::class,
+            'object',
+            'string',
         ], $dependencies);
     }
 
@@ -90,6 +97,24 @@ final class AstDependenciesFinderTest extends TestCase
         );
 
         self::assertSame([ReturnDependency::class], $dependencies);
+    }
+
+    public function testFindsPhp85SyntaxDependencies(): void
+    {
+        $dependencies = self::find(
+            'Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\Php85Subject',
+            __DIR__ . '/../../../../Fixtures/DependencyParsing/Php85Subject.php85'
+        );
+        sort($dependencies);
+
+        self::assertSame([
+            Php85AttributeDependency::class,
+            Php85CloneDependency::class,
+            Php85ConstantExpressionDependency::class,
+            Php85FinalPromotedDependency::class,
+            Php85PipeDependency::class,
+            'object',
+        ], $dependencies);
     }
 
     /**

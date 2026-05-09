@@ -10,8 +10,7 @@
         }
     ],
     "require": {
-        "psr/log": "*",
-        "twig/twig": "*",
+        "php": "^8.3",
         "ext-json": "*",
         "ext-mbstring": "*",
         "nikic/php-parser": "^5.7"
@@ -39,8 +38,8 @@
     "scripts": {
         "php-linter": "php -l bin && php -l src",
         "test": "vendor/bin/phpunit",
-        "code-sniffer": "vendor/bin/phpcs bin src",
-        "phpstan": "php -d memory_limit=512M vendor/bin/phpstan analyse -l 8 bin src",
+        "code-sniffer": "vendor/bin/phpcs bin src tests",
+        "phpstan": "php -d memory_limit=512M vendor/bin/phpstan analyse -l 8 bin src tests",
         "php-clean-architecture": "bin/phpca-check ./phpca-config.php",
         "quality-checker": [
             "@php-linter",

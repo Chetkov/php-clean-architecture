@@ -1,0 +1,8 @@
+{
+  "name": "php-clean-architecture-workspace",
+  "private": true,
+  "scripts": {
+    "report:install": "npm --prefix frontend/report-app install",
+    "report:build": "npm --prefix frontend/report-app run build"
+  }
+}

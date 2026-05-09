@@ -286,6 +286,11 @@ class AstDependenciesFinder implements DependenciesFinderInterface
             return;
         }
 
+        if ($type instanceof Node\Identifier) {
+            $this->addDependency($type->toString(), $dependencies);
+            return;
+        }
+
         if ($type instanceof Node\NullableType) {
             $this->addType($type->type, $dependencies);
             return;

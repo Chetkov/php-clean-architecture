@@ -1,7 +1,10 @@
 .idea
 /vendor
+/node_modules
+/frontend/report-app/node_modules
 /sandbox
 /phpca-reports
 /TASKS
+/AGENTS.md
 /.phpunit.result.cache
 /composer.lock
