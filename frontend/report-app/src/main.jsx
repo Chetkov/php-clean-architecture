@@ -1433,14 +1433,14 @@ function DependencyExplorer({
         </div>
       </details>
 
-      <header className="dependency-explorer-header">
-        <div>
-          <h2>{t('dependencyGroups')}</h2>
-          <span>{groups.length} {t('dependencyGroups')} · {filteredDependencies.length} {t('dependencyRows')}</span>
-        </div>
-      </header>
-
       {groups.length ? (
+        <>
+        <div className="dependency-list-summary">
+          <strong>{groups.length}</strong>
+          <span>{t('dependencyGroups')}</span>
+          <strong>{filteredDependencies.length}</strong>
+          <span>{t('dependencyRows')}</span>
+        </div>
         <div className="dependency-group-list" ref={listRef}>
           <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -1469,6 +1469,7 @@ function DependencyExplorer({
             })}
           </div>
         </div>
+        </>
       ) : (
         <EmptyState icon={<ArrowRight size={22} />} title={t('noMatchingDependencies')} />
       )}

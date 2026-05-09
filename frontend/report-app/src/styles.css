@@ -985,7 +985,6 @@ tr:last-child td {
 }
 
 .dependency-filter-panel,
-.dependency-explorer-header,
 .dependency-group-card {
   border: 1px solid #d4dde4;
   border-radius: 8px;
@@ -1184,17 +1183,17 @@ tr:last-child td {
   font-size: 12px;
 }
 
-.dependency-explorer-header {
+.dependency-list-summary {
   display: flex;
+  gap: 6px;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
+  margin: -2px 0;
+  color: #5d6c78;
+  font-size: 12px;
 }
 
-.dependency-explorer-header h2 {
-  margin: 0 0 3px;
+.dependency-list-summary strong {
   color: #263540;
-  font-size: 15px;
 }
 
 .dependency-group-list {
