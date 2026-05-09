@@ -316,25 +316,25 @@ meter {
 }
 
 .chart-zone.pain {
-  fill: #f7e7e7;
-  stroke: #e7b8b8;
+  fill: #f8eeee;
+  stroke: #ead1d1;
   stroke-width: 1;
 }
 
 .chart-zone.uselessness {
-  fill: #edf0f7;
-  stroke: #c9d1e2;
+  fill: #f2f4f8;
+  stroke: #d8deea;
   stroke-width: 1;
 }
 
 .zone-label {
-  fill: #7c6870;
+  fill: #8c7378;
   font-size: 10px;
   font-weight: 700;
 }
 
 .zone-label.uselessness {
-  fill: #626f86;
+  fill: #768198;
 }
 
 .axis-label {

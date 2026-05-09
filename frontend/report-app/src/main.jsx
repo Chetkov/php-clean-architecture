@@ -54,12 +54,8 @@ const dictionaries = {
     componentGraph: 'Component graph',
     componentMetrics: 'Component metrics',
     components: 'Components',
-    zoneOfPain: 'Zone of pain',
-    zoneOfPainLine1: 'Zone',
-    zoneOfPainLine2: 'of pain',
-    zoneOfUselessness: 'Zone of uselessness',
-    zoneOfUselessnessLine1: 'Zone',
-    zoneOfUselessnessLine2: 'of uselessness',
+    zoneOfPain: 'Painful',
+    zoneOfUselessness: 'Useless',
     dependencyDirection: 'Direction',
     dependencyFiles: 'files',
     dependencyGroups: 'Dependency groups',
@@ -135,12 +131,8 @@ const dictionaries = {
     componentGraph: 'Граф компонентов',
     componentMetrics: 'Метрики компонента',
     components: 'Компоненты',
-    zoneOfPain: 'Зона боли',
-    zoneOfPainLine1: 'Зона',
-    zoneOfPainLine2: 'боли',
-    zoneOfUselessness: 'Зона бесполезности',
-    zoneOfUselessnessLine1: 'Зона',
-    zoneOfUselessnessLine2: 'бесполезности',
+    zoneOfPain: 'Больно',
+    zoneOfUselessness: 'Бесполезно',
     dependencyDirection: 'Направление',
     dependencyFiles: 'файлов',
     dependencyGroups: 'Группы зависимостей',
@@ -216,12 +208,8 @@ const dictionaries = {
     componentGraph: '组件图',
     componentMetrics: '组件指标',
     components: '组件',
-    zoneOfPain: '痛点区',
-    zoneOfPainLine1: '痛点',
-    zoneOfPainLine2: '区',
-    zoneOfUselessness: '无用区',
-    zoneOfUselessnessLine1: '无用',
-    zoneOfUselessnessLine2: '区',
+    zoneOfPain: '痛点',
+    zoneOfUselessness: '无用',
     dependencyDirection: '方向',
     dependencyFiles: '文件',
     dependencyGroups: '依赖分组',
@@ -548,14 +536,8 @@ function AIMatrix({ components, selectedComponentId, onSelectComponent, t }) {
       <svg viewBox="0 0 360 240" role="img" aria-label={t('aiMatrix')}>
         <path className="chart-zone pain" d="M40 200 L40 122 A78 78 0 0 1 118 200 Z" />
         <path className="chart-zone uselessness" d="M320 24 L320 102 A78 78 0 0 1 242 24 Z" />
-        <text className="zone-label pain" x="52" y="168">
-          <tspan x="52">{t('zoneOfPainLine1')}</tspan>
-          <tspan dy="12" x="52">{t('zoneOfPainLine2')}</tspan>
-        </text>
-        <text className="zone-label uselessness" textAnchor="end" x="310" y="45">
-          <tspan x="310">{t('zoneOfUselessnessLine1')}</tspan>
-          <tspan dy="12" x="310">{t('zoneOfUselessnessLine2')}</tspan>
-        </text>
+        <text className="zone-label pain" x="53" y="181">{t('zoneOfPain')}</text>
+        <text className="zone-label uselessness" textAnchor="end" x="307" y="47">{t('zoneOfUselessness')}</text>
         <line className="chart-grid strong" x1="40" x2="320" y1="200" y2="200" />
         <line className="chart-grid strong" x1="40" x2="40" y1="24" y2="200" />
         {[0.25, 0.5, 0.75, 1].map((value) => (
