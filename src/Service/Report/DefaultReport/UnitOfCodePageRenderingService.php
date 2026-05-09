@@ -21,7 +21,7 @@ class UnitOfCodePageRenderingService
     /** @var TemplateRendererInterface */
     private $templateRenderer;
 
-    /** @var ObjectsGraphBuilder */
+    /** @var ObjectsGraphBuilder<UnitOfCode> */
     private $unitsOfCodeGraphBuilder;
 
     /** @var DependencyUnitOfCodeExtractor */

@@ -96,6 +96,9 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
 
         foreach ($results as $row) {
             $row = preg_replace('/( {2,}|[\n]+)/ium', ' ', $row);
+            if ($row === null) {
+                continue;
+            }
 
             if (preg_match('/(.*){(.*)}/u', $row, $matches)) {
                 $rows = [];

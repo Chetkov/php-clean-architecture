@@ -26,7 +26,7 @@ class UnitsOfCodeGraphExtractor
     }
 
     /**
-     * @param ObjectsGraphBuilder $graphBuilder
+     * @param ObjectsGraphBuilder<UnitOfCode> $graphBuilder
      * @return array<string, mixed>
      */
     public function extract(ObjectsGraphBuilder $graphBuilder): array

@@ -13,7 +13,7 @@ use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 class UnitsOfCodeGraphEdgeExtractor
 {
     /**
-     * @param array<UnitOfCode> $edge [$from, $to]
+     * @param array{from: UnitOfCode, to: UnitOfCode} $edge
      * @return array<string, mixed>
      */
     public function extract(array $edge): array

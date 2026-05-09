@@ -18,7 +18,7 @@ class IndexPageRenderingService
     /** @var TemplateRendererInterface */
     private $templateRenderer;
 
-    /** @var ObjectsGraphBuilder */
+    /** @var ObjectsGraphBuilder<Component> */
     private $componentsGraphBuilder;
 
     /** @var ComponentExtractor */

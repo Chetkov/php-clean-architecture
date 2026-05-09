@@ -16,7 +16,7 @@
         "ext-mbstring": "*"
     },
     "require-dev": {
-        "phpstan/phpstan": "^0.12.90",
+        "phpstan/phpstan": "^2.1",
         "squizlabs/php_codesniffer": "^3.6",
         "phpunit/phpunit": "^12"
     },
@@ -39,7 +39,7 @@
         "php-linter": "php -l bin && php -l src",
         "test": "vendor/bin/phpunit",
         "code-sniffer": "vendor/bin/phpcs bin src",
-        "phpstan": "vendor/bin/phpstan analyse -l 8 bin src",
+        "phpstan": "php -d memory_limit=512M vendor/bin/phpstan analyse -l 8 bin src",
         "php-clean-architecture": "bin/phpca-check ./phpca-config.php",
         "quality-checker": [
             "@php-linter",
