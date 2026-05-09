@@ -7,11 +7,11 @@ import {
   Box,
   CheckCircle2,
   CircleDot,
-  ChevronsLeftRight,
   Copy,
   FileCode2,
   GitBranch,
   Layers3,
+  Repeat2,
   Search,
   SlidersHorizontal,
   X,
@@ -133,8 +133,8 @@ const dictionaries = {
     noSearchResults: 'No matches',
     selectAll: 'Select all',
     selectedUnit: 'Selected unit',
-    sourceFirst: 'Source first',
-    targetFirst: 'Target first',
+    sourceFirst: 'What -> Depends on',
+    targetFirst: 'Depends on <- What',
     toComponents: 'To components',
     type: 'Type',
     unitDependencyGraphLabel: 'Selected unit dependency graph',
@@ -235,8 +235,8 @@ const dictionaries = {
     noSearchResults: 'Ничего не найдено',
     selectAll: 'Выбрать все',
     selectedUnit: 'Выбранный юнит',
-    sourceFirst: 'Сначала кто зависит',
-    targetFirst: 'Сначала от чего зависят',
+    sourceFirst: 'Что -> От чего',
+    targetFirst: 'От чего <- Что',
     toComponents: 'Целевые компоненты',
     type: 'Тип',
     unitDependencyGraphLabel: 'Граф зависимостей выбранного юнита',
@@ -337,8 +337,8 @@ const dictionaries = {
     noSearchResults: '没有匹配项',
     selectAll: '全选',
     selectedUnit: '选中的单元',
-    sourceFirst: '来源优先',
-    targetFirst: '目标优先',
+    sourceFirst: '谁 -> 依赖谁',
+    targetFirst: '依赖谁 <- 谁',
     toComponents: '目标组件',
     type: '类型',
     unitDependencyGraphLabel: '选中单元的依赖图',
@@ -1391,7 +1391,7 @@ function DependencyExplorer({
           <div className="filter-block">
             <span>{t('dependencyDirection')}</span>
             <button className="flip-button" onClick={() => onDirectionChange(direction === 'source' ? 'target' : 'source')} type="button">
-              <ChevronsLeftRight size={16} />
+              <Repeat2 size={16} />
               {direction === 'source' ? t('sourceFirst') : t('targetFirst')}
             </button>
           </div>
