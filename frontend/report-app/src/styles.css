@@ -150,7 +150,7 @@ td span,
   cursor: pointer;
 }
 
-.component-row span {
+.component-row > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -158,6 +158,28 @@ td span,
 
 .component-row small {
   color: #9eb0bd;
+}
+
+.component-row-metrics {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.component-row-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 28px;
+  justify-content: flex-end;
+  font-size: 0.74rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.component-row-metric svg {
+  opacity: 0.78;
 }
 
 .component-row:hover,

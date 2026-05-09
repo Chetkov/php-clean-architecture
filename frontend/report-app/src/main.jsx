@@ -59,6 +59,7 @@ const dictionaries = {
     componentGraph: 'Component graph',
     componentMetrics: 'Component metrics',
     components: 'Components',
+    componentDependsOn: 'Depends on components',
     clearSearch: 'Clear search',
     clearSelection: 'Clear',
     componentFilterSearch: 'Search components',
@@ -154,6 +155,7 @@ const dictionaries = {
     componentGraph: 'Граф компонентов',
     componentMetrics: 'Метрики компонента',
     components: 'Компоненты',
+    componentDependsOn: 'Зависит от компонентов',
     clearSearch: 'Очистить поиск',
     clearSelection: 'Сбросить',
     componentFilterSearch: 'Поиск компонентов',
@@ -249,6 +251,7 @@ const dictionaries = {
     componentGraph: '组件图',
     componentMetrics: '组件指标',
     components: '组件',
+    componentDependsOn: '依赖组件',
     clearSearch: '清除搜索',
     clearSelection: '清除',
     componentFilterSearch: '搜索组件',
@@ -568,20 +571,37 @@ function App() {
           >
             <GitBranch size={16} />
             <span>{t('noSelection')}</span>
-            <small>{report.components.length}</small>
+            <SidebarMetrics
+              metrics={[
+                [<Layers3 size={13} />, report.summary.components, t('components')],
+                [<ArrowRight size={13} />, report.summary.dependencies, t('dependencyRows')],
+                [<ShieldAlert size={13} />, report.summary.activeViolations, t('activeIssues')],
+              ]}
+            />
           </button>
-          {report.components.map((component) => (
-            <button
-              className={component.id === selectedComponent?.id ? 'component-row selected' : 'component-row'}
-              key={component.id}
-              onClick={() => selectComponent(component.id)}
-              type="button"
-            >
-              <ComponentStatus component={component} violations={indexed.violationsByComponent.get(component.id) ?? []} />
-              <span>{component.name}</span>
-              <small>{component.metrics.units}</small>
-            </button>
-          ))}
+          {report.components.map((component) => {
+            const violations = indexed.violationsByComponent.get(component.id) ?? [];
+            const activeViolations = violations.filter((violation) => violation.status === 'active').length;
+
+            return (
+              <button
+                className={component.id === selectedComponent?.id ? 'component-row selected' : 'component-row'}
+                key={component.id}
+                onClick={() => selectComponent(component.id)}
+                type="button"
+              >
+                <ComponentStatus component={component} violations={violations} />
+                <span>{component.name}</span>
+                <SidebarMetrics
+                  metrics={[
+                    [<FileCode2 size={13} />, component.metrics.units, t('units')],
+                    [<ArrowRight size={13} />, component.metrics.outgoingComponents, t('componentDependsOn')],
+                    [<ShieldAlert size={13} />, activeViolations, t('activeIssues')],
+                  ]}
+                />
+              </button>
+            );
+          })}
         </div>
       </aside>
 
@@ -1537,6 +1557,19 @@ function ComponentStatus({ component, violations }) {
     return <AlertTriangle className="status-icon warning" size={16} />;
   }
   return <CheckCircle2 className="status-icon ok" size={16} />;
+}
+
+function SidebarMetrics({ metrics }) {
+  return (
+    <div className="component-row-metrics">
+      {metrics.map(([icon, value, title]) => (
+        <small aria-label={`${title}: ${value}`} className="component-row-metric" key={title} title={`${title}: ${value}`}>
+          {icon}
+          <span>{value}</span>
+        </small>
+      ))}
+    </div>
+  );
 }
 
 function buildIndex(report) {
