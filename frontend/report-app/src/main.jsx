@@ -536,8 +536,8 @@ function AIMatrix({ components, selectedComponentId, onSelectComponent, t }) {
       <svg viewBox="0 0 360 240" role="img" aria-label={t('aiMatrix')}>
         <path className="chart-zone pain" d="M40 200 L40 122 A78 78 0 0 1 118 200 Z" />
         <path className="chart-zone uselessness" d="M320 24 L320 102 A78 78 0 0 1 242 24 Z" />
-        <text className="zone-label pain" textAnchor="middle" transform="translate(67 187) rotate(45)">{t('zoneOfPain')}</text>
-        <text className="zone-label uselessness" textAnchor="middle" transform="translate(284 52) rotate(45)">{t('zoneOfUselessness')}</text>
+        <text className="zone-label pain" textAnchor="middle" transform="translate(76 176) rotate(45)">{t('zoneOfPain')}</text>
+        <text className="zone-label uselessness" textAnchor="middle" transform="translate(284 62) rotate(45)">{t('zoneOfUselessness')}</text>
         <line className="chart-grid strong" x1="40" x2="320" y1="200" y2="200" />
         <line className="chart-grid strong" x1="40" x2="40" y1="24" y2="200" />
         {[0.25, 0.5, 0.75, 1].map((value) => (
