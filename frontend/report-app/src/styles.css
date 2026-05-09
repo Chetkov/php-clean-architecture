@@ -492,6 +492,10 @@ meter {
   stroke: #cf5f63;
 }
 
+.edge.selected {
+  stroke-width: 3;
+}
+
 marker#arrow path {
   fill: #7d91a0;
 }
@@ -509,6 +513,10 @@ marker#arrow-problem path {
   font-weight: 700;
 }
 
+.edge-label.selected {
+  fill: #182832;
+}
+
 .node,
 .unit-node {
   cursor: pointer;
@@ -523,6 +531,15 @@ marker#arrow-problem path {
 .node.selected circle {
   fill: #e9f7f0;
   stroke: #2b9a66;
+}
+
+.node.external {
+  cursor: default;
+}
+
+.node.external circle {
+  fill: #f8fafb;
+  stroke-dasharray: 5 4;
 }
 
 .node text,

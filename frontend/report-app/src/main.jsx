@@ -80,6 +80,7 @@ const dictionaries = {
     dependencyUnavailable: 'Unknown dependency',
     distance: 'Distance',
     distanceRanking: 'Distance ranking',
+    external: 'external',
     flipDependencyDirection: 'Flip dependency direction',
     fromComponents: 'From components',
     generatedReport: 'Generated report',
@@ -165,6 +166,7 @@ const dictionaries = {
     dependencyUnavailable: 'Зависимость не найдена',
     distance: 'Расстояние',
     distanceRanking: 'Рейтинг расстояния',
+    external: 'внешняя',
     flipDependencyDirection: 'Перевернуть направление зависимостей',
     fromComponents: 'Исходные компоненты',
     generatedReport: 'Сформированный отчет',
@@ -250,6 +252,7 @@ const dictionaries = {
     dependencyUnavailable: '未知依赖',
     distance: '距离',
     distanceRanking: '距离排名',
+    external: '外部',
     flipDependencyDirection: '切换依赖方向',
     fromComponents: '来源组件',
     generatedReport: '已生成报告',
@@ -677,31 +680,36 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t 
         </defs>
         {graph.edges.map((edge) => (
           <g key={edge.id}>
+            <title>{`${edge.from.name} -> ${edge.to.name}: ${edge.sourceUnitCount}->${edge.targetUnitCount} (${edge.weight} ${t('dependencyRows')})`}</title>
             <line
-              className={edge.isProblem ? 'edge problem' : 'edge'}
+              className={graphEdgeClassName(edge)}
               markerEnd={edge.isProblem ? 'url(#arrow-problem)' : 'url(#arrow)'}
               x1={edge.from.x}
               x2={edge.to.x}
               y1={edge.from.y}
               y2={edge.to.y}
             />
-            <text className="edge-label" x={(edge.from.x + edge.to.x) / 2} y={(edge.from.y + edge.to.y) / 2 - 6}>{edge.weight}</text>
+            <text className={edge.isSelected ? 'edge-label selected' : 'edge-label'} x={(edge.from.x + edge.to.x) / 2} y={(edge.from.y + edge.to.y) / 2 - 6}>
+              {edge.sourceUnitCount}-&gt;{edge.targetUnitCount}
+            </text>
           </g>
         ))}
         {graph.nodes.map((node) => {
           const violations = indexed.violationsByComponent.get(node.id) ?? [];
           return (
             <g
-              className={node.id === component?.id ? 'node selected' : 'node'}
+              className={graphNodeClassName(node, component)}
               key={node.id}
-              onClick={() => onSelectComponent(node.id)}
-              role="button"
-              tabIndex="0"
+              onClick={() => !node.isExternal && onSelectComponent(node.id)}
+              role={node.isExternal ? undefined : 'button'}
+              tabIndex={node.isExternal ? undefined : '0'}
               transform={`translate(${node.x} ${node.y})`}
             >
               <circle r="38" />
               <text textAnchor="middle" y="-3">{truncate(node.name, 14)}</text>
-              <text className="node-meta" textAnchor="middle" y="15">{violations.length ? `${violations.length} ${t('issues')}` : `${node.units} ${t('unitsCount')}`}</text>
+              <text className="node-meta" textAnchor="middle" y="15">
+                {node.isExternal ? t('external') : (violations.length ? `${violations.length} ${t('issues')}` : `${node.units} ${t('unitsCount')}`)}
+              </text>
             </g>
           );
         })}
@@ -1260,8 +1268,12 @@ function buildIndex(report) {
         toComponentName: dependency.toComponentName,
         weight: 0,
         isProblem: false,
+        sourceUnitIds: new Set(),
+        targetUnitIds: new Set(),
       };
       edge.weight += 1;
+      edge.sourceUnitIds.add(dependency.fromUnitId);
+      edge.targetUnitIds.add(dependency.toUnitId);
       edge.isProblem = edge.isProblem || !dependency.isComponentAllowed || !dependency.isTargetPublic;
       componentEdges.set(key, edge);
     }
@@ -1273,7 +1285,12 @@ function buildIndex(report) {
 
   const outgoingComponentEdges = new Map();
   const incomingComponentEdges = new Map();
-  for (const edge of componentEdges.values()) {
+  const componentEdgeList = [...componentEdges.values()].map(({ sourceUnitIds, targetUnitIds, ...edge }) => ({
+    ...edge,
+    sourceUnitCount: sourceUnitIds.size,
+    targetUnitCount: targetUnitIds.size,
+  }));
+  for (const edge of componentEdgeList) {
     pushMapList(outgoingComponentEdges, edge.fromComponentId, edge);
     pushMapList(incomingComponentEdges, edge.toComponentId, edge);
   }
@@ -1285,7 +1302,7 @@ function buildIndex(report) {
     dependenciesByFromUnit,
     dependenciesByToUnit,
     violationsByComponent,
-    componentEdges: [...componentEdges.values()],
+    componentEdges: componentEdgeList,
     outgoingComponentEdges,
     incomingComponentEdges,
   };
@@ -1325,29 +1342,81 @@ function buildDependencyComponentOptions(report, indexed) {
 }
 
 function componentGraph(component, report, indexed) {
-  if (!report.components.length) {
+  if (!report.components.length && !indexed.componentEdges.length) {
     return { nodes: [], edges: [] };
   }
 
-  const nodes = report.components.map((item, index) => {
-    const angle = (Math.PI * 2 * index) / report.components.length - Math.PI / 2;
+  const componentOrder = new Map(report.components.map((item, index) => [item.id, index]));
+  const graphComponents = new Map(report.components.map((item) => [item.id, {
+    id: item.id,
+    name: item.name,
+    units: item.metrics.units,
+    isExternal: false,
+  }]));
+
+  indexed.componentEdges.forEach((edge) => {
+    if (!graphComponents.has(edge.fromComponentId)) {
+      graphComponents.set(edge.fromComponentId, {
+        id: edge.fromComponentId,
+        name: edge.fromComponentName,
+        units: 0,
+        isExternal: true,
+      });
+    }
+    if (!graphComponents.has(edge.toComponentId)) {
+      graphComponents.set(edge.toComponentId, {
+        id: edge.toComponentId,
+        name: edge.toComponentName,
+        units: 0,
+        isExternal: true,
+      });
+    }
+  });
+
+  const graphComponentList = [...graphComponents.values()].sort((left, right) => {
+    const leftOrder = componentOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = componentOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder || left.name.localeCompare(right.name);
+  });
+
+  const nodes = graphComponentList.map((item, index) => {
+    const angle = (Math.PI * 2 * index) / graphComponentList.length - Math.PI / 2;
     return {
       id: item.id,
       name: item.name,
-      units: item.metrics.units,
+      units: item.units,
+      isExternal: item.isExternal,
       x: 360 + Math.cos(angle) * 260,
       y: 160 + Math.sin(angle) * 104,
     };
   });
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
-  const selectedEdges = component
-    ? indexed.componentEdges.filter((edge) => edge.fromComponentId === component.id || edge.toComponentId === component.id)
-    : indexed.componentEdges;
-  const edges = selectedEdges
-    .map((edge) => ({ ...edge, from: nodesById.get(edge.fromComponentId), to: nodesById.get(edge.toComponentId) }))
+  const edges = indexed.componentEdges
+    .map((edge) => ({
+      ...edge,
+      from: nodesById.get(edge.fromComponentId),
+      to: nodesById.get(edge.toComponentId),
+      isSelected: component ? edge.fromComponentId === component.id || edge.toComponentId === component.id : false,
+    }))
     .filter((edge) => edge.from && edge.to);
 
   return { nodes, edges };
+}
+
+function graphEdgeClassName(edge) {
+  return [
+    'edge',
+    edge.isProblem ? 'problem' : '',
+    edge.isSelected ? 'selected' : '',
+  ].filter(Boolean).join(' ');
+}
+
+function graphNodeClassName(node, component) {
+  return [
+    'node',
+    node.id === component?.id ? 'selected' : '',
+    node.isExternal ? 'external' : '',
+  ].filter(Boolean).join(' ');
 }
 
 function matchesUnit(unit, query) {
