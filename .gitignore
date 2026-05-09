@@ -3,5 +3,6 @@
 /sandbox
 /phpca-reports
 /TASKS
+/AGENTS.md
 /.phpunit.result.cache
 /composer.lock
