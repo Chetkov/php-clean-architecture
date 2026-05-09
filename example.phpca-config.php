@@ -12,19 +12,8 @@ use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\AnalysisEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\ComponentAnalysisEventListener;
 use Chetkov\PHPCleanArchitecture\Infrastructure\Event\Listener\Analysis\FileAnalyzedEventListener;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CompositeDependenciesFinder;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\CodeParsingDependenciesFinder;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesCreatedThroughNewParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesFromInstanceofConstructionParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\MethodAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ParamAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\PropertyAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ReturnAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ThrowsAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\VarAnnotationsParsingStrategy;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\Ast\AstDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\DependenciesFinderInterface;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\ReflectionDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\ReportRenderingService;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
 use Twig\Environment;
@@ -146,20 +135,7 @@ return [
     'factories' => [
         //Фабрика, собирающая DependenciesFinder
         'dependencies_finder' => static function (): DependenciesFinderInterface {
-            return new CompositeDependenciesFinder(...[
-                new ReflectionDependenciesFinder(),
-                new CodeParsingDependenciesFinder(...[
-                    new ClassesCreatedThroughNewParsingStrategy(),
-                    new ClassesCalledStaticallyParsingStrategy(),
-                    new ClassesFromInstanceofConstructionParsingStrategy(),
-                    new PropertyAnnotationsParsingStrategy(),
-                    new MethodAnnotationsParsingStrategy(),
-                    new ParamAnnotationsParsingStrategy(),
-                    new ReturnAnnotationsParsingStrategy(),
-                    new ThrowsAnnotationsParsingStrategy(),
-                    new VarAnnotationsParsingStrategy(),
-                ]),
-            ]);
+            return new AstDependenciesFinder();
         },
         //Фабрика, собирающая сервис рендеринга отчетов
         'report_rendering_service' => static function (EventManagerInterface $eventManager): ReportRenderingServiceInterface {

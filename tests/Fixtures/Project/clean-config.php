@@ -2,18 +2,7 @@
 
 declare(strict_types=1);
 
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\CodeParsingDependenciesFinder;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesCalledStaticallyParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesCreatedThroughNewParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ClassesFromInstanceofConstructionParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\MethodAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ParamAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\PropertyAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ReturnAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\ThrowsAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\VarAnnotationsParsingStrategy;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CompositeDependenciesFinder;
-use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\ReflectionDependenciesFinder;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\Ast\AstDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Tests\Support\NullEventManager;
 use Chetkov\PHPCleanArchitecture\Tests\Support\NullReportRenderingService;
 
@@ -58,21 +47,8 @@ return [
         ],
     ],
     'factories' => [
-        'dependencies_finder' => static function (): CompositeDependenciesFinder {
-            return new CompositeDependenciesFinder(
-                new ReflectionDependenciesFinder(),
-                new CodeParsingDependenciesFinder(
-                    new ClassesCreatedThroughNewParsingStrategy(),
-                    new ClassesCalledStaticallyParsingStrategy(),
-                    new ClassesFromInstanceofConstructionParsingStrategy(),
-                    new PropertyAnnotationsParsingStrategy(),
-                    new MethodAnnotationsParsingStrategy(),
-                    new ParamAnnotationsParsingStrategy(),
-                    new ReturnAnnotationsParsingStrategy(),
-                    new ThrowsAnnotationsParsingStrategy(),
-                    new VarAnnotationsParsingStrategy()
-                )
-            );
+        'dependencies_finder' => static function (): AstDependenciesFinder {
+            return new AstDependenciesFinder();
         },
         'report_rendering_service' => static function (): NullReportRenderingService {
             return new NullReportRenderingService();
