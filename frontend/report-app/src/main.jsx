@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import './styles.css';
 
+const dependencyStatuses = ['allowed', 'internal', 'allowed-state', 'private', 'blocked'];
+
 const fallbackReport = {
   schemaVersion: 1,
   generatedAt: null,
@@ -84,6 +86,7 @@ const dictionaries = {
     flipDependencyDirection: 'Flip dependency direction',
     fromComponents: 'From components',
     generatedReport: 'Generated report',
+    globalComponentGraph: 'Global component graph',
     incoming: 'Incoming',
     incomingDependencies: 'Incoming dependencies',
     in: 'In',
@@ -170,6 +173,7 @@ const dictionaries = {
     flipDependencyDirection: 'Перевернуть направление зависимостей',
     fromComponents: 'Исходные компоненты',
     generatedReport: 'Сформированный отчет',
+    globalComponentGraph: 'Общий граф компонентов',
     incoming: 'Входящие',
     incomingDependencies: 'Входящие зависимости',
     in: 'Вх.',
@@ -256,6 +260,7 @@ const dictionaries = {
     flipDependencyDirection: '切换依赖方向',
     fromComponents: '来源组件',
     generatedReport: '已生成报告',
+    globalComponentGraph: '全局组件图',
     incoming: '传入',
     incomingDependencies: '传入依赖',
     in: '入',
@@ -337,7 +342,7 @@ function App() {
       })
       .then((data) => {
         setReport(data);
-        setSelectedComponentId(data.components[0]?.id ?? null);
+        setSelectedComponentId(null);
         setSelectedUnitId(null);
         setLoadingState('ready');
       })
@@ -346,7 +351,7 @@ function App() {
 
   const indexed = useMemo(() => buildIndex(report), [report]);
   const dependencyComponentOptions = useMemo(() => buildDependencyComponentOptions(report, indexed), [indexed, report]);
-  const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? report.components[0] ?? null;
+  const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? null;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
   const selectedComponentUnits = useMemo(
     () => report.units.filter((unit) => !selectedComponent || unit.componentId === selectedComponent.id),
@@ -439,7 +444,7 @@ function App() {
         <header className="toolbar">
           <div className="title-block">
             <span>{formatDate(report.generatedAt, locale)}</span>
-            <h1>{selectedComponent?.name ?? t('noComponents')}</h1>
+            <h1>{selectedComponent?.name ?? t('overview')}</h1>
           </div>
           <div className="toolbar-actions">
             <label className="search-box">
@@ -668,22 +673,21 @@ function ComponentGraphPanel({ component, report, indexed, onSelectComponent, t 
 
   return (
     <section className="panel graph-panel">
-      <h2>{t('componentGraph')}</h2>
+      <h2>{component ? t('componentGraph') : t('globalComponentGraph')}</h2>
       <svg viewBox="0 0 720 320" role="img" aria-label={t('dependencyGraphLabel')}>
         <defs>
-          <marker id="arrow" markerHeight="8" markerWidth="8" orient="auto" refX="8" refY="4">
-            <path d="M0,0 L8,4 L0,8 Z" />
-          </marker>
-          <marker id="arrow-problem" markerHeight="8" markerWidth="8" orient="auto" refX="8" refY="4">
-            <path d="M0,0 L8,4 L0,8 Z" />
-          </marker>
+          {dependencyStatuses.map((status) => (
+            <marker id={`arrow-${status}`} key={status} markerHeight="8" markerWidth="8" orient="auto" refX="8" refY="4">
+              <path d="M0,0 L8,4 L0,8 Z" />
+            </marker>
+          ))}
         </defs>
         {graph.edges.map((edge) => (
           <g key={edge.id}>
-            <title>{`${edge.from.name} -> ${edge.to.name}: ${edge.sourceUnitCount}->${edge.targetUnitCount} (${edge.weight} ${t('dependencyRows')})`}</title>
+            <title>{`${edge.from.name} -> ${edge.to.name}: ${edge.sourceUnitCount}->${edge.targetUnitCount} (${edge.weight} ${t('dependencyRows')}, ${edgeStatusLabel(edge.status, t)})`}</title>
             <line
               className={graphEdgeClassName(edge)}
-              markerEnd={edge.isProblem ? 'url(#arrow-problem)' : 'url(#arrow)'}
+              markerEnd={`url(#arrow-${edge.status})`}
               x1={edge.from.x}
               x2={edge.to.x}
               y1={edge.from.y}
@@ -736,7 +740,7 @@ function FanPanel({ component, indexed, onSelectComponent, t }) {
 }
 
 function FanList({ title, items, direction, indexed, onSelectComponent, t }) {
-  const max = Math.max(...items.map((item) => item.weight), 1);
+  const max = Math.max(...items.map((item) => item.sourceUnitCount), 1);
 
   return (
     <div className="fan-list">
@@ -747,15 +751,16 @@ function FanList({ title, items, direction, indexed, onSelectComponent, t }) {
         const componentName = component?.name ?? (direction === 'to' ? item.toComponentName : item.fromComponentName);
         return (
           <button
-            className={component ? 'fan-row' : 'fan-row disabled'}
+            className={component ? `fan-row ${item.status}` : `fan-row disabled ${item.status}`}
             disabled={!component}
             key={item.id}
             onClick={() => component && onSelectComponent(componentId)}
+            title={`${item.fromComponentName} -> ${item.toComponentName}: ${item.sourceUnitCount}->${item.targetUnitCount} (${item.weight} ${t('dependencyRows')}, ${edgeStatusLabel(item.status, t)})`}
             type="button"
           >
             <span>{componentName}</span>
-            <strong>{item.weight}</strong>
-            <i style={{ width: `${Math.max((item.weight / max) * 100, 4)}%` }} />
+            <strong>{item.sourceUnitCount}</strong>
+            <i style={{ width: `${Math.max((item.sourceUnitCount / max) * 100, 4)}%` }} />
           </button>
         );
       }) : <p>{t('noExternalDependencies')}</p>}
@@ -772,14 +777,15 @@ function ViolationsTable({ violations, indexed, onSelectUnit, t }) {
     <section className="table-shell">
       {violations.map((violation) => {
         const dependency = indexed.dependenciesById.get(violation.dependencyId);
+        const status = violation.status === 'allowed-state' ? 'allowed-state' : violation.type === 'private-unit' ? 'private' : 'blocked';
         return (
-          <article className="issue-row" key={violation.id}>
+          <article className={`issue-row ${status}`} key={violation.id}>
             <AlertTriangle size={18} />
             <div>
               <strong>{violationMessage(violation, dependency, t)}</strong>
               <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
             </div>
-            <mark>{violation.status === 'allowed-state' ? t('allowedState') : violation.type}</mark>
+            <mark className={status}>{violation.status === 'allowed-state' ? t('allowedState') : violation.type}</mark>
           </article>
         );
       })}
@@ -888,6 +894,7 @@ function DependencyExplorer({
             options={[
               ['all', t('all')],
               ['blocked', t('blocked')],
+              ['private', t('privateApi')],
               ['allowed-state', t('allowedState')],
               ['internal', t('internal')],
               ['allowed', t('allowed')],
@@ -999,7 +1006,7 @@ function ComponentFilter({ components, label, selectedIds, onChange, t }) {
 
 function DependencyGroupCard({ group, onSelectUnit, t }) {
   return (
-    <details className="dependency-group-card">
+    <details className={`dependency-group-card ${group.status}`}>
       <summary>
         <CircleDot size={16} />
         <div>
@@ -1024,10 +1031,11 @@ function DependencyGroupCard({ group, onSelectUnit, t }) {
 function DependencyGroupBadges({ group, t }) {
   return (
     <div className="dependency-badges">
-      {group.counts.blocked > 0 && <mark className="problem">{group.counts.blocked} {t('blocked')}</mark>}
-      {group.counts.allowedState > 0 && <mark>{group.counts.allowedState} {t('allowedState')}</mark>}
-      {group.counts.internal > 0 && <mark>{group.counts.internal} {t('internal')}</mark>}
-      {group.counts.allowed > 0 && <mark>{group.counts.allowed} {t('allowed')}</mark>}
+      {group.counts.blocked > 0 && <mark className="blocked">{group.counts.blocked} {t('blocked')}</mark>}
+      {group.counts.private > 0 && <mark className="private">{group.counts.private} {t('privateApi')}</mark>}
+      {group.counts.allowedState > 0 && <mark className="allowed-state">{group.counts.allowedState} {t('allowedState')}</mark>}
+      {group.counts.internal > 0 && <mark className="internal">{group.counts.internal} {t('internal')}</mark>}
+      {group.counts.allowed > 0 && <mark className="allowed">{group.counts.allowed} {t('allowed')}</mark>}
     </div>
   );
 }
@@ -1065,13 +1073,13 @@ function DependencyFileGroup({ file, onSelectUnit, t }) {
       </summary>
       <div className="dependency-file-rows">
         {visibleDependencies.map((dependency) => (
-          <article className={dependencyStatusKey(dependency) === 'blocked' ? 'dependency-row problem' : 'dependency-row'} key={dependency.id}>
+          <article className={`dependency-row ${dependencyStatusKey(dependency)}`} key={dependency.id}>
             <CircleDot size={16} />
             <div>
               <strong>{dependency.fromComponentName} {'->'} {dependency.toComponentName}</strong>
               <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
             </div>
-            <mark>{dependencyStatusLabel(dependency, t)}</mark>
+            <mark className={dependencyStatusKey(dependency)}>{dependencyStatusLabel(dependency, t)}</mark>
           </article>
         ))}
         {hiddenCount > 0 && (
@@ -1170,9 +1178,11 @@ function UnitGraph({ unit, incoming, outgoing, indexed, onSelectUnit, t }) {
           const x = center.x + Math.cos(item.angle) * 190;
           const y = center.y + Math.sin(item.angle) * 82;
           const isIncoming = item.dependency.toUnitId === unit.id;
+          const status = dependencyStatusKey(item.dependency);
           return (
             <g key={item.dependency.id}>
-              <line className="edge" x1={isIncoming ? x : center.x} x2={isIncoming ? center.x : x} y1={isIncoming ? y : center.y} y2={isIncoming ? center.y : y} />
+              <title>{`${item.dependency.fromUnitName} -> ${item.dependency.toUnitName}: ${dependencyStatusLabel(item.dependency, t)}`}</title>
+              <line className={`edge ${status}`} x1={isIncoming ? x : center.x} x2={isIncoming ? center.x : x} y1={isIncoming ? y : center.y} y2={isIncoming ? center.y : y} />
               <g className="unit-node" onClick={() => onSelectUnit(item.id)} role="button" tabIndex="0" transform={`translate(${x} ${y})`}>
                 <rect height="34" rx="8" width="150" x="-75" y="-17" />
                 <text textAnchor="middle" y="4">{truncate(relatedUnit?.shortName ?? item.dependency.toUnitName, 20)}</text>
@@ -1201,10 +1211,11 @@ function UnitDependencyList({ title, dependencies, side, onSelectUnit, t }) {
         const unitId = side === 'to' ? dependency.toUnitId : dependency.fromUnitId;
         const unitName = side === 'to' ? dependency.toUnitName : dependency.fromUnitName;
         const componentName = side === 'to' ? dependency.toComponentName : dependency.fromComponentName;
+        const status = dependencyStatusKey(dependency);
         return (
-          <button className="unit-dependency-row" key={dependency.id} onClick={() => onSelectUnit(unitId)} type="button">
+          <button className={`unit-dependency-row ${status}`} key={dependency.id} onClick={() => onSelectUnit(unitId)} type="button">
             <span title={unitName}>{shortUnitName(unitName)}</span>
-            <mark>{componentName}</mark>
+            <mark className={status}>{componentName}</mark>
           </button>
         );
       }) : <p>{t('noDependencies')}</p>}
@@ -1267,14 +1278,14 @@ function buildIndex(report) {
         fromComponentName: dependency.fromComponentName,
         toComponentName: dependency.toComponentName,
         weight: 0,
-        isProblem: false,
         sourceUnitIds: new Set(),
         targetUnitIds: new Set(),
+        counts: { allowed: 0, allowedState: 0, blocked: 0, internal: 0, private: 0 },
       };
       edge.weight += 1;
       edge.sourceUnitIds.add(dependency.fromUnitId);
       edge.targetUnitIds.add(dependency.toUnitId);
-      edge.isProblem = edge.isProblem || !dependency.isComponentAllowed || !dependency.isTargetPublic;
+      incrementDependencyCount(edge.counts, dependencyStatusKey(dependency));
       componentEdges.set(key, edge);
     }
   }
@@ -1289,6 +1300,7 @@ function buildIndex(report) {
     ...edge,
     sourceUnitCount: sourceUnitIds.size,
     targetUnitCount: targetUnitIds.size,
+    status: worstDependencyStatus(edge.counts),
   }));
   for (const edge of componentEdgeList) {
     pushMapList(outgoingComponentEdges, edge.fromComponentId, edge);
@@ -1346,15 +1358,21 @@ function componentGraph(component, report, indexed) {
     return { nodes: [], edges: [] };
   }
 
+  const graphEdges = component
+    ? indexed.componentEdges.filter((edge) => edge.fromComponentId === component.id || edge.toComponentId === component.id)
+    : indexed.componentEdges;
   const componentOrder = new Map(report.components.map((item, index) => [item.id, index]));
-  const graphComponents = new Map(report.components.map((item) => [item.id, {
-    id: item.id,
-    name: item.name,
-    units: item.metrics.units,
-    isExternal: false,
-  }]));
+  const graphComponents = new Map();
 
-  indexed.componentEdges.forEach((edge) => {
+  if (!component) {
+    report.components.forEach((item) => {
+      graphComponents.set(item.id, componentGraphNode(item, false));
+    });
+  } else {
+    graphComponents.set(component.id, componentGraphNode(component, false));
+  }
+
+  graphEdges.forEach((edge) => {
     if (!graphComponents.has(edge.fromComponentId)) {
       graphComponents.set(edge.fromComponentId, {
         id: edge.fromComponentId,
@@ -1391,7 +1409,7 @@ function componentGraph(component, report, indexed) {
     };
   });
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
-  const edges = indexed.componentEdges
+  const edges = graphEdges
     .map((edge) => ({
       ...edge,
       from: nodesById.get(edge.fromComponentId),
@@ -1406,7 +1424,7 @@ function componentGraph(component, report, indexed) {
 function graphEdgeClassName(edge) {
   return [
     'edge',
-    edge.isProblem ? 'problem' : '',
+    edge.status,
     edge.isSelected ? 'selected' : '',
   ].filter(Boolean).join(' ');
 }
@@ -1417,6 +1435,15 @@ function graphNodeClassName(node, component) {
     node.id === component?.id ? 'selected' : '',
     node.isExternal ? 'external' : '',
   ].filter(Boolean).join(' ');
+}
+
+function componentGraphNode(component, isExternal) {
+  return {
+    id: component.id,
+    name: component.name,
+    units: component.metrics.units,
+    isExternal,
+  };
 }
 
 function matchesUnit(unit, query) {
@@ -1514,13 +1541,7 @@ function formatDate(value, locale) {
 }
 
 function dependencyStatusLabel(dependency, t) {
-  if (dependency.isInternal) {
-    return t('internal');
-  }
-  if (dependency.isAllowedState) {
-    return t('allowedState');
-  }
-  return dependency.isComponentAllowed && dependency.isTargetPublic ? t('allowed') : t('blocked');
+  return edgeStatusLabel(dependencyStatusKey(dependency), t);
 }
 
 function dependencyStatusKey(dependency) {
@@ -1530,7 +1551,29 @@ function dependencyStatusKey(dependency) {
   if (dependency.isAllowedState) {
     return 'allowed-state';
   }
-  return dependency.isComponentAllowed && dependency.isTargetPublic ? 'allowed' : 'blocked';
+  if (!dependency.isComponentAllowed) {
+    return 'blocked';
+  }
+  if (!dependency.isTargetPublic) {
+    return 'private';
+  }
+  return 'allowed';
+}
+
+function edgeStatusLabel(status, t) {
+  if (status === 'blocked') {
+    return t('blocked');
+  }
+  if (status === 'private') {
+    return t('privateApi');
+  }
+  if (status === 'allowed-state') {
+    return t('allowedState');
+  }
+  if (status === 'internal') {
+    return t('internal');
+  }
+  return t('allowed');
 }
 
 function violationMessage(violation, dependency, t) {
@@ -1566,7 +1609,7 @@ function buildDependencyGroups(dependencies, indexed, direction) {
       primaryName: primaryComponentName,
       secondaryName: secondaryComponentName,
       dependencies: [],
-      counts: { allowed: 0, allowedState: 0, blocked: 0, internal: 0 },
+      counts: { allowed: 0, allowedState: 0, blocked: 0, internal: 0, private: 0 },
       tree: createDirectoryNode('root', 'root'),
       filePaths: new Set(),
     };
@@ -1582,6 +1625,7 @@ function buildDependencyGroups(dependencies, indexed, direction) {
     .map((group) => ({
       ...group,
       fileCount: group.filePaths.size,
+      status: worstDependencyStatus(group.counts),
       tree: sortDirectoryNode(group.tree),
     }))
     .sort((left, right) => right.dependencies.length - left.dependencies.length || left.primaryName.localeCompare(right.primaryName));
@@ -1593,6 +1637,22 @@ function incrementDependencyCount(counts, status) {
     return;
   }
   counts[status] += 1;
+}
+
+function worstDependencyStatus(counts) {
+  if (counts.blocked > 0) {
+    return 'blocked';
+  }
+  if (counts.private > 0) {
+    return 'private';
+  }
+  if (counts.allowedState > 0) {
+    return 'allowed-state';
+  }
+  if (counts.internal > 0 && counts.allowed === 0) {
+    return 'internal';
+  }
+  return 'allowed';
 }
 
 function addDependencyToTree(root, dependency, indexed, direction) {

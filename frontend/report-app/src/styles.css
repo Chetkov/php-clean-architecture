@@ -483,25 +483,66 @@ meter {
   background: #2b9a66;
 }
 
+.fan-row.blocked i {
+  background: #c8464c;
+}
+
+.fan-row.private i {
+  background: #d9822b;
+}
+
+.fan-row.allowed-state i {
+  background: #c59b2b;
+}
+
 .edge {
   stroke: #7d91a0;
   stroke-width: 2;
 }
 
-.edge.problem {
-  stroke: #cf5f63;
+.edge.allowed {
+  stroke: #7d91a0;
+}
+
+.edge.internal {
+  stroke: #9aa8b3;
+  stroke-dasharray: 5 4;
+}
+
+.edge.allowed-state {
+  stroke: #c59b2b;
+}
+
+.edge.private {
+  stroke: #d9822b;
+}
+
+.edge.blocked {
+  stroke: #c8464c;
 }
 
 .edge.selected {
   stroke-width: 3;
 }
 
-marker#arrow path {
+marker#arrow-allowed path {
   fill: #7d91a0;
 }
 
-marker#arrow-problem path {
-  fill: #cf5f63;
+marker#arrow-internal path {
+  fill: #9aa8b3;
+}
+
+marker#arrow-allowed-state path {
+  fill: #c59b2b;
+}
+
+marker#arrow-private path {
+  fill: #d9822b;
+}
+
+marker#arrow-blocked path {
+  fill: #c8464c;
 }
 
 .edge-label {
@@ -719,12 +760,50 @@ tr:last-child td {
 }
 
 .issue-row svg,
-.dependency-row.problem svg {
-  color: #cf5f63;
-}
-
 .dependency-row svg {
   color: #2b9a66;
+}
+
+.issue-row.blocked svg,
+.dependency-row.blocked svg {
+  color: #c8464c;
+}
+
+.issue-row.private svg,
+.dependency-row.private svg {
+  color: #d9822b;
+}
+
+.issue-row.allowed-state svg,
+.dependency-row.allowed-state svg {
+  color: #c59b2b;
+}
+
+.dependency-row.internal svg {
+  color: #8fa0ad;
+}
+
+.issue-row.blocked,
+.dependency-row.blocked,
+.unit-dependency-row.blocked {
+  background: #fff7f7;
+}
+
+.issue-row.private,
+.dependency-row.private,
+.unit-dependency-row.private {
+  background: #fff8ef;
+}
+
+.issue-row.allowed-state,
+.dependency-row.allowed-state,
+.unit-dependency-row.allowed-state {
+  background: #fffbed;
+}
+
+.dependency-row.internal,
+.unit-dependency-row.internal {
+  background: #f8fafb;
 }
 
 .issue-row strong,
@@ -933,9 +1012,41 @@ tr:last-child td {
   flex-wrap: wrap;
 }
 
-mark.problem {
+mark.blocked {
   color: #8f3034;
   background: #f6dddd;
+}
+
+mark.private {
+  color: #875019;
+  background: #fae6cf;
+}
+
+mark.allowed-state {
+  color: #725d18;
+  background: #f7edc6;
+}
+
+mark.allowed {
+  color: #235f43;
+  background: #dff1e9;
+}
+
+mark.internal {
+  color: #526270;
+  background: #e9eef2;
+}
+
+.dependency-group-card.blocked {
+  border-color: #efc5c8;
+}
+
+.dependency-group-card.private {
+  border-color: #efd0ab;
+}
+
+.dependency-group-card.allowed-state {
+  border-color: #eadb9a;
 }
 
 .dependency-tree {
