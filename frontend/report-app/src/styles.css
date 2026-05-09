@@ -1076,6 +1076,8 @@ tr:last-child td {
 
 .component-filter-menu {
   position: relative;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .component-filter-menu summary {
@@ -1083,6 +1085,9 @@ tr:last-child td {
   gap: 8px;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   padding: 0 10px;
   color: #22313c;
   cursor: pointer;
@@ -1090,6 +1095,7 @@ tr:last-child td {
 }
 
 .component-filter-menu summary span {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
