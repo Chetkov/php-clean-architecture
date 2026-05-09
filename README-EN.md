@@ -17,6 +17,16 @@ cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config
 
 All configuration details are described in detail in the config sample https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php, as well as in articles https://habr.com/ru/post/504590/ and https://habr.com/ru/post/686236/
 
+## Source discovery
+
+The analyzer reads PHP files through AST and discovers declared `class`, `interface`, `trait`, and `enum` symbols from file
+contents. A unit name no longer has to match its PSR-4 path: a component can point to a legacy directory or a single file,
+and discovered symbols are assigned to the component by the configured root path.
+
+For files without declared symbols, such as executable scripts, the analyzer keeps the previous fallback based on the root
+`namespace` and relative path. When `vendor_based_components` is enabled, Composer `psr-4`, `psr-0`, `classmap`, `files`,
+`autoload-dev`, and `exclude-from-classmap` metadata are used.
+
 ## Usage
 
 1. Generating a report for analysis.

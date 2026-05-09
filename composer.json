@@ -13,7 +13,8 @@
         "psr/log": "*",
         "twig/twig": "*",
         "ext-json": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "nikic/php-parser": "^5.7"
     },
     "require-dev": {
         "phpstan/phpstan": "^2.1",

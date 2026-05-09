@@ -106,7 +106,57 @@ class UnitOfCode
         if ($path) {
             $unitOfCode->path = $path;
         }
+        if (!$component && $unitOfCode->component()->isUndefined()) {
+            $resolvedComponent = Component::createByUnitOfCode($unitOfCode);
+            if (!$resolvedComponent->isUndefined()) {
+                $unitOfCode->setComponent($resolvedComponent);
+            }
+        }
         return $unitOfCode;
+    }
+
+    /**
+     * @param SourceUnit $sourceUnit
+     * @param Component $component
+     * @return self
+     */
+    public static function createFromSourceUnit(SourceUnit $sourceUnit, Component $component): self
+    {
+        if (!$sourceUnit->isDeclaredSymbol()) {
+            return self::create($sourceUnit->name(), $component, $sourceUnit->path());
+        }
+
+        $fullName = trim($sourceUnit->name(), '\\');
+        $unitOfCode = self::$instances[$fullName] ?? null;
+        if (!$unitOfCode) {
+            $unitOfCode = new UnitOfCode(
+                $fullName,
+                self::createTypeFromSourceUnit($sourceUnit),
+                $sourceUnit->path(),
+                $component
+            );
+            self::$instances[$fullName] = $unitOfCode;
+        }
+
+        $unitOfCode->setComponent($component);
+        $unitOfCode->path = $sourceUnit->path();
+
+        return $unitOfCode;
+    }
+
+    private static function createTypeFromSourceUnit(SourceUnit $sourceUnit): Type
+    {
+        switch ($sourceUnit->kind()) {
+            case SourceUnit::KIND_INTERFACE:
+                return TypeInterface::getInstance();
+            case SourceUnit::KIND_TRAIT:
+                return TypeTrait::getInstance();
+            case SourceUnit::KIND_ENUM:
+            case SourceUnit::KIND_CLASS:
+                return TypeClass::getInstance($sourceUnit->isAbstract());
+            default:
+                return TypeUndefined::getInstance();
+        }
     }
 
     /**
