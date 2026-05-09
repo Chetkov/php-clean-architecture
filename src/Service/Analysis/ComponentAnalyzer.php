@@ -121,7 +121,6 @@ class ComponentAnalyzer
                         break;
                     }
                 }
-
             }
 
             if (!empty($phpFilesWithoutPhpExtensions)) {

@@ -35,7 +35,8 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
     public function find(UnitOfCode $unitOfCode): array
     {
         $dependencies = [];
-        if ($unitOfCode->path() === null
+        if (
+            $unitOfCode->path() === null
             || !$content = file_get_contents($unitOfCode->path())
         ) {
             return $dependencies;
@@ -139,7 +140,8 @@ class CodeParsingDependenciesFinder implements DependenciesFinderInterface
                 continue;
             }
 
-            if (TypePrimitive::isThisType($dependency)
+            if (
+                TypePrimitive::isThisType($dependency)
                 || $this->isElementExists($dependency)
             ) {
                 $fullNames[] = $dependency;

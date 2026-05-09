@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<ruleset name="PHPCleanArchitecture">
+    <description>PHPCS rules for php-clean-architecture.</description>
+
+    <file>bin</file>
+    <file>src</file>
+
+    <arg name="colors"/>
+    <arg value="p"/>
+
+    <rule ref="PSR12">
+        <exclude name="Generic.Files.LineLength"/>
+    </rule>
+</ruleset>

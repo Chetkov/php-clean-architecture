@@ -6,5 +6,4 @@ namespace Chetkov\PHPCleanArchitecture\Service\Report\DefaultReport\Event;
 
 class ComponentReportRenderingStartedEvent extends ComponentReportRenderingEvent
 {
-
 }

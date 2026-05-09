@@ -6,5 +6,4 @@ namespace Chetkov\PHPCleanArchitecture\Service\Analysis\Event;
 
 class ComponentAnalysisFinishedEvent extends ComponentAnalysisEvent
 {
-
 }

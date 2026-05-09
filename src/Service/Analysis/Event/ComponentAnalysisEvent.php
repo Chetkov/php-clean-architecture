@@ -11,7 +11,8 @@ use Chetkov\PHPCleanArchitecture\Model\Event\TimedTrait;
 
 abstract class ComponentAnalysisEvent implements EventInterface
 {
-    use TimedTrait, ProgressiveTrait;
+    use TimedTrait;
+    use ProgressiveTrait;
 
     /** @var Component */
     private $component;
