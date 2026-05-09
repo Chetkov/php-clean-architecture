@@ -17,6 +17,7 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\CodeParsing\Strategy\VarAnnotationsParsingStrategy;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\DocBlockDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\FactoryDependency;
+use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\FullyQualifiedSubject;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\InstanceofDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\ParamDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\ReturnDependency;
@@ -34,7 +35,28 @@ final class CodeParsingDependenciesFinderTest extends TestCase
         require_once __DIR__ . '/../../../../Fixtures/DependencyParsing/Dependencies.php';
         require_once __DIR__ . '/../../../../Fixtures/DependencyParsing/SampleSubject.php';
 
-        $finder = new CodeParsingDependenciesFinder(
+        self::assertFinderDependencies(SampleSubject::class);
+    }
+
+    public function testFindsFullyQualifiedDependenciesSupportedByCurrentRegexParser(): void
+    {
+        require_once __DIR__ . '/../../../../Fixtures/DependencyParsing/Dependencies.php';
+        require_once __DIR__ . '/../../../../Fixtures/DependencyParsing/FullyQualifiedSubject.php';
+
+        self::assertFinderDependencies(FullyQualifiedSubject::class);
+    }
+
+    private static function assertFinderDependencies(string $unitOfCodeName): void
+    {
+        $dependencies = self::createFinder()->find(UnitOfCode::create($unitOfCodeName));
+        sort($dependencies);
+
+        self::assertSame(self::expectedDependencies(), $dependencies);
+    }
+
+    private static function createFinder(): CodeParsingDependenciesFinder
+    {
+        return new CodeParsingDependenciesFinder(
             new ClassesCreatedThroughNewParsingStrategy(),
             new ClassesCalledStaticallyParsingStrategy(),
             new ClassesFromInstanceofConstructionParsingStrategy(),
@@ -45,11 +67,14 @@ final class CodeParsingDependenciesFinderTest extends TestCase
             new ThrowsAnnotationsParsingStrategy(),
             new VarAnnotationsParsingStrategy()
         );
+    }
 
-        $dependencies = $finder->find(UnitOfCode::create(SampleSubject::class));
-        sort($dependencies);
-
-        self::assertSame([
+    /**
+     * @return array<string>
+     */
+    private static function expectedDependencies(): array
+    {
+        return [
             DocBlockDependency::class,
             FactoryDependency::class,
             InstanceofDependency::class,
@@ -59,6 +84,6 @@ final class CodeParsingDependenciesFinderTest extends TestCase
             StaticDependency::class,
             ThrowsDependency::class,
             VarDependency::class,
-        ], $dependencies);
+        ];
     }
 }

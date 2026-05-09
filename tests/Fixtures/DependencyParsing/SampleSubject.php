@@ -27,6 +27,16 @@ class SampleSubject
      */
     private $value;
 
+    public function __construct()
+    {
+        $this->value = new VarDependency();
+    }
+
+    public function value(): VarDependency
+    {
+        return $this->value;
+    }
+
     /**
      * @param ParamDependency $param
      * @return ReturnDependency
@@ -34,13 +44,22 @@ class SampleSubject
      */
     public function handle(ParamDependency $param): ReturnDependency
     {
-        $created = new AliasDependency();
         StaticDependency::touch();
 
+        $created = $this->createServiceDependency(new AliasDependency());
         if ($created instanceof InstanceofDependency) {
             return new ReturnDependency();
         }
 
         return new ReturnDependency();
+    }
+
+    private function createServiceDependency(ServiceDependency $fallback): ServiceDependency
+    {
+        if ($fallback instanceof InstanceofDependency) {
+            return $fallback;
+        }
+
+        return new InstanceofDependency();
     }
 }
