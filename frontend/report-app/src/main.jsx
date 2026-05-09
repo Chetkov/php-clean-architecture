@@ -1459,6 +1459,7 @@ function DependencyExplorer({
                   }}
                 >
                   <DependencyGroupCard
+                    direction={direction}
                     focused={group.dependencies.some((dependency) => dependency.id === focusedDependencyId)}
                     group={group}
                     onSelectUnit={onSelectUnit}
@@ -1580,13 +1581,15 @@ function ComponentFilter({ components, id, isOpen, label, selectedIds, onChange,
   );
 }
 
-function DependencyGroupCard({ focused, group, onSelectUnit, t }) {
+function DependencyGroupCard({ direction, focused, group, onSelectUnit, t }) {
   return (
     <details className={`dependency-group-card ${group.status}${focused ? ' focused-search-target' : ''}`} open={focused || undefined}>
       <summary>
         <CircleDot size={16} />
         <div>
-          <strong>{group.primaryName} {'->'} {group.secondaryName}</strong>
+          <strong>{direction === 'source'
+            ? `${group.primaryName} -> ${group.secondaryName}`
+            : `${group.primaryName} <- ${group.secondaryName}`}</strong>
           <span>{group.dependencies.length} {t('dependencyRows')} · {group.fileCount} {t('dependencyFiles')}</span>
         </div>
         <DependencyGroupBadges group={group} t={t} />
