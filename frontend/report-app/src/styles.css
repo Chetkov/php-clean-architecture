@@ -501,7 +501,7 @@ td span,
   position: absolute;
   inset: auto auto 0 0;
   height: 3px;
-  background: #2b9a66;
+  background: var(--ranking-color, #2b9a66);
 }
 
 .fan-row.blocked i {

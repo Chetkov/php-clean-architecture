@@ -788,6 +788,7 @@ function DistanceRanking({ components, selectedComponentId, onSelectComponent, t
             className={component.id === selectedComponentId ? 'ranking-row selected' : 'ranking-row'}
             key={component.id}
             onClick={() => onSelectComponent(component.id)}
+            style={{ '--ranking-color': qualityColor(componentMetricQuality(component, 'distance')) }}
             type="button"
           >
             <span>{component.name}</span>
