@@ -2,3 +2,6 @@
 /vendor
 /sandbox
 /phpca-reports
+/TASKS
+/.phpunit.result.cache
+/composer.lock

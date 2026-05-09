@@ -105,7 +105,12 @@ class ComponentAnalyzer
                     continue;
                 }
 
-                $content = file_get_contents($notPhpFile->getRealPath());
+                $notPhpFilePath = $notPhpFile->getRealPath();
+                if (!$notPhpFilePath) {
+                    continue;
+                }
+
+                $content = file_get_contents($notPhpFilePath);
                 if (!$content) {
                     continue;
                 }

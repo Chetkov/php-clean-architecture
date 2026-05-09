@@ -17,11 +17,17 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^0.12.90",
-        "squizlabs/php_codesniffer": "^3.6"
+        "squizlabs/php_codesniffer": "^3.6",
+        "phpunit/phpunit": "^12"
     },
     "autoload": {
         "psr-4": {
             "Chetkov\\PHPCleanArchitecture\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Chetkov\\PHPCleanArchitecture\\Tests\\": "tests/"
         }
     },
     "bin": [
@@ -31,6 +37,7 @@
     ],
     "scripts": {
         "php-linter": "php -l bin && php -l src",
+        "test": "vendor/bin/phpunit",
         "code-sniffer": "vendor/bin/phpcs bin src",
         "phpstan": "vendor/bin/phpstan analyse -l 8 bin src",
         "php-clean-architecture": "bin/phpca-check ./phpca-config.php",
