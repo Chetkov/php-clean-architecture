@@ -63,6 +63,7 @@ const dictionaries = {
     clearSelection: 'Clear',
     componentFilterSearch: 'Search components',
     componentFilterSelected: 'selected',
+    componentLinksShort: 'comp',
     copy: 'Copy',
     dependencyOverview: 'Dependency map',
     filtered: 'filtered',
@@ -79,6 +80,7 @@ const dictionaries = {
     dependencyBlockedViolation: '"{from}" must not depend on "{to}".',
     dependencyPrivateViolation: '"{from}" uses non-public "{to}".',
     dependencyRows: 'dependencies',
+    dependencyUnitsShort: 'unit',
     dependencyStatus: 'Status',
     directoryTree: 'Directory tree',
     dependencies: 'Dependencies',
@@ -156,6 +158,7 @@ const dictionaries = {
     clearSelection: 'Сбросить',
     componentFilterSearch: 'Поиск компонентов',
     componentFilterSelected: 'выбрано',
+    componentLinksShort: 'комп',
     copy: 'Копировать',
     dependencyOverview: 'Карта зависимостей',
     filtered: 'отфильтровано',
@@ -172,6 +175,7 @@ const dictionaries = {
     dependencyBlockedViolation: '"{from}" не должен зависеть от "{to}".',
     dependencyPrivateViolation: '"{from}" использует непубличный "{to}".',
     dependencyRows: 'зависимостей',
+    dependencyUnitsShort: 'юнит',
     dependencyStatus: 'Статус',
     directoryTree: 'Дерево директорий',
     dependencies: 'Зависимости',
@@ -249,6 +253,7 @@ const dictionaries = {
     clearSelection: '清除',
     componentFilterSearch: '搜索组件',
     componentFilterSelected: '已选',
+    componentLinksShort: '组件',
     copy: '复制',
     dependencyOverview: '依赖地图',
     filtered: '已筛选',
@@ -265,6 +270,7 @@ const dictionaries = {
     dependencyBlockedViolation: '"{from}" 不应依赖 "{to}"。',
     dependencyPrivateViolation: '"{from}" 使用了非公开的 "{to}"。',
     dependencyRows: '依赖',
+    dependencyUnitsShort: '单元',
     dependencyStatus: '状态',
     directoryTree: '目录树',
     dependencies: '依赖',
@@ -403,6 +409,10 @@ function App() {
   const visibleDependencies = useMemo(
     () => filterDependencies(report.dependencies, indexed, query, sourceComponentIds, targetComponentIds, dependencyStatus),
     [dependencyStatus, indexed, query, report.dependencies, sourceComponentIds, targetComponentIds],
+  );
+  const visibleDependencyLinks = useMemo(
+    () => countComponentDependencyLinks(visibleDependencies),
+    [visibleDependencies],
   );
 
   useEffect(() => {
@@ -627,7 +637,10 @@ function App() {
               <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')} type="button">
                 <ArrowRight size={16} />
                 {t('dependencies')}
-                <strong>{visibleDependencies.length}</strong>
+                <span className="tab-metrics">
+                  <strong title={t('dependencyGroups')}>{t('componentLinksShort')}: {visibleDependencyLinks}</strong>
+                  <strong title={t('dependencyRows')}>{t('dependencyUnitsShort')}: {visibleDependencies.length}</strong>
+                </span>
               </button>
               <button className={view === 'units' ? 'active' : ''} onClick={() => setView('units')} type="button">
                 <FileCode2 size={16} />
@@ -1758,6 +1771,17 @@ function filterDependencies(dependencies, indexed, query, sourceComponentIds, ta
     .filter((dependency) => targetIds.has(dependency.toComponentId))
     .filter((dependency) => status === 'all' || dependencyStatusKey(dependency) === status)
     .filter((dependency) => matchesDependencyWithUnits(dependency, indexed, query));
+}
+
+function countComponentDependencyLinks(dependencies) {
+  const links = new Set();
+  dependencies.forEach((dependency) => {
+    if (dependency.fromComponentId !== dependency.toComponentId) {
+      links.add(`${dependency.fromComponentId}->${dependency.toComponentId}`);
+    }
+  });
+
+  return links.size;
 }
 
 function matchesViolation(violation, indexed, query) {

@@ -673,6 +673,16 @@ marker#arrow-blocked path {
   background: #e9eef2;
 }
 
+.tab-metrics {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tab-metrics strong {
+  min-width: 0;
+}
+
 .tabs button.active {
   color: #ffffff;
   border-color: #24485f;
