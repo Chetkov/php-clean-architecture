@@ -86,7 +86,6 @@ const dictionaries = {
     openSearch: 'Search',
     overview: 'Overview',
     showMore: 'Show more',
-    showLess: 'Show less',
     zoneOfPain: 'Painful',
     zoneOfUselessness: 'Useless',
     dependencyDirection: 'Direction',
@@ -203,7 +202,6 @@ const dictionaries = {
     openSearch: 'Поиск',
     overview: 'Обзор',
     showMore: 'Показать еще',
-    showLess: 'Свернуть',
     zoneOfPain: 'Больно',
     zoneOfUselessness: 'Бесполезно',
     dependencyDirection: 'Направление',
@@ -320,7 +318,6 @@ const dictionaries = {
     openSearch: '搜索',
     overview: '概览',
     showMore: '显示更多',
-    showLess: '收起',
     zoneOfPain: '痛点',
     zoneOfUselessness: '无用',
     dependencyDirection: '方向',
@@ -1071,85 +1068,103 @@ function ProgressMeter({ value, quality }) {
 }
 
 function AIMatrix({ components, selectedComponentId, onSelectComponent, t }) {
+  const [hoveredComponentId, setHoveredComponentId] = useState(null);
+  const chart = {
+    bottom: 210,
+    height: 196,
+    left: 28,
+    right: 344,
+    top: 14,
+    width: 316,
+  };
+  const labeledComponentIds = useMemo(() => {
+    const ids = new Set(
+      [...components]
+        .sort((left, right) => right.metrics.distance - left.metrics.distance)
+        .slice(0, 3)
+        .map((component) => component.id),
+    );
+    if (selectedComponentId) {
+      ids.add(selectedComponentId);
+    }
+    if (hoveredComponentId) {
+      ids.add(hoveredComponentId);
+    }
+
+    return ids;
+  }, [components, hoveredComponentId, selectedComponentId]);
+
   return (
-    <section className="panel chart-panel">
+    <section className="panel chart-panel ai-matrix-panel">
       <h2>{t('aiMatrix')}</h2>
       <svg viewBox="0 0 360 240" role="img" aria-label={t('aiMatrix')}>
-        <path className="chart-zone pain" d="M40 200 L40 122 A78 78 0 0 1 118 200 Z" />
-        <path className="chart-zone uselessness" d="M320 24 L320 102 A78 78 0 0 1 242 24 Z" />
-        <text className="zone-label pain" textAnchor="middle" transform="translate(96 184) rotate(45)">{t('zoneOfPain')}</text>
-        <text className="zone-label uselessness" textAnchor="middle" transform="translate(284 62) rotate(45)">{t('zoneOfUselessness')}</text>
-        <line className="chart-grid strong" x1="40" x2="320" y1="200" y2="200" />
-        <line className="chart-grid strong" x1="40" x2="40" y1="24" y2="200" />
+        <path className="chart-zone pain" d={`M${chart.left} ${chart.bottom} L${chart.left} ${chart.bottom - 88} A88 88 0 0 1 ${chart.left + 88} ${chart.bottom} Z`} />
+        <path className="chart-zone uselessness" d={`M${chart.right} ${chart.top} L${chart.right} ${chart.top + 88} A88 88 0 0 1 ${chart.right - 88} ${chart.top} Z`} />
+        <text className="zone-label pain" textAnchor="middle" transform={`translate(${chart.left + 62} ${chart.bottom - 18}) rotate(45)`}>{t('zoneOfPain')}</text>
+        <text className="zone-label uselessness" textAnchor="middle" transform={`translate(${chart.right - 44} ${chart.top + 48}) rotate(45)`}>{t('zoneOfUselessness')}</text>
+        <line className="chart-grid strong" x1={chart.left} x2={chart.right} y1={chart.bottom} y2={chart.bottom} />
+        <line className="chart-grid strong" x1={chart.left} x2={chart.left} y1={chart.top} y2={chart.bottom} />
         {[0.25, 0.5, 0.75, 1].map((value) => (
           <g key={value}>
-            <line className="chart-grid" x1={40 + value * 280} x2={40 + value * 280} y1="24" y2="200" />
-            <line className="chart-grid" x1="40" x2="320" y1={200 - value * 176} y2={200 - value * 176} />
+            <line className="chart-grid" x1={chart.left + value * chart.width} x2={chart.left + value * chart.width} y1={chart.top} y2={chart.bottom} />
+            <line className="chart-grid" x1={chart.left} x2={chart.right} y1={chart.bottom - value * chart.height} y2={chart.bottom - value * chart.height} />
           </g>
         ))}
-        <line className="main-sequence" x1="40" x2="320" y1="24" y2="200" />
+        <line className="main-sequence" x1={chart.left} x2={chart.right} y1={chart.top} y2={chart.bottom} />
         {components.map((component, index) => {
-          const x = 40 + component.metrics.instability * 280;
-          const y = 200 - component.metrics.abstractness * 176;
-          const labelX = x > 260 ? x - 10 : x + 10;
+          const x = chart.left + component.metrics.instability * chart.width;
+          const y = chart.bottom - component.metrics.abstractness * chart.height;
+          const labelX = x > 282 ? x - 10 : x + 10;
           const labelY = y + ((index % 3) - 1) * 12;
+          const shouldShowLabel = labeledComponentIds.has(component.id);
           return (
             <g
               className={component.id === selectedComponentId ? 'chart-point selected' : 'chart-point'}
               key={component.id}
               onClick={() => onSelectComponent(component.id)}
+              onBlur={() => setHoveredComponentId(null)}
+              onFocus={() => setHoveredComponentId(component.id)}
+              onMouseEnter={() => setHoveredComponentId(component.id)}
+              onMouseLeave={() => setHoveredComponentId(null)}
               role="button"
               tabIndex="0"
             >
+              <title>{`${component.name}: A ${formatRate(component.metrics.abstractness)}, I ${formatRate(component.metrics.instability)}, D ${formatRate(component.metrics.distance)}`}</title>
               <circle cx={x} cy={y} r={component.id === selectedComponentId ? 9 : 7} />
-              <text textAnchor={x > 260 ? 'end' : 'start'} x={labelX} y={labelY}>{truncate(component.name, 16)}</text>
+              {shouldShowLabel && (
+                <text textAnchor={x > 282 ? 'end' : 'start'} x={labelX} y={labelY}>{truncate(component.name, 16)}</text>
+              )}
             </g>
           );
         })}
-        <text className="axis-label" x="170" y="228">{t('instability')}</text>
-        <text className="axis-label vertical" x="-140" y="14">{t('abstractness')}</text>
+        <text className="axis-label" x="178" y="234">{t('instability')}</text>
+        <text className="axis-label vertical" x="-146" y="12">{t('abstractness')}</text>
       </svg>
     </section>
   );
 }
 
 function DistanceRanking({ components, selectedComponentId, onSelectComponent, t }) {
-  const [expanded, setExpanded] = useState(false);
   const sortedComponents = [...components].sort((left, right) => right.metrics.distance - left.metrics.distance);
-  const hasOverflow = sortedComponents.length > 5;
-  const previewComponents = hasOverflow ? sortedComponents.slice(0, 5) : sortedComponents;
-  const renderRankingRows = (items) => items.map((component) => (
-    <button
-      className={component.id === selectedComponentId ? 'ranking-row selected' : 'ranking-row'}
-      key={component.id}
-      onClick={() => onSelectComponent(component.id)}
-      style={{ '--ranking-color': qualityColor(componentMetricQuality(component, 'distance')) }}
-      type="button"
-    >
-      <span>{component.name}</span>
-      <strong>{formatRate(component.metrics.distance)}</strong>
-      <i style={{ width: `${Math.max(component.metrics.distance * 100, 2)}%` }} />
-    </button>
-  ));
 
   return (
     <section className="panel chart-panel ranking-panel">
       <h2>{t('distanceRanking')}</h2>
       <div className="ranking-list">
-        {renderRankingRows(previewComponents)}
+        {sortedComponents.map((component) => (
+          <button
+            className={component.id === selectedComponentId ? 'ranking-row selected' : 'ranking-row'}
+            key={component.id}
+            onClick={() => onSelectComponent(component.id)}
+            style={{ '--ranking-color': qualityColor(componentMetricQuality(component, 'distance')) }}
+            type="button"
+          >
+            <span>{component.name}</span>
+            <strong>{formatRate(component.metrics.distance)}</strong>
+            <i style={{ width: `${Math.max(component.metrics.distance * 100, 2)}%` }} />
+          </button>
+        ))}
       </div>
-      {hasOverflow && (
-        <button className="ranking-toggle" onClick={() => setExpanded((current) => !current)} type="button">
-          {expanded ? t('showLess') : `${t('showMore')} (${sortedComponents.length})`}
-        </button>
-      )}
-      {expanded && (
-        <div className="ranking-popover">
-          <div className="ranking-list">
-            {renderRankingRows(sortedComponents)}
-          </div>
-        </div>
-      )}
     </section>
   );
 }

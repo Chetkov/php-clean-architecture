@@ -414,6 +414,8 @@ td span,
   display: grid;
   grid-template-columns: minmax(220px, 0.85fr) minmax(280px, 1fr) minmax(220px, 0.85fr) minmax(260px, 1fr);
   gap: 12px;
+  align-items: stretch;
+  --overview-card-height: 320px;
 }
 
 .overview-grid.global-overview {
@@ -432,6 +434,11 @@ td span,
   padding: 12px 14px;
 }
 
+.overview-grid > .panel {
+  height: var(--overview-card-height);
+  box-sizing: border-box;
+}
+
 .panel h2 {
   color: #263540;
   font-size: 15px;
@@ -440,6 +447,7 @@ td span,
 .metrics-panel {
   display: grid;
   gap: 10px;
+  align-content: space-between;
 }
 
 .metric div {
@@ -477,11 +485,23 @@ td span,
 }
 
 .chart-panel svg {
-  height: 190px;
+  height: 205px;
 }
 
 .global-overview .chart-panel svg {
-  height: 260px;
+  height: 246px;
+}
+
+.ai-matrix-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-matrix-panel svg {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
 }
 
 .graph-panel {
@@ -686,6 +706,10 @@ body.graph-fullscreen-open {
 
 .ranking-panel {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
 }
 
 .ranking-row,
@@ -713,36 +737,6 @@ body.graph-fullscreen-open {
 
 .fan-row.disabled {
   cursor: default;
-}
-
-.ranking-toggle {
-  min-height: 28px;
-  margin-top: 8px;
-  padding: 0 10px;
-  color: #325a75;
-  border: 1px solid #c9d2d9;
-  border-radius: 8px;
-  background: #ffffff;
-  cursor: pointer;
-}
-
-.ranking-popover {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% - 12px);
-  right: 14px;
-  left: 14px;
-  max-height: min(420px, 70vh);
-  overflow: auto;
-  padding: 10px;
-  border: 1px solid #c9d2d9;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 18px 36px rgba(31, 47, 61, 0.18);
-}
-
-.ranking-popover .ranking-list {
-  margin-top: 0;
 }
 
 .fan-row.disabled:hover {
@@ -902,8 +896,11 @@ marker#arrow-blocked path {
 }
 
 .fan-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  min-height: 0;
+  overflow: auto;
 }
 
 .fan-list h3,
