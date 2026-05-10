@@ -466,7 +466,7 @@ td span,
 }
 
 .chart-panel svg,
-.graph-panel svg,
+.graph-panel > svg,
 .unit-graph svg {
   display: block;
   width: 100%;
@@ -480,15 +480,41 @@ td span,
   overflow: hidden;
 }
 
+body.graph-fullscreen-open {
+  overflow: hidden;
+}
+
+.graph-panel.fullscreen {
+  position: fixed;
+  inset: 14px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-shadow: 0 22px 70px rgba(17, 24, 32, 0.32);
+}
+
 .graph-panel-header {
   display: flex;
   gap: 10px;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
-.graph-scope-switcher {
+.graph-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.graph-scope-switcher,
+.graph-layout-switcher,
+.graph-zoom-controls {
   display: inline-flex;
   gap: 4px;
   padding: 3px;
@@ -497,9 +523,19 @@ td span,
   background: #f4f7f9;
 }
 
-.graph-scope-switcher button {
+.graph-scope-switcher button,
+.graph-layout-switcher button,
+.graph-fullscreen-button,
+.graph-zoom-controls button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
   min-height: 24px;
   padding: 0 9px;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
   color: #526270;
   border: 0;
   border-radius: 999px;
@@ -507,18 +543,63 @@ td span,
   cursor: pointer;
 }
 
-.graph-scope-switcher button.active {
+.graph-fullscreen-button,
+.graph-zoom-controls button {
+  flex: 0 0 auto;
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  border: 1px solid #c9d2d9;
+  background: #ffffff;
+}
+
+.graph-fullscreen-button span {
+  display: none;
+}
+
+.graph-layout-switcher button svg,
+.graph-fullscreen-button svg,
+.graph-zoom-controls button svg {
+  flex: 0 0 auto;
+}
+
+.graph-scope-switcher button.active,
+.graph-layout-switcher button.active {
   color: #ffffff;
   background: #24485f;
 }
 
-.graph-scope-switcher button:disabled {
+.graph-scope-switcher button:disabled,
+.graph-layout-switcher button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
-.graph-panel svg {
-  height: 260px;
+.graph-zoom-controls button:hover,
+.graph-fullscreen-button:hover {
+  border-color: #9fb4c4;
+  color: #24485f;
+}
+
+.graph-panel > svg {
+  height: 360px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.graph-panel.fullscreen > svg {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.graph-pan-surface {
+  fill: transparent;
+}
+
+.graph-viewport {
+  transform-box: fill-box;
+  transform-origin: 0 0;
 }
 
 .chart-grid {
@@ -726,13 +807,18 @@ marker#arrow-blocked path {
   fill: #182832;
 }
 
-.node,
-.unit-node {
-  cursor: pointer;
+.node {
+  cursor: grab;
+  pointer-events: all;
+  touch-action: none;
 }
 
-.node {
-  touch-action: none;
+.node:active {
+  cursor: grabbing;
+}
+
+.unit-node {
+  cursor: pointer;
 }
 
 .node circle {
@@ -747,7 +833,7 @@ marker#arrow-blocked path {
 }
 
 .node.external {
-  cursor: default;
+  cursor: grab;
 }
 
 .node.external circle {

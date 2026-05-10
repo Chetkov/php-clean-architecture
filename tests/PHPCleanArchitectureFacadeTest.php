@@ -66,6 +66,49 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    public function testReportDoesNotCreatePrivateViolationForInternalDependency(): void
+    {
+        $reportPath = sys_get_temp_dir() . '/phpca-internal-private-report-' . bin2hex(random_bytes(8));
+        $config = $this->createConfig([
+            'component-a' => [
+                'allowed_dependencies' => ['component-a', 'component-b'],
+                'private_elements' => [__DIR__ . '/Fixtures/Project/ComponentA/Internal'],
+            ],
+        ]);
+        $config['reports_dir'] = $reportPath;
+        $config['factories']['report_rendering_service'] = static function (
+            EventManagerInterface $eventManager
+        ): ReportRenderingService {
+            return new ReportRenderingService($eventManager);
+        };
+
+        $facade = new PHPCleanArchitectureFacade($config);
+
+        self::assertSame([], $facade->check());
+
+        $facade->generateReport($reportPath);
+
+        $reportData = json_decode((string) file_get_contents($reportPath . '/report.json'), true);
+        self::assertIsArray($reportData);
+
+        $internalDependency = $this->findDependency(
+            $reportData,
+            'Chetkov\PHPCleanArchitecture\Tests\Fixtures\Project\ComponentA\UsesOwnPrivateClass',
+            'Chetkov\PHPCleanArchitecture\Tests\Fixtures\Project\ComponentA\Internal\InternalPrivateClass'
+        );
+        self::assertTrue($internalDependency['isInternal']);
+        self::assertFalse($internalDependency['isTargetPublic']);
+        self::assertSame(0, $reportData['summary']['violations']);
+        self::assertSame(0, $reportData['summary']['activeViolations']);
+        $this->assertNoViolation($reportData, $internalDependency['id'], 'private-unit');
+
+        $componentA = $this->findComponent($reportData, 'component-a');
+        self::assertFalse($componentA['health']['hasPrivateApiDependencies']);
+
+        $this->removeDirectory($reportPath);
+    }
+
+    #[RunInSeparateProcess]
     public function testAllowedCurrentStateSuppressesExistingDependencyErrors(): void
     {
         $storage = tempnam(sys_get_temp_dir(), 'phpca-allowed-state-');
@@ -408,6 +451,34 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         }
 
         self::fail(sprintf('Violation %s for dependency %s was not found.', $type, $dependencyId));
+    }
+
+    /**
+     * @param array<string, mixed> $reportData
+     */
+    private function assertNoViolation(array $reportData, string $dependencyId, string $type): void
+    {
+        foreach ($reportData['violations'] as $violation) {
+            self::assertFalse(
+                $violation['dependencyId'] === $dependencyId && $violation['type'] === $type,
+                sprintf('Unexpected violation %s for dependency %s was found.', $type, $dependencyId)
+            );
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $reportData
+     * @return array<string, mixed>
+     */
+    private function findComponent(array $reportData, string $componentName): array
+    {
+        foreach ($reportData['components'] as $component) {
+            if ($component['name'] === $componentName) {
+                return $component;
+            }
+        }
+
+        self::fail('Component ' . $componentName . ' was not found in report data.');
     }
 
     /**

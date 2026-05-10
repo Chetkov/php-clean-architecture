@@ -11,15 +11,25 @@ import {
   FileCode2,
   GitBranch,
   Layers3,
+  Maximize2,
+  Minimize2,
   Repeat2,
+  RotateCcw,
   Search,
   SlidersHorizontal,
   X,
   ShieldAlert,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import './styles.css';
 
 const dependencyStatuses = ['allowed', 'internal', 'allowed-state', 'private', 'blocked'];
+const graphWidth = 1120;
+const graphHeight = 420;
+const graphPadding = 58;
+const graphLayouts = ['circle', 'grid', 'layers'];
+const defaultGraphViewport = { x: 0, y: 0, scale: 1 };
 
 const fallbackReport = {
   schemaVersion: 1,
@@ -98,6 +108,15 @@ const dictionaries = {
     fromComponents: 'From components',
     generatedReport: 'Generated report',
     globalComponentGraph: 'Global component graph',
+    graphLayout: 'Layout',
+    graphLayoutCircle: 'Circle',
+    graphLayoutGrid: 'Grid',
+    graphLayoutLayers: 'Layers',
+    graphFullscreenOpen: 'Open graph fullscreen',
+    graphFullscreenClose: 'Exit fullscreen',
+    graphZoomIn: 'Zoom in',
+    graphZoomOut: 'Zoom out',
+    graphViewportReset: 'Reset graph view',
     incoming: 'Incoming',
     incomingDependencies: 'Incoming dependencies',
     in: 'In',
@@ -204,6 +223,15 @@ const dictionaries = {
     fromComponents: 'Исходные компоненты',
     generatedReport: 'Сформированный отчет',
     globalComponentGraph: 'Общий граф компонентов',
+    graphLayout: 'Компоновка',
+    graphLayoutCircle: 'Круг',
+    graphLayoutGrid: 'Сетка',
+    graphLayoutLayers: 'Слои',
+    graphFullscreenOpen: 'Открыть граф во весь экран',
+    graphFullscreenClose: 'Выйти из полноэкранного режима',
+    graphZoomIn: 'Приблизить граф',
+    graphZoomOut: 'Отдалить граф',
+    graphViewportReset: 'Сбросить положение графа',
     incoming: 'Входящие',
     incomingDependencies: 'Входящие зависимости',
     in: 'Вх.',
@@ -310,6 +338,15 @@ const dictionaries = {
     fromComponents: '来源组件',
     generatedReport: '已生成报告',
     globalComponentGraph: '全局组件图',
+    graphLayout: '布局',
+    graphLayoutCircle: '圆形',
+    graphLayoutGrid: '网格',
+    graphLayoutLayers: '分层',
+    graphFullscreenOpen: '全屏打开图',
+    graphFullscreenClose: '退出全屏',
+    graphZoomIn: '放大图',
+    graphZoomOut: '缩小图',
+    graphViewportReset: '重置图视图',
     incoming: '传入',
     incomingDependencies: '传入依赖',
     in: '入',
@@ -1083,15 +1120,132 @@ function DistanceRanking({ components, selectedComponentId, onSelectComponent, t
 }
 
 function ComponentGraphPanel({ component, report, indexed, onScopeChange, onSelectComponent, scope, t }) {
-  const graph = useMemo(() => componentGraph(component, report, indexed, scope), [component, indexed, report, scope]);
-  const graphKey = useMemo(() => graph.nodes.map((node) => node.id).sort().join('|'), [graph.nodes]);
+  const [graphLayout, setGraphLayout] = useState(() => readGraphLayout(report));
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const graph = useMemo(
+    () => componentGraph(component, report, indexed, scope, graphLayout),
+    [component, graphLayout, indexed, report, scope],
+  );
+  const graphNodesKey = useMemo(() => graph.nodes.map((node) => node.id).sort().join('|'), [graph.nodes]);
+  const graphKey = `${graphLayout}:${graphNodesKey}`;
   const [nodePositions, setNodePositions] = useState(() => readGraphPositions(report, graphKey));
+  const [graphViewport, setGraphViewport] = useState(() => readGraphViewport(report, graphKey));
+  const svgRef = useRef(null);
   const dragState = useRef(null);
   const suppressNodeClick = useRef(false);
 
   useEffect(() => {
     setNodePositions(readGraphPositions(report, graphKey));
+    setGraphViewport(readGraphViewport(report, graphKey));
   }, [graphKey, report]);
+
+  useEffect(() => {
+    saveGraphLayout(report, graphLayout);
+  }, [graphLayout, report]);
+
+  const zoomGraphAtPoint = (pointer, factor) => {
+    setGraphViewport((viewport) => {
+      const nextScale = clamp(viewport.scale * factor, 0.35, 3);
+      const ratio = nextScale / viewport.scale;
+
+      return {
+        x: pointer.x - (pointer.x - viewport.x) * ratio,
+        y: pointer.y - (pointer.y - viewport.y) * ratio,
+        scale: nextScale,
+      };
+    });
+  };
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) {
+      return undefined;
+    }
+
+    const preventPageScrollOnZoom = (event) => {
+      event.preventDefault();
+      zoomGraphAtPoint(svgPoint(svg, event), event.deltaY < 0 ? 1.12 : 1 / 1.12);
+    };
+
+    svg.addEventListener('wheel', preventPageScrollOnZoom, { passive: false });
+
+    return () => {
+      svg.removeEventListener('wheel', preventPageScrollOnZoom);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      return undefined;
+    }
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
+    document.body.classList.add('graph-fullscreen-open');
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.classList.remove('graph-fullscreen-open');
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    const moveWindowDrag = (event) => {
+      if (!dragState.current) {
+        return;
+      }
+
+      const state = dragState.current;
+      const deltaX = (event.clientX - state.originClientX) * state.svgUnitsPerClientX;
+      const deltaY = (event.clientY - state.originClientY) * state.svgUnitsPerClientY;
+      state.hasMoved = true;
+
+      if (state.type === 'pan') {
+        setGraphViewport({
+          ...graphViewport,
+          x: state.originViewportX + deltaX,
+          y: state.originViewportY + deltaY,
+        });
+        return;
+      }
+
+      const nextPosition = {
+        x: state.originNodeX + deltaX / state.scale,
+        y: state.originNodeY + deltaY / state.scale,
+      };
+      suppressNodeClick.current = true;
+      setNodePositions((positions) => {
+        const nextPositions = { ...positions, [state.nodeId]: nextPosition };
+        saveGraphPositions(report, graphKey, nextPositions);
+
+        return nextPositions;
+      });
+    };
+
+    const endWindowDrag = () => {
+      if (!dragState.current) {
+        return;
+      }
+
+      suppressNodeClick.current = dragState.current.type === 'node' && dragState.current.hasMoved;
+      dragState.current = null;
+      saveGraphViewport(report, graphKey, graphViewport);
+    };
+
+    window.addEventListener('pointermove', moveWindowDrag);
+    window.addEventListener('pointerup', endWindowDrag);
+    window.addEventListener('pointercancel', endWindowDrag);
+
+    return () => {
+      window.removeEventListener('pointermove', moveWindowDrag);
+      window.removeEventListener('pointerup', endWindowDrag);
+      window.removeEventListener('pointercancel', endWindowDrag);
+    };
+  }, [graphKey, graphViewport, report]);
 
   const positionedGraph = useMemo(() => ({
     nodes: graph.nodes.map((node) => nodePositions[node.id] ? { ...node, ...nodePositions[node.id] } : node),
@@ -1106,45 +1260,22 @@ function ComponentGraphPanel({ component, report, indexed, onScopeChange, onSele
   const graphEdgeShapes = useMemo(() => shapeGraphEdges(positionedEdges), [positionedEdges]);
 
   const startDrag = (event, node) => {
-    if (node.isExternal) {
-      return;
-    }
-
     event.preventDefault();
-    const pointer = svgPoint(event.currentTarget.ownerSVGElement, event);
+    event.stopPropagation();
+    const svg = event.currentTarget.ownerSVGElement;
+    const rect = svg.getBoundingClientRect();
     dragState.current = {
+      type: 'node',
       hasMoved: false,
       nodeId: node.id,
-      offsetX: pointer.x - node.x,
-      offsetY: pointer.y - node.y,
+      originClientX: event.clientX,
+      originClientY: event.clientY,
+      originNodeX: node.x,
+      originNodeY: node.y,
+      scale: graphViewport.scale,
+      svgUnitsPerClientX: graphWidth / rect.width,
+      svgUnitsPerClientY: graphHeight / rect.height,
     };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const moveDrag = (event) => {
-    if (!dragState.current) {
-      return;
-    }
-
-    const pointer = svgPoint(event.currentTarget, event);
-    const nextPosition = {
-      x: clamp(pointer.x - dragState.current.offsetX, 48, 672),
-      y: clamp(pointer.y - dragState.current.offsetY, 48, 272),
-    };
-    const nodeId = dragState.current.nodeId;
-    dragState.current.hasMoved = true;
-    suppressNodeClick.current = true;
-    setNodePositions((positions) => ({ ...positions, [nodeId]: nextPosition }));
-  };
-
-  const endDrag = () => {
-    if (!dragState.current) {
-      return;
-    }
-
-    suppressNodeClick.current = dragState.current.hasMoved;
-    dragState.current = null;
-    saveGraphPositions(report, graphKey, nodePositions);
   };
 
   useEffect(() => {
@@ -1153,39 +1284,138 @@ function ComponentGraphPanel({ component, report, indexed, onScopeChange, onSele
     }
   }, [graphKey, nodePositions, report]);
 
+  useEffect(() => {
+    if (!dragState.current) {
+      saveGraphViewport(report, graphKey, graphViewport);
+    }
+  }, [graphKey, graphViewport, report]);
+
+  const applyGraphLayout = (layout) => {
+    const nextGraphKey = `${layout}:${graphNodesKey}`;
+    removeGraphPositions(report, nextGraphKey);
+    removeGraphViewport(report, nextGraphKey);
+    setGraphLayout(layout);
+    setNodePositions({});
+    setGraphViewport(defaultGraphViewport);
+  };
+
+  const startPan = (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    dragState.current = {
+      type: 'pan',
+      hasMoved: false,
+      originClientX: event.clientX,
+      originClientY: event.clientY,
+      originViewportX: graphViewport.x,
+      originViewportY: graphViewport.y,
+      svgUnitsPerClientX: graphWidth / rect.width,
+      svgUnitsPerClientY: graphHeight / rect.height,
+    };
+  };
+
+  const zoomGraphFromButton = (factor) => {
+    zoomGraphAtPoint({ x: graphWidth / 2, y: graphHeight / 2 }, factor);
+  };
+
   return (
-    <section className="panel graph-panel">
+    <section className={isFullscreen ? 'panel graph-panel fullscreen' : 'panel graph-panel'}>
       <header className="graph-panel-header">
         <h2>{component ? t('componentGraph') : t('globalComponentGraph')}</h2>
-        <div className="graph-scope-switcher" aria-label={t('dependencyDirection')}>
-          {[
-            ['all', t('all')],
-            ['outgoing', t('outgoing')],
-            ['incoming', t('incoming')],
-          ].map(([value, label]) => (
+        <div className="graph-controls">
+          <div className="graph-layout-switcher" aria-label={t('graphLayout')}>
+            {graphLayouts.map((layout) => (
+              <button
+                className={graphLayout === layout ? 'active' : ''}
+                key={layout}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  applyGraphLayout(layout);
+                }}
+                title={t(`graphLayout${capitalize(layout)}`)}
+                type="button"
+              >
+                {layout === 'circle' && <Repeat2 size={15} />}
+                {layout === 'grid' && <Layers3 size={15} />}
+                {layout === 'layers' && <GitBranch size={15} />}
+                <span>{t(`graphLayout${capitalize(layout)}`)}</span>
+              </button>
+            ))}
+          </div>
+          <div className="graph-scope-switcher" aria-label={t('dependencyDirection')}>
+            {[
+              ['all', t('all')],
+              ['outgoing', t('outgoing')],
+              ['incoming', t('incoming')],
+            ].map(([value, label]) => (
+              <button
+                className={scope === value ? 'active' : ''}
+                disabled={!component && value !== 'all'}
+                key={value}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onScopeChange(value);
+                }}
+                type="button"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="graph-zoom-controls">
             <button
-              className={scope === value ? 'active' : ''}
-              disabled={!component && value !== 'all'}
-              key={value}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onScopeChange(value);
-              }}
+              aria-label={t('graphZoomOut')}
+              onClick={() => zoomGraphFromButton(1 / 1.18)}
+              title={t('graphZoomOut')}
               type="button"
             >
-              {label}
+              <ZoomOut size={15} />
             </button>
-          ))}
+            <button
+              aria-label={t('graphViewportReset')}
+              onClick={() => setGraphViewport(defaultGraphViewport)}
+              title={t('graphViewportReset')}
+              type="button"
+            >
+              <RotateCcw size={15} />
+            </button>
+            <button
+              aria-label={t('graphZoomIn')}
+              onClick={() => zoomGraphFromButton(1.18)}
+              title={t('graphZoomIn')}
+              type="button"
+            >
+              <ZoomIn size={15} />
+            </button>
+          </div>
+          <button
+            className="graph-fullscreen-button"
+            aria-label={isFullscreen ? t('graphFullscreenClose') : t('graphFullscreenOpen')}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsFullscreen((current) => !current);
+            }}
+            title={isFullscreen ? t('graphFullscreenClose') : t('graphFullscreenOpen')}
+            type="button"
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            <span>{isFullscreen ? t('graphFullscreenClose') : t('graphFullscreenOpen')}</span>
+          </button>
         </div>
       </header>
       <svg
-        viewBox="0 0 720 320"
+        ref={svgRef}
+        viewBox={`0 0 ${graphWidth} ${graphHeight}`}
         role="img"
         aria-label={t('dependencyGraphLabel')}
-        onPointerMove={moveDrag}
-        onPointerLeave={endDrag}
-        onPointerUp={endDrag}
+        onPointerDown={startPan}
       >
         <defs>
           {dependencyStatuses.map((status) => (
@@ -1194,47 +1424,50 @@ function ComponentGraphPanel({ component, report, indexed, onScopeChange, onSele
             </marker>
           ))}
         </defs>
-        {graphEdgeShapes.map((shape) => (
-          <g key={shape.edge.id}>
-            <title>{`${shape.edge.from.name} -> ${shape.edge.to.name}: ${shape.edge.sourceUnitCount}->${shape.edge.targetUnitCount} (${shape.edge.weight} ${t('dependencyRows')}, ${edgeStatusLabel(shape.edge.status, t)})`}</title>
-            <path
-              className={graphEdgeClassName(shape.edge)}
-              d={shape.path}
-              markerEnd={`url(#arrow-${shape.edge.status})`}
-            />
-            <text className={shape.edge.isSelected ? 'edge-label selected' : 'edge-label'} x={shape.label.x} y={shape.label.y}>
-              {shape.edge.sourceUnitCount}-&gt;{shape.edge.targetUnitCount}
-            </text>
-          </g>
-        ))}
-        {positionedGraph.nodes.map((node) => {
-          const violations = indexed.violationsByComponent.get(node.id) ?? [];
-          return (
-            <g
-              className={graphNodeClassName(node, component)}
-              key={node.id}
-              onClick={() => {
-                if (suppressNodeClick.current) {
-                  suppressNodeClick.current = false;
-                  return;
-                }
-                if (!node.isExternal) {
-                  onSelectComponent(node.id);
-                }
-              }}
-              onPointerDown={(event) => startDrag(event, node)}
-              role={node.isExternal ? undefined : 'button'}
-              tabIndex={node.isExternal ? undefined : '0'}
-              transform={`translate(${node.x} ${node.y})`}
-            >
-              <circle r="38" />
-              <text textAnchor="middle" y="-3">{truncate(node.name, 14)}</text>
-              <text className="node-meta" textAnchor="middle" y="15">
-                {node.isExternal ? t('external') : (violations.length ? `${violations.length} ${t('issues')}` : `${node.units} ${t('unitsCount')}`)}
+        <rect className="graph-pan-surface" width={graphWidth} height={graphHeight} />
+        <g className="graph-viewport" transform={`translate(${graphViewport.x} ${graphViewport.y}) scale(${graphViewport.scale})`}>
+          {graphEdgeShapes.map((shape) => (
+            <g key={shape.edge.id}>
+              <title>{`${shape.edge.from.name} -> ${shape.edge.to.name}: ${shape.edge.sourceUnitCount}->${shape.edge.targetUnitCount} (${shape.edge.weight} ${t('dependencyRows')}, ${edgeStatusLabel(shape.edge.status, t)})`}</title>
+              <path
+                className={graphEdgeClassName(shape.edge)}
+                d={shape.path}
+                markerEnd={`url(#arrow-${shape.edge.status})`}
+              />
+              <text className={shape.edge.isSelected ? 'edge-label selected' : 'edge-label'} x={shape.label.x} y={shape.label.y}>
+                {shape.edge.sourceUnitCount}-&gt;{shape.edge.targetUnitCount}
               </text>
             </g>
-          );
-        })}
+          ))}
+          {positionedGraph.nodes.map((node) => {
+            const violations = indexed.violationsByComponent.get(node.id) ?? [];
+            return (
+              <g
+                className={graphNodeClassName(node, component)}
+                key={node.id}
+                onClick={() => {
+                  if (suppressNodeClick.current) {
+                    suppressNodeClick.current = false;
+                    return;
+                  }
+                  if (!node.isExternal) {
+                    onSelectComponent(node.id);
+                  }
+                }}
+                onPointerDown={(event) => startDrag(event, node)}
+                role={node.isExternal ? undefined : 'button'}
+                tabIndex={node.isExternal ? undefined : '0'}
+                transform={`translate(${node.x} ${node.y})`}
+              >
+                <circle r="38" />
+                <text textAnchor="middle" y="-3">{truncate(node.name, 14)}</text>
+                <text className="node-meta" textAnchor="middle" y="15">
+                  {node.isExternal ? t('external') : (violations.length ? `${violations.length} ${t('issues')}` : `${node.units} ${t('unitsCount')}`)}
+                </text>
+              </g>
+            );
+          })}
+        </g>
       </svg>
     </section>
   );
@@ -2078,7 +2311,7 @@ function buildDependencyComponentOptions(report, indexed) {
   });
 }
 
-function componentGraph(component, report, indexed, scope = 'all') {
+function componentGraph(component, report, indexed, scope = 'all', layout = 'circle') {
   if (!report.components.length && !indexed.componentEdges.length) {
     return { nodes: [], edges: [] };
   }
@@ -2125,17 +2358,7 @@ function componentGraph(component, report, indexed, scope = 'all') {
     return leftOrder - rightOrder || left.name.localeCompare(right.name);
   });
 
-  const nodes = graphComponentList.map((item, index) => {
-    const angle = (Math.PI * 2 * index) / graphComponentList.length - Math.PI / 2;
-    return {
-      id: item.id,
-      name: item.name,
-      units: item.units,
-      isExternal: item.isExternal,
-      x: 360 + Math.cos(angle) * 260,
-      y: 160 + Math.sin(angle) * 104,
-    };
-  });
+  const nodes = layoutGraphComponents(graphComponentList, graphEdges, layout);
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const edges = graphEdges
     .map((edge) => ({
@@ -2147,6 +2370,85 @@ function componentGraph(component, report, indexed, scope = 'all') {
     .filter((edge) => edge.from && edge.to);
 
   return { nodes, edges };
+}
+
+function layoutGraphComponents(components, edges, layout) {
+  if (layout === 'grid') {
+    return gridGraphNodes(components);
+  }
+  if (layout === 'layers') {
+    return layeredGraphNodes(components, edges);
+  }
+
+  return circleGraphNodes(components);
+}
+
+function circleGraphNodes(components) {
+  const centerX = graphWidth / 2;
+  const centerY = graphHeight / 2;
+  const radiusX = Math.max(220, graphWidth / 2 - 130);
+  const radiusY = Math.max(120, graphHeight / 2 - 82);
+
+  return components.map((item, index) => {
+    const angle = (Math.PI * 2 * index) / Math.max(components.length, 1) - Math.PI / 2;
+    return graphNodeWithPosition(item, centerX + Math.cos(angle) * radiusX, centerY + Math.sin(angle) * radiusY);
+  });
+}
+
+function gridGraphNodes(components) {
+  const columns = Math.max(1, Math.ceil(Math.sqrt(components.length * (graphWidth / graphHeight))));
+  const rows = Math.max(1, Math.ceil(components.length / columns));
+  const cellWidth = (graphWidth - graphPadding * 2) / columns;
+  const cellHeight = (graphHeight - graphPadding * 2) / rows;
+
+  return components.map((item, index) => graphNodeWithPosition(
+    item,
+    graphPadding + cellWidth * (index % columns) + cellWidth / 2,
+    graphPadding + cellHeight * Math.floor(index / columns) + cellHeight / 2,
+  ));
+}
+
+function layeredGraphNodes(components, edges) {
+  const incoming = new Map(components.map((item) => [item.id, 0]));
+  const outgoing = new Map(components.map((item) => [item.id, 0]));
+  edges.forEach((edge) => {
+    outgoing.set(edge.fromComponentId, (outgoing.get(edge.fromComponentId) ?? 0) + edge.weight);
+    incoming.set(edge.toComponentId, (incoming.get(edge.toComponentId) ?? 0) + edge.weight);
+  });
+
+  const buckets = [
+    components.filter((item) => (incoming.get(item.id) ?? 0) === 0 && (outgoing.get(item.id) ?? 0) > 0),
+    components.filter((item) => (incoming.get(item.id) ?? 0) > 0 && (outgoing.get(item.id) ?? 0) > 0),
+    components.filter((item) => (incoming.get(item.id) ?? 0) > 0 && (outgoing.get(item.id) ?? 0) === 0),
+  ];
+  const isolated = components.filter((item) => (incoming.get(item.id) ?? 0) === 0 && (outgoing.get(item.id) ?? 0) === 0);
+  if (isolated.length > 0) {
+    buckets[1].push(...isolated);
+  }
+
+  const visibleBuckets = buckets.filter((bucket) => bucket.length > 0);
+  const columnCount = Math.max(visibleBuckets.length, 1);
+  const columnWidth = (graphWidth - graphPadding * 2) / columnCount;
+
+  return visibleBuckets.flatMap((bucket, columnIndex) => {
+    const rowHeight = (graphHeight - graphPadding * 2) / Math.max(bucket.length, 1);
+    return bucket.map((item, rowIndex) => graphNodeWithPosition(
+      item,
+      graphPadding + columnWidth * columnIndex + columnWidth / 2,
+      graphPadding + rowHeight * rowIndex + rowHeight / 2,
+    ));
+  });
+}
+
+function graphNodeWithPosition(item, x, y) {
+  return {
+    id: item.id,
+    name: item.name,
+    units: item.units,
+    isExternal: item.isExternal,
+    x: clamp(x, graphPadding, graphWidth - graphPadding),
+    y: clamp(y, graphPadding, graphHeight - graphPadding),
+  };
 }
 
 function matchesComponentGraphScope(edge, componentId, scope) {
@@ -2577,14 +2879,70 @@ function saveGraphPositions(report, graphKey, positions) {
   localStorage.setItem(graphPositionStorageKey(report, graphKey), JSON.stringify(positions));
 }
 
+function removeGraphPositions(report, graphKey) {
+  localStorage.removeItem(graphPositionStorageKey(report, graphKey));
+}
+
 function graphPositionStorageKey(report, graphKey) {
   const reportKey = report.components.map((component) => component.id).join('|');
 
   return `phpca-report-graph:${reportKey}:${graphKey}`;
 }
 
+function readGraphViewport(report, graphKey) {
+  try {
+    const viewport = JSON.parse(localStorage.getItem(graphViewportStorageKey(report, graphKey)) ?? 'null');
+
+    if (!viewport || typeof viewport !== 'object') {
+      return defaultGraphViewport;
+    }
+
+    return {
+      x: Number(viewport.x) || 0,
+      y: Number(viewport.y) || 0,
+      scale: clamp(Number(viewport.scale) || 1, 0.35, 3),
+    };
+  } catch {
+    return defaultGraphViewport;
+  }
+}
+
+function saveGraphViewport(report, graphKey, viewport) {
+  localStorage.setItem(graphViewportStorageKey(report, graphKey), JSON.stringify(viewport));
+}
+
+function removeGraphViewport(report, graphKey) {
+  localStorage.removeItem(graphViewportStorageKey(report, graphKey));
+}
+
+function graphViewportStorageKey(report, graphKey) {
+  const reportKey = report.components.map((component) => component.id).join('|');
+
+  return `phpca-report-graph-viewport:${reportKey}:${graphKey}`;
+}
+
+function readGraphLayout(report) {
+  const layout = localStorage.getItem(graphLayoutStorageKey(report));
+
+  return graphLayouts.includes(layout) ? layout : 'circle';
+}
+
+function saveGraphLayout(report, layout) {
+  localStorage.setItem(graphLayoutStorageKey(report), layout);
+}
+
+function graphLayoutStorageKey(report) {
+  const reportKey = report.components.map((component) => component.id).join('|');
+
+  return `phpca-report-graph-layout:${reportKey}`;
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function capitalize(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function clamp01(value) {

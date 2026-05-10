@@ -31,6 +31,17 @@ cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config
 Configuration details are described in the sample config:
 https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php
 
+### Public And Private Component API
+
+`public_elements` and `private_elements` describe the component API exposed to other components. They do not forbid using
+an element inside its owning component.
+
+For example, `ComponentA\Service` may depend on `ComponentA\Internal\Model`. This is an internal component dependency. It
+may still be shown in the dependency graph as internal, but it is not a private API violation.
+
+However, `ComponentB\Service` must not depend on `ComponentA\Internal\Model` when that element is outside
+`ComponentA`'s public API or is explicitly listed in `private_elements`.
+
 These articles may also be useful:
 
 - https://habr.com/ru/post/504590/

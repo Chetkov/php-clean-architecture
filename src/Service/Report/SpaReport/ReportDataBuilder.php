@@ -178,6 +178,7 @@ final class ReportDataBuilder
 
         if (
             $component->isDependencyAllowed($dependencyComponent)
+            && !$dependencyUnitOfCode->belongToComponent($component)
             && !$dependencyUnitOfCode->isAccessibleFromOutside()
         ) {
             $violations[] = $this->violationData(

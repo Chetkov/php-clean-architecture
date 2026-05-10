@@ -58,7 +58,7 @@ function resolveDefaultConfigPath(): string
 function recreateReportsDirectory(string $path): void
 {
     removeDirectory($path);
-    if (!mkdir($path) && !is_dir($path)) {
+    if (!mkdir($path, 0777, true) && !is_dir($path)) {
         throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
     }
 }

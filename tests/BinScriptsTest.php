@@ -45,7 +45,10 @@ final class BinScriptsTest extends TestCase
 
     public function testPhpcaBuildReportsCreatesSpaReport(): void
     {
-        $reportPath = sys_get_temp_dir() . '/phpca-bin-report-' . bin2hex(random_bytes(8));
+        $reportRoot = sys_get_temp_dir() . '/phpca-bin-report-root-' . bin2hex(random_bytes(8));
+        $reportPath = $reportRoot . '/layers/AgentWorkspace';
+        self::assertTrue(mkdir($reportRoot, 0777, true));
+
         $result = $this->runCommand(
             implode(' ', [
                 'PHPCA_REPORTS_DIR=' . escapeshellarg($reportPath),
@@ -65,7 +68,7 @@ final class BinScriptsTest extends TestCase
             (string) file_get_contents($reportPath . '/index.html')
         );
 
-        $this->removeDirectory($reportPath);
+        $this->removeDirectory($reportRoot);
     }
 
     /**
