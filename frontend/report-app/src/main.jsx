@@ -86,6 +86,7 @@ const dictionaries = {
     openSearch: 'Search',
     overview: 'Overview',
     showMore: 'Show more',
+    showLess: 'Show less',
     zoneOfPain: 'Painful',
     zoneOfUselessness: 'Useless',
     dependencyDirection: 'Direction',
@@ -202,6 +203,7 @@ const dictionaries = {
     openSearch: 'Поиск',
     overview: 'Обзор',
     showMore: 'Показать еще',
+    showLess: 'Свернуть',
     zoneOfPain: 'Больно',
     zoneOfUselessness: 'Бесполезно',
     dependencyDirection: 'Направление',
@@ -318,6 +320,7 @@ const dictionaries = {
     openSearch: '搜索',
     overview: '概览',
     showMore: '显示更多',
+    showLess: '收起',
     zoneOfPain: '痛点',
     zoneOfUselessness: '无用',
     dependencyDirection: '方向',
@@ -881,11 +884,11 @@ function App() {
           </div>
         </header>
 
-        <section className="overview-grid" aria-label={t('overview')}>
-          <MetricPanel component={selectedComponent} t={t} />
+        <section className={selectedComponent ? 'overview-grid' : 'overview-grid global-overview'} aria-label={t('overview')}>
+          {selectedComponent && <MetricPanel component={selectedComponent} t={t} />}
           <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
           <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
-          <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />
+          {selectedComponent && <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />}
         </section>
 
         <details className="component-map" open>
@@ -1111,26 +1114,42 @@ function AIMatrix({ components, selectedComponentId, onSelectComponent, t }) {
 }
 
 function DistanceRanking({ components, selectedComponentId, onSelectComponent, t }) {
+  const [expanded, setExpanded] = useState(false);
   const sortedComponents = [...components].sort((left, right) => right.metrics.distance - left.metrics.distance);
+  const hasOverflow = sortedComponents.length > 5;
+  const previewComponents = hasOverflow ? sortedComponents.slice(0, 5) : sortedComponents;
+  const renderRankingRows = (items) => items.map((component) => (
+    <button
+      className={component.id === selectedComponentId ? 'ranking-row selected' : 'ranking-row'}
+      key={component.id}
+      onClick={() => onSelectComponent(component.id)}
+      style={{ '--ranking-color': qualityColor(componentMetricQuality(component, 'distance')) }}
+      type="button"
+    >
+      <span>{component.name}</span>
+      <strong>{formatRate(component.metrics.distance)}</strong>
+      <i style={{ width: `${Math.max(component.metrics.distance * 100, 2)}%` }} />
+    </button>
+  ));
 
   return (
-    <section className="panel chart-panel">
+    <section className="panel chart-panel ranking-panel">
       <h2>{t('distanceRanking')}</h2>
       <div className="ranking-list">
-        {sortedComponents.map((component) => (
-          <button
-            className={component.id === selectedComponentId ? 'ranking-row selected' : 'ranking-row'}
-            key={component.id}
-            onClick={() => onSelectComponent(component.id)}
-            style={{ '--ranking-color': qualityColor(componentMetricQuality(component, 'distance')) }}
-            type="button"
-          >
-            <span>{component.name}</span>
-            <strong>{formatRate(component.metrics.distance)}</strong>
-            <i style={{ width: `${Math.max(component.metrics.distance * 100, 2)}%` }} />
-          </button>
-        ))}
+        {renderRankingRows(previewComponents)}
       </div>
+      {hasOverflow && (
+        <button className="ranking-toggle" onClick={() => setExpanded((current) => !current)} type="button">
+          {expanded ? t('showLess') : `${t('showMore')} (${sortedComponents.length})`}
+        </button>
+      )}
+      {expanded && (
+        <div className="ranking-popover">
+          <div className="ranking-list">
+            {renderRankingRows(sortedComponents)}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -1353,7 +1372,6 @@ function ComponentGraphPanel({
   return (
     <section className={isFullscreen ? 'panel graph-panel fullscreen' : 'panel graph-panel'}>
       <header className="graph-panel-header">
-        <h2>{component ? t('componentGraph') : t('globalComponentGraph')}</h2>
         <div className="graph-controls">
           <div className="graph-layout-switcher" aria-label={t('graphLayout')}>
             {graphLayouts.map((layout) => (

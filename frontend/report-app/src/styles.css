@@ -416,6 +416,10 @@ td span,
   gap: 12px;
 }
 
+.overview-grid.global-overview {
+  grid-template-columns: minmax(360px, 1.25fr) minmax(300px, 0.75fr);
+}
+
 .panel,
 .table-shell,
 .empty-state {
@@ -476,6 +480,10 @@ td span,
   height: 190px;
 }
 
+.global-overview .chart-panel svg {
+  height: 260px;
+}
+
 .graph-panel {
   overflow: hidden;
 }
@@ -498,7 +506,7 @@ body.graph-fullscreen-open {
   display: flex;
   gap: 10px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 8px;
   flex-wrap: wrap;
 }
@@ -676,6 +684,10 @@ body.graph-fullscreen-open {
   margin-top: 10px;
 }
 
+.ranking-panel {
+  position: relative;
+}
+
 .ranking-row,
 .fan-row {
   position: relative;
@@ -701,6 +713,36 @@ body.graph-fullscreen-open {
 
 .fan-row.disabled {
   cursor: default;
+}
+
+.ranking-toggle {
+  min-height: 28px;
+  margin-top: 8px;
+  padding: 0 10px;
+  color: #325a75;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.ranking-popover {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% - 12px);
+  right: 14px;
+  left: 14px;
+  max-height: min(420px, 70vh);
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 36px rgba(31, 47, 61, 0.18);
+}
+
+.ranking-popover .ranking-list {
+  margin-top: 0;
 }
 
 .fan-row.disabled:hover {
