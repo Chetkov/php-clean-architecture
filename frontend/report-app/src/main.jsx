@@ -112,6 +112,7 @@ const dictionaries = {
     graphLayoutCircle: 'Circle',
     graphLayoutGrid: 'Grid',
     graphLayoutLayers: 'Layers',
+    graphComponents: 'Graph components',
     graphFullscreenOpen: 'Open graph fullscreen',
     graphFullscreenClose: 'Exit fullscreen',
     graphZoomIn: 'Zoom in',
@@ -227,6 +228,7 @@ const dictionaries = {
     graphLayoutCircle: 'Круг',
     graphLayoutGrid: 'Сетка',
     graphLayoutLayers: 'Слои',
+    graphComponents: 'Компоненты графа',
     graphFullscreenOpen: 'Открыть граф во весь экран',
     graphFullscreenClose: 'Выйти из полноэкранного режима',
     graphZoomIn: 'Приблизить граф',
@@ -342,6 +344,7 @@ const dictionaries = {
     graphLayoutCircle: '圆形',
     graphLayoutGrid: '网格',
     graphLayoutLayers: '分层',
+    graphComponents: '图组件',
     graphFullscreenOpen: '全屏打开图',
     graphFullscreenClose: '退出全屏',
     graphZoomIn: '放大图',
@@ -414,6 +417,7 @@ function App() {
   const [dependencyStatus, setDependencyStatus] = useState('all');
   const [sourceComponentIds, setSourceComponentIds] = useState([]);
   const [targetComponentIds, setTargetComponentIds] = useState([]);
+  const [graphComponentIds, setGraphComponentIds] = useState(null);
   const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'ru');
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
@@ -462,6 +466,11 @@ function App() {
     () => targetComponentOptions.map((component) => component.id),
     [targetComponentOptions],
   );
+  const graphComponentIdsAll = useMemo(
+    () => sourceComponentOptions.map((component) => component.id),
+    [sourceComponentOptions],
+  );
+  const selectedGraphComponentIds = graphComponentIds ?? graphComponentIdsAll;
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? null;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
   const selectedComponentUnits = useMemo(
@@ -567,6 +576,10 @@ function App() {
     setSourceComponentIds(sourceComponentIdsAll);
     setTargetComponentIds(targetComponentIdsAll);
   }, [componentGraphScope, sourceComponentIdsAll, targetComponentIdsAll, selectedComponentId]);
+
+  useEffect(() => {
+    setGraphComponentIds(null);
+  }, [report]);
 
   useEffect(() => {
     if (loadingState !== 'ready' || navigationReady.current) {
@@ -882,7 +895,10 @@ function App() {
           </summary>
           <ComponentGraphPanel
             component={selectedComponent}
+            graphComponentIds={selectedGraphComponentIds}
+            graphComponents={sourceComponentOptions}
             indexed={indexed}
+            onGraphComponentsChange={setGraphComponentIds}
             onScopeChange={changeComponentGraphScope}
             onSelectComponent={selectComponent}
             report={report}
@@ -1119,12 +1135,24 @@ function DistanceRanking({ components, selectedComponentId, onSelectComponent, t
   );
 }
 
-function ComponentGraphPanel({ component, report, indexed, onScopeChange, onSelectComponent, scope, t }) {
+function ComponentGraphPanel({
+  component,
+  graphComponentIds,
+  graphComponents,
+  indexed,
+  onGraphComponentsChange,
+  onScopeChange,
+  onSelectComponent,
+  report,
+  scope,
+  t,
+}) {
   const [graphLayout, setGraphLayout] = useState(() => readGraphLayout(report));
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isGraphComponentFilterOpen, setIsGraphComponentFilterOpen] = useState(false);
   const graph = useMemo(
-    () => componentGraph(component, report, indexed, scope, graphLayout),
-    [component, graphLayout, indexed, report, scope],
+    () => componentGraph(component, report, indexed, scope, graphLayout, graphComponentIds),
+    [component, graphComponentIds, graphLayout, indexed, report, scope],
   );
   const graphNodesKey = useMemo(() => graph.nodes.map((node) => node.id).sort().join('|'), [graph.nodes]);
   const graphKey = `${graphLayout}:${graphNodesKey}`;
@@ -1368,6 +1396,20 @@ function ComponentGraphPanel({ component, report, indexed, onScopeChange, onSele
               </button>
             ))}
           </div>
+          {!component && (
+            <ComponentFilter
+              compact
+              components={graphComponents}
+              id="graph"
+              isOpen={isGraphComponentFilterOpen}
+              label={t('graphComponents')}
+              onChange={onGraphComponentsChange}
+              onClose={() => setIsGraphComponentFilterOpen(false)}
+              onOpen={() => setIsGraphComponentFilterOpen(true)}
+              selectedIds={graphComponentIds}
+              t={t}
+            />
+          )}
           <div className="graph-zoom-controls">
             <button
               aria-label={t('graphZoomOut')}
@@ -1830,7 +1872,7 @@ function SegmentedFilter({ label, options, value, onChange }) {
   );
 }
 
-function ComponentFilter({ components, id, isOpen, label, selectedIds, onChange, onClose, onOpen, t }) {
+function ComponentFilter({ compact = false, components, id, isOpen, label, selectedIds, onChange, onClose, onOpen, t }) {
   const [componentQuery, setComponentQuery] = useState('');
   const inputRef = useRef(null);
   const menuRef = useRef(null);
@@ -1895,11 +1937,12 @@ function ComponentFilter({ components, id, isOpen, label, selectedIds, onChange,
   }, [isOpen, onClose]);
 
   return (
-    <div className="filter-block component-filter">
-      <span>{label}</span>
+    <div className={compact ? 'filter-block component-filter compact' : 'filter-block component-filter'}>
+      {!compact && <span>{label}</span>}
       <div className="component-filter-menu" ref={menuRef}>
         <button
           className="component-filter-trigger"
+          aria-label={label}
           onClick={() => {
             if (isOpen) {
               onClose();
@@ -2311,22 +2354,25 @@ function buildDependencyComponentOptions(report, indexed) {
   });
 }
 
-function componentGraph(component, report, indexed, scope = 'all', layout = 'circle') {
+function componentGraph(component, report, indexed, scope = 'all', layout = 'circle', selectedComponentIds = []) {
   if (!report.components.length && !indexed.componentEdges.length) {
     return { nodes: [], edges: [] };
   }
 
+  const selectedComponentSet = new Set(selectedComponentIds);
   const graphEdges = component
     ? indexed.componentEdges.filter((edge) => matchesComponentGraphScope(edge, component.id, scope))
-    : indexed.componentEdges;
+    : indexed.componentEdges.filter((edge) => selectedComponentSet.has(edge.fromComponentId) && selectedComponentSet.has(edge.toComponentId));
   const componentOrder = new Map(report.components.map((item, index) => [item.id, index]));
   const analyzedComponents = new Map(report.components.map((item) => [item.id, item]));
   const graphComponents = new Map();
 
   if (!component) {
-    report.components.forEach((item) => {
-      graphComponents.set(item.id, componentGraphNode(item, false));
-    });
+    report.components
+      .filter((item) => selectedComponentSet.has(item.id))
+      .forEach((item) => {
+        graphComponents.set(item.id, componentGraphNode(item, false));
+      });
   } else {
     graphComponents.set(component.id, componentGraphNode(component, false));
   }

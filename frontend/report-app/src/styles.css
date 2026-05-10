@@ -1198,6 +1198,10 @@ tr:last-child td {
   position: relative;
 }
 
+.component-filter.compact {
+  width: clamp(190px, 22vw, 320px);
+}
+
 .component-filter-menu {
   position: relative;
   min-width: 0;
