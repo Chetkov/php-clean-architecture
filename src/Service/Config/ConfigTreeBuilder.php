@@ -50,13 +50,14 @@ final class ConfigTreeBuilder
     ): ConfigTreeNode {
         $components = $this->normalizeComponents($config['components'] ?? []);
         $children = [];
+        $usedChildSlugs = [];
         foreach ($components as $component) {
             if (!isset($component['sub']) || !is_array($component['sub'])) {
                 continue;
             }
 
             $componentName = (string) ($component['name'] ?? 'component');
-            $slug = $this->slugify($componentName);
+            $slug = $this->uniqueSlug($this->slugify($componentName), $usedChildSlugs);
             $childIdParts = array_merge($idParts, [$slug]);
             $childConfig = $this->createEffectiveSubConfig($component['sub'], $inheritedContext);
             $childReportPath = $this->rootReportsPath . '/' . implode('/', $childIdParts);
@@ -194,6 +195,10 @@ final class ConfigTreeBuilder
      */
     private function mergeConfig(array $base, array $override): array
     {
+        if ($this->isList($base) || $this->isList($override)) {
+            return $override;
+        }
+
         foreach ($override as $key => $value) {
             if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
                 $base[$key] = $this->mergeConfig($base[$key], $value);
@@ -204,6 +209,23 @@ final class ConfigTreeBuilder
         }
 
         return $base;
+    }
+
+    /**
+     * @param array<mixed> $items
+     */
+    private function isList(array $items): bool
+    {
+        $expectedKey = 0;
+        foreach (array_keys($items) as $key) {
+            if ($key !== $expectedKey) {
+                return false;
+            }
+
+            $expectedKey++;
+        }
+
+        return true;
     }
 
     private function normalizePath(string $path): string
@@ -229,6 +251,22 @@ final class ConfigTreeBuilder
         }
 
         return $value;
+    }
+
+    /**
+     * @param array<string, true> $usedSlugs
+     */
+    private function uniqueSlug(string $slug, array &$usedSlugs): string
+    {
+        $candidate = $slug;
+        $counter = 2;
+        while (isset($usedSlugs[$candidate])) {
+            $candidate = $slug . '-' . $counter;
+            $counter++;
+        }
+
+        $usedSlugs[$candidate] = true;
+        return $candidate;
     }
 
     /**

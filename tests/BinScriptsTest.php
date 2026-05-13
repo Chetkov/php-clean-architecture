@@ -120,13 +120,29 @@ final class BinScriptsTest extends TestCase
             '<script id="phpca-report-suite" type="application/json">',
             $indexHtml
         );
+        $hasInlineSuite = preg_match(
+            '#<script id="phpca-report-suite" type="application/json">(.+)</script>#',
+            $indexHtml,
+            $suiteScriptMatches
+        );
+        self::assertSame(1, $hasInlineSuite);
+        $inlineSuite = json_decode($suiteScriptMatches[1], true);
+        self::assertIsArray($inlineSuite);
+        self::assertSame('.', $inlineSuite['tree']['reportPath']);
+        self::assertArrayNotHasKey('report', $inlineSuite['tree']);
+        self::assertSame('component-a', $inlineSuite['tree']['children'][0]['reportPath']);
+        self::assertArrayHasKey('report', $inlineSuite['tree']['children'][0]);
+        self::assertStringNotContainsString($reportRoot, $suiteScriptMatches[1]);
 
         $suite = json_decode((string) file_get_contents($reportRoot . '/suite.json'), true);
         self::assertIsArray($suite);
         self::assertSame('root', $suite['rootId']);
         self::assertSame('component-a', $suite['tree']['children'][0]['id']);
         self::assertSame('component-a', $suite['tree']['children'][0]['title']);
+        self::assertSame('.', $suite['tree']['reportPath']);
+        self::assertSame('component-a', $suite['tree']['children'][0]['reportPath']);
         self::assertArrayNotHasKey('report', $suite['tree']);
+        self::assertArrayNotHasKey('report', $suite['tree']['children'][0]);
 
         $childReport = json_decode((string) file_get_contents($reportRoot . '/component-a/report.json'), true);
         self::assertIsArray($childReport);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Chetkov\PHPCleanArchitecture\Tests\Service\Config;
 
 use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeBuilder;
+use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeNode;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigTreeBuilderTest extends TestCase
@@ -69,5 +70,74 @@ final class ConfigTreeBuilderTest extends TestCase
         self::assertArrayHasKey('factories', $grandChild->config());
         self::assertSame(['root-vendor'], $grandChild->config()['vendor_based_components']['excluded']);
         self::assertSame([], $grandChild->config()['restrictions']);
+    }
+
+    public function testChildListValuesOverrideInheritedListsInsteadOfBeingMergedByIndex(): void
+    {
+        $tree = (new ConfigTreeBuilder())->build([
+            'reports_dir' => sys_get_temp_dir() . '/phpca-config-tree',
+            'vendor_based_components' => [
+                'enabled' => true,
+                'vendor_path' => '/vendor',
+                'excluded' => ['root-a', 'root-b'],
+            ],
+            'components' => [
+                'Feature' => [
+                    'roots' => [],
+                    'sub' => [
+                        'inherit' => ['vendor_based_components'],
+                        'vendor_based_components' => [
+                            'excluded' => ['child-only'],
+                        ],
+                        'components' => [],
+                    ],
+                ],
+            ],
+        ]);
+
+        $child = $tree->children()[0];
+
+        self::assertTrue($child->config()['vendor_based_components']['enabled']);
+        self::assertSame('/vendor', $child->config()['vendor_based_components']['vendor_path']);
+        self::assertSame(['child-only'], $child->config()['vendor_based_components']['excluded']);
+    }
+
+    public function testNormalizesDuplicateChildReportSlugsWithoutPathCollisions(): void
+    {
+        $reportsPath = sys_get_temp_dir() . '/phpca-config-tree';
+        $tree = (new ConfigTreeBuilder())->build([
+            'reports_dir' => $reportsPath,
+            'components' => [
+                'Sales API' => [
+                    'roots' => [],
+                    'sub' => ['components' => []],
+                ],
+                'Sales/API' => [
+                    'roots' => [],
+                    'sub' => ['components' => []],
+                ],
+                'Sales API!' => [
+                    'roots' => [],
+                    'sub' => ['components' => []],
+                ],
+            ],
+        ]);
+
+        self::assertSame(
+            ['sales-api', 'sales-api-2', 'sales-api-3'],
+            array_map(static function (ConfigTreeNode $child): string {
+                return $child->id();
+            }, $tree->children())
+        );
+        self::assertSame(
+            [
+                $reportsPath . '/sales-api',
+                $reportsPath . '/sales-api-2',
+                $reportsPath . '/sales-api-3',
+            ],
+            array_map(static function (ConfigTreeNode $child): string {
+                return $child->reportPath();
+            }, $tree->children())
+        );
     }
 }

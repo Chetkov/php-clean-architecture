@@ -23,24 +23,29 @@ final class ReportSuiteRenderer
         return [
             'schemaVersion' => 1,
             'rootId' => 'root',
-            'tree' => $this->buildSuiteNode($node),
+            'tree' => $this->buildSuiteNode($node, $node->reportPath(), false),
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function buildSuiteNode(ConfigTreeNode $node): array
+    private function buildSuiteNode(ConfigTreeNode $node, string $rootReportPath, bool $includeReport): array
     {
-        return [
+        $suiteNode = [
             'id' => $node->id(),
             'title' => $node->title(),
-            'reportPath' => $node->reportPath(),
-            'report' => $this->readReportData($node->reportPath()),
-            'children' => array_map(function (ConfigTreeNode $child): array {
-                return $this->buildSuiteNode($child);
+            'reportPath' => $this->relativeReportPath($rootReportPath, $node->reportPath()),
+            'children' => array_map(function (ConfigTreeNode $child) use ($rootReportPath): array {
+                return $this->buildSuiteNode($child, $rootReportPath, true);
             }, $node->children()),
         ];
+
+        if ($includeReport) {
+            $suiteNode['report'] = $this->readReportData($node->reportPath());
+        }
+
+        return $suiteNode;
     }
 
     /**
@@ -60,6 +65,23 @@ final class ReportSuiteRenderer
         }
 
         return $data;
+    }
+
+    private function relativeReportPath(string $rootReportPath, string $reportPath): string
+    {
+        $rootReportPath = rtrim($rootReportPath, '/');
+        $reportPath = rtrim($reportPath, '/');
+
+        if ($reportPath === $rootReportPath) {
+            return '.';
+        }
+
+        $prefix = $rootReportPath . '/';
+        if (strpos($reportPath, $prefix) === 0) {
+            return substr($reportPath, strlen($prefix));
+        }
+
+        return basename($reportPath);
     }
 
     /**

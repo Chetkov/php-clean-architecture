@@ -419,13 +419,14 @@ const dictionaries = {
 };
 
 function App() {
-  const [suite] = useState(() => readEmbeddedSuite());
+  const [embeddedReport] = useState(() => readEmbeddedReport());
+  const [suite] = useState(() => readEmbeddedSuite(embeddedReport));
   const [activeReportId, setActiveReportId] = useState(() => normalizeSuiteReportId(suite, parseNavigationHash().reportId));
   const activeSuiteNode = useMemo(
     () => suite ? findSuiteNode(suite.tree, activeReportId) ?? suite.tree : null,
     [activeReportId, suite],
   );
-  const [initialReport] = useState(() => activeSuiteNode?.report ?? readEmbeddedReport());
+  const [initialReport] = useState(() => activeSuiteNode?.report ?? embeddedReport);
   const [report, setReport] = useState(() => initialReport ?? fallbackReport);
   const [loadingState, setLoadingState] = useState(initialReport ? 'ready' : 'loading');
   const [query, setQuery] = useState('');
@@ -3099,14 +3100,25 @@ function readEmbeddedReport() {
   }
 }
 
-function readEmbeddedSuite() {
+function readEmbeddedSuite(rootReport) {
   const element = document.getElementById('phpca-report-suite');
   if (!element?.textContent) {
     return null;
   }
 
   try {
-    return JSON.parse(element.textContent);
+    const suite = JSON.parse(element.textContent);
+    if (rootReport && suite?.tree && !suite.tree.report) {
+      return {
+        ...suite,
+        tree: {
+          ...suite.tree,
+          report: rootReport,
+        },
+      };
+    }
+
+    return suite;
   } catch {
     return null;
   }

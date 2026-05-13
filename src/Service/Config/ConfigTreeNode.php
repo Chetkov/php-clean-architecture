@@ -77,19 +77,4 @@ final class ConfigTreeNode
 
         return $nodes;
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toManifest(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'reportPath' => $this->reportPath,
-            'children' => array_map(static function (ConfigTreeNode $child): array {
-                return $child->toManifest();
-            }, $this->children),
-        ];
-    }
 }
