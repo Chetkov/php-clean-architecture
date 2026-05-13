@@ -33,6 +33,20 @@ final class ConfigTreePathResolver
     }
 
     /**
+     * @param array<string> $childIdParts
+     */
+    public function childAllowedStateStoragePath(string $rootStoragePath, array $childIdParts): string
+    {
+        $directory = dirname($rootStoragePath);
+        $baseName = basename($rootStoragePath);
+        if (substr($baseName, -4) === '.php') {
+            $baseName = substr($baseName, 0, -4);
+        }
+
+        return $directory . '/' . $baseName . '/' . implode('/', $childIdParts) . '.php';
+    }
+
+    /**
      * @param array<string, true> $usedSlugs
      */
     private function uniqueSlug(string $slug, array &$usedSlugs): string

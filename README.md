@@ -36,6 +36,26 @@ cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config
 Все детали конфигурации подробно описаны в образце конфига:
 https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php
 
+### Основные секции конфига
+
+- `reports_dir` - директория, куда `phpca-build-reports` сохранит HTML-отчет. В образцовом конфиге значение можно
+  переопределить через `PHPCA_REPORTS_DIR`.
+- `components` - список архитектурных компонентов проекта.
+- `roots` - директории или файлы компонента: `path` задает путь, `namespace` задает соответствующий PHP namespace.
+- `excluded` - пути внутри компонента, которые нужно исключить из анализа этого компонента.
+- `restrictions.allowed_dependencies` - компоненты, от которых текущему компоненту разрешено зависеть.
+- `restrictions.forbidden_dependencies` - компоненты, от которых текущему компоненту явно запрещено зависеть. Не стоит
+  использовать одновременно с `allowed_dependencies`.
+- `restrictions.public_elements` - публичный API компонента для других компонентов.
+- `restrictions.private_elements` - приватный API компонента для других компонентов.
+- `restrictions.max_allowable_distance` - максимально допустимое расстояние компонента от Main Sequence.
+- `restrictions.check_acyclic_dependencies_principle` - проверка Acyclic Dependencies Principle.
+- `restrictions.check_stable_dependencies_principle` - проверка Stable Dependencies Principle.
+- `vendor_based_components` - автоматическое создание компонентов для Composer-зависимостей из `vendor`.
+- `exclusions.allowed_state` - сохраненное разрешенное состояние для постепенного внедрения правил.
+- `factories` - технические фабрики анализатора, рендера отчета и event manager. В обычном проекте их чаще всего не нужно
+  менять.
+
 ### Публичный и приватный API компонента
 
 `public_elements` и `private_elements` описывают API компонента для других компонентов, а не запрет на использование
@@ -106,6 +126,23 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 Синтаксис PHP 8.5 поддерживается на уровне AST-парсинга: pipe operator, `clone()` с изменением свойств, `#[NoDiscard]`,
 closures/first-class callables и casts в constant expressions, attributes on constants и final promoted properties.
 
+## CLI-команды
+
+Все команды принимают путь к конфигу первым аргументом. Если путь не передан, используется `phpca-config.php` из текущего
+проекта.
+
+```shell
+vendor/bin/phpca-check phpca-config.php
+vendor/bin/phpca-build-reports phpca-config.php
+vendor/bin/phpca-allow-current-state phpca-config.php
+```
+
+`PHPCA_ALLOWED_PATHS` ограничивает анализ списком файлов. Это удобно для CI по измененным файлам. Значение передается как
+список путей, разделенных переводом строки.
+
+`PHPCA_REPORTS_DIR` можно использовать в образцовом конфиге для переопределения `reports_dir` без изменения файла
+конфигурации.
+
 ## Использование
 
 1. Формирование отчета для анализа.
@@ -169,6 +206,11 @@ vendor/bin/phpca-allow-current-state phpca-config.php
 
 Чтобы `phpca-check` учитывал сохраненное состояние, в конфиге должны быть включены `exclusions.allowed_state.enabled` и
 указан путь к `exclusions.allowed_state.storage`.
+
+Для suite-конфига команда проходит корневой конфиг и все вложенные `sub`-конфиги. Если вложенный конфиг наследует
+`exclusions`, его состояние сохраняется в отдельный файл, построенный от корневого storage по иерархии компонентов,
+например `phpca-allowed-state/catalog/domain.php`. Если во вложенном конфиге явно указан свой
+`exclusions.allowed_state.storage`, используется этот путь.
 
 Это дает возможность подключать php-clean-architecture не только к новым проектам, но и к уже существующим проектам,
 где архитектурные проблемы нужно устранять постепенно.

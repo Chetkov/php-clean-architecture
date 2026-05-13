@@ -15,6 +15,12 @@ final class ConfigTreeBuilderTest extends TestCase
         $reportsPath = sys_get_temp_dir() . '/phpca-config-tree';
         $rootConfig = [
             'reports_dir' => $reportsPath,
+            'exclusions' => [
+                'allowed_state' => [
+                    'enabled' => true,
+                    'storage' => $reportsPath . '/phpca-allowed-state.php',
+                ],
+            ],
             'vendor_based_components' => [
                 'enabled' => false,
                 'vendor_path' => '',
@@ -31,12 +37,12 @@ final class ConfigTreeBuilderTest extends TestCase
                 'Компонент A!' => [
                     'roots' => [],
                     'sub' => [
-                        'inherit' => ['factories', 'vendor_based_components'],
+                        'inherit' => ['factories', 'vendor_based_components', 'exclusions'],
                         'components' => [
                             'Layer 1' => [
                                 'roots' => [],
                                 'sub' => [
-                                    'inherit' => ['factories', 'vendor_based_components', 'restrictions'],
+                                    'inherit' => ['factories', 'vendor_based_components', 'exclusions', 'restrictions'],
                                     'components' => [
                                         [
                                             'name' => 'Deep Layer',
@@ -63,6 +69,10 @@ final class ConfigTreeBuilderTest extends TestCase
         self::assertArrayHasKey('factories', $child->config());
         self::assertSame(['root-vendor'], $child->config()['vendor_based_components']['excluded']);
         self::assertSame([], $child->config()['restrictions']);
+        self::assertSame(
+            $reportsPath . '/phpca-allowed-state/komponent-a.php',
+            $child->config()['exclusions']['allowed_state']['storage']
+        );
 
         $grandChild = $child->children()[0];
         self::assertSame('komponent-a/layer-1', $grandChild->id());
@@ -70,6 +80,55 @@ final class ConfigTreeBuilderTest extends TestCase
         self::assertArrayHasKey('factories', $grandChild->config());
         self::assertSame(['root-vendor'], $grandChild->config()['vendor_based_components']['excluded']);
         self::assertSame([], $grandChild->config()['restrictions']);
+        self::assertSame(
+            $reportsPath . '/phpca-allowed-state/komponent-a/layer-1.php',
+            $grandChild->config()['exclusions']['allowed_state']['storage']
+        );
+    }
+
+    public function testExplicitChildAllowedStateStorageStartsOwnNestedStorageRoot(): void
+    {
+        $reportsPath = sys_get_temp_dir() . '/phpca-config-tree';
+        $tree = (new ConfigTreeBuilder())->build([
+            'reports_dir' => $reportsPath,
+            'exclusions' => [
+                'allowed_state' => [
+                    'enabled' => true,
+                    'storage' => $reportsPath . '/root-state.php',
+                ],
+            ],
+            'components' => [
+                'Feature' => [
+                    'roots' => [],
+                    'sub' => [
+                        'inherit' => ['exclusions'],
+                        'exclusions' => [
+                            'allowed_state' => [
+                                'storage' => $reportsPath . '/feature-state.php',
+                            ],
+                        ],
+                        'components' => [
+                            'Layer' => [
+                                'roots' => [],
+                                'sub' => [
+                                    'inherit' => ['exclusions'],
+                                    'components' => [],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $feature = $tree->children()[0];
+        $layer = $feature->children()[0];
+
+        self::assertSame($reportsPath . '/feature-state.php', $feature->config()['exclusions']['allowed_state']['storage']);
+        self::assertSame(
+            $reportsPath . '/feature-state/layer.php',
+            $layer->config()['exclusions']['allowed_state']['storage']
+        );
     }
 
     public function testChildListValuesOverrideInheritedListsInsteadOfBeingMergedByIndex(): void

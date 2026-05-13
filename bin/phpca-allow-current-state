@@ -1,23 +1,32 @@
 #!/usr/bin/env php
 <?php
 
-use Chetkov\PHPCleanArchitecture\PHPCleanArchitectureFacade;
+use Chetkov\PHPCleanArchitecture\ConfigTreeRunner;
+use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeBuilder;
 
 require_once resolveAutoloadPath();
 
 $configPath = $argv[1] ?? resolveDefaultConfigPath();
 $config = require $configPath;
 
-$analyzer = new PHPCleanArchitectureFacade($config);
-$stateStorage = $config['exclusions']['allowed_state']['storage'] ?? null;
-if (!$stateStorage) {
-    echo 'Config "exclusions.allowed_state.storage" must not be empty!' . PHP_EOL;
+$configTree = (new ConfigTreeBuilder())->build($config);
+
+try {
+    $savedPaths = (new ConfigTreeRunner())->allowCurrentState($configTree);
+} catch (\RuntimeException $exception) {
+    echo $exception->getMessage() . PHP_EOL;
     exit(1);
 }
 
-$analyzer->allowCurrentState($stateStorage);
+if (count($savedPaths) === 1) {
+    echo PHP_EOL . 'The current state is saved to ' . reset($savedPaths) . PHP_EOL;
+    exit(0);
+}
 
-echo PHP_EOL . 'The current state is saved to ' . $stateStorage . PHP_EOL;
+echo PHP_EOL . 'The current state is saved to:' . PHP_EOL;
+foreach ($savedPaths as $nodeId => $stateStorage) {
+    echo '- ' . $nodeId . ': ' . $stateStorage . PHP_EOL;
+}
 
 function resolveAutoloadPath(): string
 {

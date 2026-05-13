@@ -160,6 +160,10 @@ return [
         // vendor/bin/phpca-allow-current-state phpca-config.php
         //
         // Если enabled=true, но файл storage еще не существует, allowed state просто не применяется.
+        // В suite-режиме команда проходит корневой конфиг и все вложенные sub-конфиги.
+        // Если sub наследует exclusions, его состояние будет сохранено в отдельный файл рядом с корневым storage:
+        // например phpca-allowed-state/first-component/domain.php.
+        // Если sub задает свой exclusions.allowed_state.storage явно, используется явно заданный путь.
         'allowed_state' => [
             'enabled' => false,
             'storage' => __DIR__ . '/phpca-allowed-state.php',

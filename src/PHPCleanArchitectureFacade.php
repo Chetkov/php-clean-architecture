@@ -168,6 +168,11 @@ class PHPCleanArchitectureFacade
         }
 
         $asCode = '<?php' . PHP_EOL . PHP_EOL . 'return ' . var_export($currentState, true) . ';' . PHP_EOL;
+        $storageDirectory = dirname($storageFile);
+        if (!is_dir($storageDirectory) && !mkdir($storageDirectory, 0777, true) && !is_dir($storageDirectory)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $storageDirectory));
+        }
+
         file_put_contents($storageFile, $asCode);
     }
 

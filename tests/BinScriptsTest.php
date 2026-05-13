@@ -39,6 +39,40 @@ final class BinScriptsTest extends TestCase
         );
     }
 
+    public function testPhpcaAllowCurrentStateSavesNestedSuiteStateUsedByCheck(): void
+    {
+        $workspace = sys_get_temp_dir() . '/phpca-allowed-state-suite-' . bin2hex(random_bytes(8));
+        self::assertTrue(mkdir($workspace, 0777, true));
+
+        $configPath = $workspace . '/phpca-config.php';
+        $rootStatePath = $workspace . '/phpca-allowed-state.php';
+        self::assertNotFalse(file_put_contents(
+            $configPath,
+            '<?php' . PHP_EOL .
+            '$config = require ' . var_export(__DIR__ . '/Fixtures/Project/nested-forbidden-config.php', true) . ';' . PHP_EOL .
+            '$config["exclusions"]["allowed_state"] = [' . PHP_EOL .
+            '    "enabled" => true,' . PHP_EOL .
+            '    "storage" => ' . var_export($rootStatePath, true) . ',' . PHP_EOL .
+            '];' . PHP_EOL .
+            'return $config;' . PHP_EOL
+        ));
+
+        $saveResult = $this->runBin('phpca-allow-current-state', $configPath);
+
+        self::assertSame(0, $saveResult['exitCode']);
+        self::assertStringContainsString('root: ' . $rootStatePath, $saveResult['output']);
+        self::assertStringContainsString('component-a: ' . $workspace . '/phpca-allowed-state/component-a.php', $saveResult['output']);
+        self::assertFileExists($rootStatePath);
+        self::assertFileExists($workspace . '/phpca-allowed-state/component-a.php');
+
+        $checkResult = $this->runBin('phpca-check', $configPath);
+
+        self::assertSame(0, $checkResult['exitCode']);
+        self::assertStringContainsString('No errors!', $checkResult['output']);
+
+        $this->removeDirectory($workspace);
+    }
+
     public function testPhpcaCheckIsolatesNestedConfigsFromRootAnalysisState(): void
     {
         $result = $this->runBin('phpca-check', __DIR__ . '/Fixtures/Project/nested-isolation-config.php');

@@ -15,17 +15,23 @@ final class ConfigTreeBuilder
     /** @var ConfigTreePathResolver */
     private $pathResolver;
 
+    /** @var AllowedStateStorageResolver */
+    private $allowedStateStorageResolver;
+
     /** @var string */
     private $rootReportsPath;
 
     public function __construct(
         ?ConfigNormalizer $normalizer = null,
         ?ConfigInheritanceResolver $inheritanceResolver = null,
-        ?ConfigTreePathResolver $pathResolver = null
+        ?ConfigTreePathResolver $pathResolver = null,
+        ?AllowedStateStorageResolver $allowedStateStorageResolver = null
     ) {
         $this->normalizer = $normalizer ?? new ConfigNormalizer();
         $this->inheritanceResolver = $inheritanceResolver ?? new ConfigInheritanceResolver($this->normalizer);
         $this->pathResolver = $pathResolver ?? new ConfigTreePathResolver();
+        $this->allowedStateStorageResolver = $allowedStateStorageResolver
+            ?? new AllowedStateStorageResolver($this->pathResolver);
     }
 
     /**
@@ -38,6 +44,10 @@ final class ConfigTreeBuilder
         );
         $rootConfig = $this->normalizer->normalizeConfig($rootConfig);
         $rootConfig['reports_dir'] = $this->rootReportsPath;
+        $allowedStateContext = new AllowedStateStorageContext(
+            $this->allowedStateStorageResolver->configuredStorage($rootConfig),
+            []
+        );
 
         return $this->buildNode(
             'root',
@@ -45,7 +55,8 @@ final class ConfigTreeBuilder
             $this->rootReportsPath,
             [],
             $rootConfig,
-            $this->inheritanceResolver->extractInheritedContext($rootConfig)
+            $this->inheritanceResolver->extractInheritedContext($rootConfig),
+            $allowedStateContext
         );
     }
 
@@ -60,7 +71,8 @@ final class ConfigTreeBuilder
         string $reportPath,
         array $idParts,
         array $config,
-        array $inheritedContext
+        array $inheritedContext,
+        AllowedStateStorageContext $allowedStateContext
     ): EffectiveConfigNode {
         $components = $this->normalizer->normalizeComponents($config['components'] ?? []);
         $children = [];
@@ -75,6 +87,12 @@ final class ConfigTreeBuilder
             $childConfig = $this->inheritanceResolver->createEffectiveSubConfig($component['sub'], $inheritedContext);
             $childReportPath = $this->pathResolver->childReportPath($this->rootReportsPath, $childIdParts);
             $childConfig['reports_dir'] = $childReportPath;
+            $childAllowedStateContext = $this->allowedStateStorageResolver->configureChildStorage(
+                $childConfig,
+                $component['sub'],
+                $childIdParts,
+                $allowedStateContext
+            );
 
             $children[] = $this->buildNode(
                 implode('/', $childIdParts),
@@ -82,7 +100,8 @@ final class ConfigTreeBuilder
                 $childReportPath,
                 $childIdParts,
                 $childConfig,
-                $this->inheritanceResolver->extractInheritedContext($childConfig)
+                $this->inheritanceResolver->extractInheritedContext($childConfig),
+                $childAllowedStateContext
             );
         }
 

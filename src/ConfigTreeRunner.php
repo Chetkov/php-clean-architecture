@@ -10,6 +10,29 @@ use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportSuiteRenderer;
 final class ConfigTreeRunner
 {
     /**
+     * @return array<string, string>
+     */
+    public function allowCurrentState(EffectiveConfigNode $rootNode): array
+    {
+        $savedPaths = [];
+        foreach ($rootNode->flatten() as $node) {
+            $stateStorage = $node->config()['exclusions']['allowed_state']['storage'] ?? null;
+            if (!is_string($stateStorage) || $stateStorage === '') {
+                continue;
+            }
+
+            (new PHPCleanArchitectureFacade($node->config()))->allowCurrentState($stateStorage);
+            $savedPaths[$node->id()] = $stateStorage;
+        }
+
+        if ($savedPaths === []) {
+            throw new \RuntimeException('Config "exclusions.allowed_state.storage" must not be empty!');
+        }
+
+        return $savedPaths;
+    }
+
+    /**
      * @param array<string> $allowedPaths
      *
      * @return array<string>

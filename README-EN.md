@@ -34,6 +34,27 @@ cp vendor/v.chetkov/php-clean-architecture/example.phpca-config.php phpca-config
 Configuration details are described in the sample config:
 https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-config.php
 
+### Main Config Sections
+
+- `reports_dir` - directory where `phpca-build-reports` writes the HTML report. In the sample config, it can be
+  overridden through `PHPCA_REPORTS_DIR`.
+- `components` - list of architecture components in the project.
+- `roots` - component directories or files: `path` defines the filesystem path, `namespace` defines the matching PHP
+  namespace.
+- `excluded` - paths inside a component that should be excluded from that component analysis.
+- `restrictions.allowed_dependencies` - components the current component is allowed to depend on.
+- `restrictions.forbidden_dependencies` - components the current component is explicitly forbidden to depend on. Avoid
+  using it together with `allowed_dependencies`.
+- `restrictions.public_elements` - public component API exposed to other components.
+- `restrictions.private_elements` - private component API for other components.
+- `restrictions.max_allowable_distance` - maximum allowed Distance from Main Sequence.
+- `restrictions.check_acyclic_dependencies_principle` - Acyclic Dependencies Principle check.
+- `restrictions.check_stable_dependencies_principle` - Stable Dependencies Principle check.
+- `vendor_based_components` - automatic component creation for Composer dependencies from `vendor`.
+- `exclusions.allowed_state` - stored allowed state for gradual adoption.
+- `factories` - technical factories for the analyzer, report renderer, and event manager. Most projects do not need to
+  change them.
+
 ### Public And Private Component API
 
 `public_elements` and `private_elements` describe the component API exposed to other components. They do not forbid using
@@ -104,6 +125,22 @@ and relative path. When `vendor_based_components` is enabled, Composer `psr-4`, 
 PHP 8.5 syntax is supported at the AST parsing level: pipe operator, `clone()` with property changes, `#[NoDiscard]`,
 closures/first-class callables and casts in constant expressions, attributes on constants, and final promoted properties.
 
+## CLI Commands
+
+All commands accept the config path as the first argument. When the path is omitted, `phpca-config.php` from the current
+project is used.
+
+```shell
+vendor/bin/phpca-check phpca-config.php
+vendor/bin/phpca-build-reports phpca-config.php
+vendor/bin/phpca-allow-current-state phpca-config.php
+```
+
+`PHPCA_ALLOWED_PATHS` limits analysis to a list of files. This is useful for CI checks on changed files. The value is a
+newline-separated list of paths.
+
+`PHPCA_REPORTS_DIR` can be used by the sample config to override `reports_dir` without changing the config file.
+
 ## Usage
 
 1. Generate a report for analysis.
@@ -167,6 +204,11 @@ The command stores the current project state and dependencies between existing c
 
 For `phpca-check` to use the stored state, `exclusions.allowed_state.enabled` must be enabled in the config and
 `exclusions.allowed_state.storage` must point to the storage file.
+
+For a suite config, the command walks the root config and every nested `sub` config. When a nested config inherits
+`exclusions`, its state is stored in a separate file derived from the root storage path and the component hierarchy,
+for example `phpca-allowed-state/catalog/domain.php`. If a nested config explicitly defines
+`exclusions.allowed_state.storage`, that path is used.
 
 This makes it possible to connect php-clean-architecture not only to new projects, but also to existing projects where
 architecture problems need to be fixed gradually.
