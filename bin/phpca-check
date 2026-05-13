@@ -1,17 +1,18 @@
 #!/usr/bin/env php
 <?php
 
-use Chetkov\PHPCleanArchitecture\PHPCleanArchitectureFacade;
+use Chetkov\PHPCleanArchitecture\ConfigTreeRunner;
+use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeBuilder;
 
 require_once resolveAutoloadPath();
 
 $configPath = $argv[1] ?? resolveDefaultConfigPath();
 $config = require $configPath;
 
-$analyzer = new PHPCleanArchitectureFacade($config);
+$configTree = (new ConfigTreeBuilder())->build($config);
 
 $allowedPaths = array_filter(explode(PHP_EOL, getenv('PHPCA_ALLOWED_PATHS'))) ?: [];
-$errors = $analyzer->check($allowedPaths);
+$errors = (new ConfigTreeRunner())->check($configTree, $allowedPaths);
 if (empty($errors)) {
     exit('No errors!' . PHP_EOL);
 }

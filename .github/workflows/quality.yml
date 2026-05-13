@@ -7,6 +7,36 @@ on:
   pull_request:
 
 jobs:
+  runtime-compatibility:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '7.4'
+          - '8.0'
+          - '8.1'
+          - '8.2'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          extensions: json, mbstring
+          tools: composer:v2
+
+      - name: Install runtime dependencies
+        run: composer install --no-dev --no-interaction --no-progress --prefer-dist
+
+      - name: Check runtime syntax
+        run: find bin src -type f ! -path 'src/Service/Report/SpaReport/Assets/*' -print0 | xargs -0 -n1 php -l
+
   quality:
     runs-on: ubuntu-latest
 

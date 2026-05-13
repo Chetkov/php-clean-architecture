@@ -6,10 +6,12 @@ import {
   ArrowRight,
   Box,
   CheckCircle2,
+  ChevronRight,
   CircleDot,
   Copy,
   FileCode2,
   GitBranch,
+  Check,
   Layers3,
   Maximize2,
   Minimize2,
@@ -78,6 +80,9 @@ const dictionaries = {
     componentLinksShort: 'comp',
     componentLinksSummary: '{count} component links',
     copy: 'Copy',
+    copyFilePath: 'Copy file path',
+    copyUnitName: 'Copy unit name',
+    copied: 'Copied',
     dependedOnByComponentsSummary: '{count} components depend here',
     dependsOnComponentsSummary: 'Depends on {count} components',
     dependencyOverview: 'Dependency map',
@@ -151,6 +156,7 @@ const dictionaries = {
     reportJsonNotFound: 'report.json was not found near index.html.',
     reportLanguage: 'Report language',
     reportView: 'Report view',
+    rootReport: 'System',
     searchPlaceholder: 'Search components, units, paths or dependencies',
     searchResults: 'Search results',
     noSearchResults: 'No matches',
@@ -194,6 +200,9 @@ const dictionaries = {
     componentLinksShort: 'комп',
     componentLinksSummary: '{count} связей компонентов',
     copy: 'Копировать',
+    copyFilePath: 'Копировать путь файла',
+    copyUnitName: 'Копировать имя юнита',
+    copied: 'Скопировано',
     dependedOnByComponentsSummary: '{count} компонентов зависят',
     dependsOnComponentsSummary: 'Зависит от {count} компонентов',
     dependencyOverview: 'Карта зависимостей',
@@ -267,6 +276,7 @@ const dictionaries = {
     reportJsonNotFound: 'report.json не найден рядом с index.html.',
     reportLanguage: 'Язык отчета',
     reportView: 'Раздел отчета',
+    rootReport: 'Система',
     searchPlaceholder: 'Поиск по компонентам, юнитам, путям или зависимостям',
     searchResults: 'Результаты поиска',
     noSearchResults: 'Ничего не найдено',
@@ -310,6 +320,9 @@ const dictionaries = {
     componentLinksShort: '组件',
     componentLinksSummary: '{count} 个组件连接',
     copy: '复制',
+    copyFilePath: '复制文件路径',
+    copyUnitName: '复制单元名称',
+    copied: '已复制',
     dependedOnByComponentsSummary: '{count} 个组件依赖这里',
     dependsOnComponentsSummary: '依赖 {count} 个组件',
     dependencyOverview: '依赖地图',
@@ -383,6 +396,7 @@ const dictionaries = {
     reportJsonNotFound: 'index.html 旁边没有找到 report.json。',
     reportLanguage: '报告语言',
     reportView: '报告视图',
+    rootReport: '系统',
     searchPlaceholder: '搜索组件、单元、路径或依赖',
     searchResults: '搜索结果',
     noSearchResults: '没有匹配项',
@@ -405,7 +419,13 @@ const dictionaries = {
 };
 
 function App() {
-  const [initialReport] = useState(() => readEmbeddedReport());
+  const [suite] = useState(() => readEmbeddedSuite());
+  const [activeReportId, setActiveReportId] = useState(() => normalizeSuiteReportId(suite, parseNavigationHash().reportId));
+  const activeSuiteNode = useMemo(
+    () => suite ? findSuiteNode(suite.tree, activeReportId) ?? suite.tree : null,
+    [activeReportId, suite],
+  );
+  const [initialReport] = useState(() => activeSuiteNode?.report ?? readEmbeddedReport());
   const [report, setReport] = useState(() => initialReport ?? fallbackReport);
   const [loadingState, setLoadingState] = useState(initialReport ? 'ready' : 'loading');
   const [query, setQuery] = useState('');
@@ -425,6 +445,7 @@ function App() {
   const navigationReady = useRef(false);
   const applyingNavigation = useRef(false);
   const lastNavigationHash = useRef(null);
+  const pendingNavigationState = useRef(null);
   const keepManualDependencyFilters = useRef(false);
   const t = useMemo(() => (key) => dictionaries[locale]?.[key] ?? dictionaries.en[key] ?? key, [locale]);
 
@@ -434,6 +455,16 @@ function App() {
   }, [locale]);
 
   useEffect(() => {
+    if (activeSuiteNode?.report) {
+      setReport(activeSuiteNode.report);
+      setSelectedComponentId(null);
+      setSelectedUnitId(null);
+      setQuery('');
+      setView('violations');
+      setLoadingState('ready');
+      return;
+    }
+
     if (initialReport) {
       setReport(initialReport);
       return;
@@ -453,7 +484,7 @@ function App() {
         setLoadingState('ready');
       })
       .catch(() => setLoadingState('failed'));
-  }, [initialReport]);
+  }, [activeSuiteNode, initialReport]);
 
   const indexed = useMemo(() => buildIndex(report), [report]);
   const sourceComponentOptions = useMemo(() => [...report.components].sort((left, right) => left.name.localeCompare(right.name)), [report.components]);
@@ -467,12 +498,21 @@ function App() {
     [targetComponentOptions],
   );
   const graphComponentIdsAll = useMemo(
-    () => sourceComponentOptions.map((component) => component.id),
-    [sourceComponentOptions],
+    () => targetComponentOptions.map((component) => component.id),
+    [targetComponentOptions],
   );
   const selectedGraphComponentIds = graphComponentIds ?? graphComponentIdsAll;
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? null;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
+  const activeSuitePath = useMemo(
+    () => suite ? findSuitePath(suite.tree, activeReportId) ?? [] : [],
+    [activeReportId, suite],
+  );
+  const parentSuiteNode = activeSuitePath.length > 1 ? activeSuitePath[activeSuitePath.length - 2] : null;
+  const childSuiteNodesByTitle = useMemo(
+    () => new Map((activeSuiteNode?.children ?? []).map((child) => [child.title, child])),
+    [activeSuiteNode],
+  );
   const selectedComponentUnits = useMemo(
     () => report.units.filter((unit) => !selectedComponent || unit.componentId === selectedComponent.id),
     [report.units, selectedComponent],
@@ -582,19 +622,42 @@ function App() {
   }, [report]);
 
   useEffect(() => {
-    if (loadingState !== 'ready' || navigationReady.current) {
+    if (loadingState !== 'ready' || navigationReady.current || (activeSuiteNode?.report && report !== activeSuiteNode.report)) {
       return;
     }
 
-    applyNavigationState(parseNavigationHash(), indexed, {
+    const navigationState = parseNavigationHash();
+    applyNavigationState(navigationState, indexed, {
       setQuery,
       setSelectedComponentId,
       setSelectedUnitId,
       setView,
     });
     navigationReady.current = true;
-    lastNavigationHash.current = window.location.hash || buildNavigationHash({ query, selectedComponentId, selectedUnitId, view });
-  }, [indexed, loadingState, query, selectedComponentId, selectedUnitId, view]);
+    lastNavigationHash.current = window.location.hash || buildNavigationHash({
+      activeReportId,
+      query,
+      rootReportId: suite?.rootId,
+      selectedComponentId,
+      selectedUnitId,
+      view,
+    });
+  }, [activeReportId, activeSuiteNode, indexed, loadingState, query, report, selectedComponentId, selectedUnitId, suite?.rootId, view]);
+
+  useEffect(() => {
+    if (loadingState !== 'ready' || !pendingNavigationState.current || (activeSuiteNode?.report && report !== activeSuiteNode.report)) {
+      return;
+    }
+
+    applyNavigationState(pendingNavigationState.current, indexed, {
+      setQuery,
+      setSelectedComponentId,
+      setSelectedUnitId,
+      setView,
+    });
+    pendingNavigationState.current = null;
+    lastNavigationHash.current = window.location.hash;
+  }, [activeSuiteNode, indexed, loadingState, report]);
 
   useEffect(() => {
     if (loadingState !== 'ready') {
@@ -602,8 +665,17 @@ function App() {
     }
 
     const onPopState = () => {
+      const navigationState = parseNavigationHash();
+      const nextReportId = normalizeSuiteReportId(suite, navigationState.reportId);
       applyingNavigation.current = true;
-      applyNavigationState(parseNavigationHash(), indexed, {
+
+      if (nextReportId !== activeReportId) {
+        pendingNavigationState.current = navigationState;
+        setActiveReportId(nextReportId);
+        return;
+      }
+
+      applyNavigationState(navigationState, indexed, {
         setQuery,
         setSelectedComponentId,
         setSelectedUnitId,
@@ -613,14 +685,21 @@ function App() {
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [indexed, loadingState]);
+  }, [activeReportId, indexed, loadingState, suite]);
 
   useEffect(() => {
     if (loadingState !== 'ready' || !navigationReady.current) {
       return;
     }
 
-    const nextHash = buildNavigationHash({ query, selectedComponentId, selectedUnitId, view });
+    const nextHash = buildNavigationHash({
+      activeReportId,
+      query,
+      rootReportId: suite?.rootId,
+      selectedComponentId,
+      selectedUnitId,
+      view,
+    });
     if (nextHash === lastNavigationHash.current) {
       return;
     }
@@ -639,7 +718,7 @@ function App() {
       return;
     }
     window.history.pushState(null, '', nextHash);
-  }, [loadingState, query, selectedComponentId, selectedUnitId, view]);
+  }, [activeReportId, loadingState, query, selectedComponentId, selectedUnitId, suite?.rootId, view]);
 
   const selectOverview = () => {
     setSelectedComponentId(null);
@@ -652,6 +731,25 @@ function App() {
     setSelectedComponentId(componentId);
     setSelectedUnitId(null);
     setComponentGraphScope('all');
+  };
+  const selectReport = (reportId) => {
+    setSelectedComponentId(null);
+    setSelectedUnitId(null);
+    setQuery('');
+    setView('violations');
+    setComponentGraphScope('all');
+    setDependencyStatus('all');
+    setGraphComponentIds(null);
+    setActiveReportId(reportId);
+  };
+  const selectComponentRow = (component) => {
+    const childSuiteNode = childSuiteNodesByTitle.get(component.name);
+    if (childSuiteNode) {
+      selectReport(childSuiteNode.id);
+      return;
+    }
+
+    selectComponent(component.id);
   };
   const changeComponentGraphScope = (scope) => {
     setComponentGraphScope(scope);
@@ -793,6 +891,17 @@ function App() {
         </div>
         <SummaryGrid summary={report.summary} t={t} />
         <div className="component-list">
+          {parentSuiteNode && (
+            <button
+              className="component-row overview-row"
+              onClick={() => selectReport(parentSuiteNode.id)}
+              type="button"
+            >
+              <GitBranch size={16} />
+              <span>{parentSuiteNode.id === suite?.rootId ? t('rootReport') : parentSuiteNode.title}</span>
+              <ChevronRight className="component-row-action reverse" size={15} />
+            </button>
+          )}
           <button
             className={!selectedComponent ? 'component-row selected overview-row' : 'component-row overview-row'}
             onClick={selectOverview}
@@ -811,15 +920,19 @@ function App() {
           {report.components.map((component) => {
             const violations = indexed.violationsByComponent.get(component.id) ?? [];
             const activeViolations = violations.filter((violation) => violation.status === 'active').length;
+            const childSuiteNode = childSuiteNodesByTitle.get(component.name);
 
             return (
               <button
-                className={component.id === selectedComponent?.id ? 'component-row selected' : 'component-row'}
+                className={[
+                  component.id === selectedComponent?.id ? 'component-row selected' : 'component-row',
+                  childSuiteNode ? 'has-sub-report' : '',
+                ].filter(Boolean).join(' ')}
                 key={component.id}
-                onClick={() => selectComponent(component.id)}
+                onClick={() => selectComponentRow(component)}
                 type="button"
               >
-                <ComponentStatus component={component} violations={violations} />
+                {childSuiteNode ? <ChevronRight className="component-row-action" size={15} /> : <ComponentStatus component={component} violations={violations} />}
                 <span>{component.name}</span>
                 <SidebarMetrics
                   metrics={[
@@ -896,7 +1009,7 @@ function App() {
           <ComponentGraphPanel
             component={selectedComponent}
             graphComponentIds={selectedGraphComponentIds}
-            graphComponents={sourceComponentOptions}
+            graphComponents={targetComponentOptions}
             indexed={indexed}
             onGraphComponentsChange={setGraphComponentIds}
             onScopeChange={changeComponentGraphScope}
@@ -2084,6 +2197,7 @@ function DependencyFileGroup({ file, onSelectUnit, t }) {
   const [expanded, setExpanded] = useState(false);
   const visibleDependencies = expanded ? file.dependencies : file.dependencies.slice(0, 12);
   const hiddenCount = file.dependencies.length - visibleDependencies.length;
+  const copyValue = file.path ?? file.fallbackName ?? file.name;
 
   return (
     <details className="dependency-file-group">
@@ -2091,13 +2205,22 @@ function DependencyFileGroup({ file, onSelectUnit, t }) {
         <FileCode2 size={15} />
         <span>{file.name}</span>
         <small>{file.dependencies.length} {t('dependencyRows')}</small>
+        <CopyAction
+          ariaLabel={t('copyFilePath')}
+          className="inline-copy"
+          title={t('copyFilePath')}
+          value={copyValue}
+          t={t}
+        />
       </summary>
       <div className="dependency-file-rows">
         {visibleDependencies.map((dependency) => (
           <article className={`dependency-row ${dependencyStatusKey(dependency)}`} key={dependency.id}>
             <CircleDot size={16} />
             <div>
-              <strong>{dependency.fromComponentName} {'->'} {dependency.toComponentName}</strong>
+              <strong title={`${dependency.fromUnitName} -> ${dependency.toUnitName}`}>
+                {shortUnitName(dependency.fromUnitName)} {'->'} {shortUnitName(dependency.toUnitName)}
+              </strong>
               <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
             </div>
             <mark className={dependencyStatusKey(dependency)}>{dependencyStatusLabel(dependency, t)}</mark>
@@ -2120,9 +2243,19 @@ function DependencyEndpoints({ dependency, onSelectUnit, t }) {
 
   return (
     <span className="dependency-endpoints">
-      <button onClick={() => onSelectUnit(dependency.fromUnitId)} title={dependency.fromUnitName} type="button">{shortUnitName(dependency.fromUnitName)}</button>
+      <span className="dependency-endpoint">
+        <button onClick={() => onSelectUnit(dependency.fromUnitId)} title={dependency.fromUnitName} type="button">
+          {compactNamespace(dependency.fromUnitName, shortUnitName(dependency.fromUnitName))}
+        </button>
+        <CopyAction ariaLabel={t('copyUnitName')} title={t('copyUnitName')} value={dependency.fromUnitName} t={t} />
+      </span>
       <span>{'->'}</span>
-      <button onClick={() => onSelectUnit(dependency.toUnitId)} title={dependency.toUnitName} type="button">{shortUnitName(dependency.toUnitName)}</button>
+      <span className="dependency-endpoint">
+        <button onClick={() => onSelectUnit(dependency.toUnitId)} title={dependency.toUnitName} type="button">
+          {compactNamespace(dependency.toUnitName, shortUnitName(dependency.toUnitName))}
+        </button>
+        <CopyAction ariaLabel={t('copyUnitName')} title={t('copyUnitName')} value={dependency.toUnitName} t={t} />
+      </span>
     </span>
   );
 }
@@ -2165,22 +2298,38 @@ function UnitDetail({ unit, indexed, onSelectUnit, t }) {
 }
 
 function Fact({ label, value, copyable = false, t }) {
-  const copyValue = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(String(value));
-    }
-  };
-
   return (
     <div className="fact">
       <span>{label}</span>
       <strong title={String(value)}>{value}</strong>
       {copyable && (
-        <button aria-label={t('copy')} onClick={copyValue} type="button">
-          <Copy size={14} />
-        </button>
+        <CopyAction ariaLabel={t('copy')} title={t('copy')} value={value} t={t} />
       )}
     </div>
+  );
+}
+
+function CopyAction({ ariaLabel, className = '', title, value, t }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyValue = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await writeClipboard(String(value ?? ''));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1100);
+  };
+
+  return (
+    <button
+      aria-label={copied ? t('copied') : ariaLabel}
+      className={['copy-action', copied ? 'copied' : '', className].filter(Boolean).join(' ')}
+      onClick={copyValue}
+      title={copied ? t('copied') : title}
+      type="button"
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+    </button>
   );
 }
 
@@ -2393,18 +2542,26 @@ function componentGraph(component, report, indexed, scope = 'all', layout = 'cir
   }
 
   const selectedComponentSet = new Set(selectedComponentIds);
+  const showSelectedComponentContext = !component && selectedComponentSet.size === 1;
   const graphEdges = component
     ? indexed.componentEdges.filter((edge) => matchesComponentGraphScope(edge, component.id, scope))
-    : indexed.componentEdges.filter((edge) => selectedComponentSet.has(edge.fromComponentId) && selectedComponentSet.has(edge.toComponentId));
+    : indexed.componentEdges.filter((edge) => {
+      if (showSelectedComponentContext) {
+        return selectedComponentSet.has(edge.fromComponentId) || selectedComponentSet.has(edge.toComponentId);
+      }
+
+      return selectedComponentSet.has(edge.fromComponentId) && selectedComponentSet.has(edge.toComponentId);
+    });
   const componentOrder = new Map(report.components.map((item, index) => [item.id, index]));
   const analyzedComponents = new Map(report.components.map((item) => [item.id, item]));
+  const allDependencyComponents = new Map(buildDependencyComponentOptions(report, indexed).map((item) => [item.id, item]));
   const graphComponents = new Map();
 
   if (!component) {
-    report.components
+    [...allDependencyComponents.values()]
       .filter((item) => selectedComponentSet.has(item.id))
       .forEach((item) => {
-        graphComponents.set(item.id, componentGraphNode(item, false));
+        graphComponents.set(item.id, componentGraphNode(item, !analyzedComponents.has(item.id)));
       });
   } else {
     graphComponents.set(component.id, componentGraphNode(component, false));
@@ -2835,14 +2992,18 @@ function parseNavigationHash() {
   return {
     componentId: params.get('component'),
     query: params.get('q') ?? '',
+    reportId: params.get('report'),
     unitId: params.get('unit'),
     view: normalizeReportView(params.get('view')),
   };
 }
 
-function buildNavigationHash({ query, selectedComponentId, selectedUnitId, view }) {
+function buildNavigationHash({ activeReportId, query, rootReportId, selectedComponentId, selectedUnitId, view }) {
   const params = new URLSearchParams();
   params.set('view', normalizeReportView(view));
+  if (rootReportId && activeReportId && activeReportId !== rootReportId) {
+    params.set('report', activeReportId);
+  }
   if (selectedComponentId) {
     params.set('component', selectedComponentId);
   }
@@ -2854,6 +3015,14 @@ function buildNavigationHash({ query, selectedComponentId, selectedUnitId, view 
   }
 
   return `#${params.toString()}`;
+}
+
+function normalizeSuiteReportId(suite, reportId) {
+  if (!suite) {
+    return 'root';
+  }
+
+  return reportId && findSuiteNode(suite.tree, reportId) ? reportId : suite.rootId;
 }
 
 function stripNavigationQuery(hash) {
@@ -2879,6 +3048,23 @@ function normalizeReportView(view) {
 
 function normalizeQuery(query) {
   return query.trim().toLowerCase();
+}
+
+async function writeClipboard(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', 'readonly');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
 }
 
 function escapeCssAttribute(value) {
@@ -2911,6 +3097,54 @@ function readEmbeddedReport() {
   } catch {
     return null;
   }
+}
+
+function readEmbeddedSuite() {
+  const element = document.getElementById('phpca-report-suite');
+  if (!element?.textContent) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(element.textContent);
+  } catch {
+    return null;
+  }
+}
+
+function findSuiteNode(node, id) {
+  if (!node || node.id === id) {
+    return node;
+  }
+
+  for (const child of node.children ?? []) {
+    const match = findSuiteNode(child, id);
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+}
+
+function findSuitePath(node, id, path = []) {
+  if (!node) {
+    return null;
+  }
+
+  const nextPath = [...path, node];
+  if (node.id === id) {
+    return nextPath;
+  }
+
+  for (const child of node.children ?? []) {
+    const match = findSuitePath(child, id, nextPath);
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
 }
 
 function formatRate(value) {
@@ -3145,6 +3379,7 @@ function worstDependencyStatus(counts) {
 
 function addDependencyToTree(root, dependency, indexed, direction) {
   const path = primaryUnitPath(dependency, indexed, direction);
+  const fallbackName = primaryUnitName(dependency, direction);
   const parts = normalizePathParts(path);
   const fileName = parts.pop() ?? 'unknown';
   let node = root;
@@ -3163,7 +3398,7 @@ function addDependencyToTree(root, dependency, indexed, direction) {
 
   let file = node.fileMap.get(fileName);
   if (!file) {
-    file = { id: `${node.id}/${fileName}`, name: fileName, dependencies: [] };
+    file = { id: `${node.id}/${fileName}`, name: fileName, path, fallbackName, dependencies: [] };
     node.fileMap.set(fileName, file);
     node.files.push(file);
   }
@@ -3195,6 +3430,10 @@ function sortDirectoryNode(node) {
 function primaryUnitPath(dependency, indexed, direction) {
   const unitId = direction === 'source' ? dependency.fromUnitId : dependency.toUnitId;
   return indexed.unitsById.get(unitId)?.path;
+}
+
+function primaryUnitName(dependency, direction) {
+  return direction === 'source' ? dependency.fromUnitName : dependency.toUnitName;
 }
 
 function normalizePathParts(path) {

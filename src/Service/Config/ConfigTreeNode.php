@@ -1,0 +1,95 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Chetkov\PHPCleanArchitecture\Service\Config;
+
+final class ConfigTreeNode
+{
+    /** @var string */
+    private $id;
+
+    /** @var string */
+    private $title;
+
+    /** @var string */
+    private $reportPath;
+
+    /** @var array<string, mixed> */
+    private $config;
+
+    /** @var array<ConfigTreeNode> */
+    private $children;
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array<ConfigTreeNode> $children
+     */
+    public function __construct(string $id, string $title, string $reportPath, array $config, array $children)
+    {
+        $this->id = $id;
+        $this->title = $title;
+        $this->reportPath = $reportPath;
+        $this->config = $config;
+        $this->children = $children;
+    }
+
+    public function id(): string
+    {
+        return $this->id;
+    }
+
+    public function title(): string
+    {
+        return $this->title;
+    }
+
+    public function reportPath(): string
+    {
+        return $this->reportPath;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function config(): array
+    {
+        return $this->config;
+    }
+
+    /**
+     * @return array<ConfigTreeNode>
+     */
+    public function children(): array
+    {
+        return $this->children;
+    }
+
+    /**
+     * @return array<ConfigTreeNode>
+     */
+    public function flatten(): array
+    {
+        $nodes = [$this];
+        foreach ($this->children as $child) {
+            array_push($nodes, ...$child->flatten());
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toManifest(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'reportPath' => $this->reportPath,
+            'children' => array_map(static function (ConfigTreeNode $child): array {
+                return $child->toManifest();
+            }, $this->children),
+        ];
+    }
+}

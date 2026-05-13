@@ -18,7 +18,10 @@ vendor/bin/phpca-build-reports phpca-config.php
 
 ## Compatibility
 
-The current major version supports PHP 8.3, 8.4, and 8.5.
+The package can be installed in projects running PHP 7.4 or newer.
+
+The analyzer can still read PHP 8.5 syntax through AST. This means the analyzed project may use modern PHP syntax, while
+the tool runtime remains compatible with older PHP versions starting from PHP 7.4.
 
 ## Configuration
 
@@ -41,6 +44,47 @@ may still be shown in the dependency graph as internal, but it is not a private 
 
 However, `ComponentB\Service` must not depend on `ComponentA\Internal\Model` when that element is outside
 `ComponentA`'s public API or is explicitly listed in `private_elements`.
+
+### Nested Reports
+
+For large systems, a single global graph often becomes too noisy. In those cases the architecture can be described
+recursively: the top level shows large system components, while each component can describe its layers, subcomponents, or
+another decomposition level.
+
+A top-level component may contain a `sub` config:
+
+```php
+'components' => [
+    'AgentWorkspace' => [
+        'roots' => [...],
+        'sub' => require __DIR__ . '/phpca-configs/layers/AgentWorkspace.php',
+    ],
+],
+```
+
+The `sub` format is the same as a regular `phpca-config.php`. The same file can still be executed standalone, or required
+from a parent config.
+
+When running from a parent config:
+
+- `phpca-check` checks the root config and all nested `sub` configs one by one;
+- `phpca-build-reports` creates one SPA report where you can navigate between analysis levels;
+- the child config's local `reports_dir` is ignored;
+- the nested report path is built from the root `reports_dir` plus the component hierarchy path.
+
+Inheritance is explicit:
+
+```php
+'inherit' => ['factories', 'vendor_based_components', 'exclusions'],
+```
+
+If `inherit` is omitted, the child config inherits nothing. `components` are never inherited.
+
+This makes it possible to keep several useful architecture-control levels:
+
+- whole system: dependencies between bounded contexts or large modules;
+- component: dependencies between `Domain`, `Application`, `Infrastructure`, `Presentation` layers;
+- subcomponent: deeper internal decomposition when the project needs it.
 
 These articles may also be useful:
 
@@ -68,10 +112,40 @@ closures/first-class callables and casts in constant expressions, attributes on 
 vendor/bin/phpca-build-reports phpca-config.php
 ```
 
-The command creates a static HTML report with a component graph, unit search, dependency filters, violation lists, and
-architecture metrics. The report can be opened locally in a browser without running a server.
+The command creates a static HTML report. The report can be opened locally in a browser without running a server.
 
 The config path can be omitted when using the standard `phpca-config.php` file in the current directory.
+
+### What's In The Report
+
+The report is designed not only for small projects, but also for larger codebases where you need to move quickly from the
+big picture to a concrete dependency.
+
+Main capabilities:
+
+- system overview with component, unit, dependency, and active issue counts;
+- Robert C. Martin A/I matrix with pain and uselessness zones;
+- Distance from Main Sequence and component metrics with quality-based colors;
+- global component graph and focused graph for the selected component;
+- external components and libraries shown on the graph as external nodes;
+- graph component filter: one selected component shows its neighborhood, while multiple selected components show only
+  links between the selected set;
+- drag, zoom, reset viewport, fullscreen, and several graph layout strategies;
+- global search across components, units, paths, and dependencies;
+- violations, dependencies, and units tabs;
+- Dependency Explorer grouped as `component -> directory tree -> file -> concrete unit dependencies`;
+- status coloring for `allowed`, `internal`, `allowed state`, `private API`, and `blocked`;
+- copying file paths and full unit names from dependency details;
+- URL navigation: selected report, component, tab, unit, and search are restored after refresh;
+- RU / EN / 中文 localization.
+
+Example report from a larger project:
+
+![Suite report overview](docs/images/report-suite-overview.png)
+
+![Dependency map with external components](docs/images/report-dependency-graph.png)
+
+![Component dependency details](docs/images/report-dependency-details.png)
 
 2. Check for CI.
 

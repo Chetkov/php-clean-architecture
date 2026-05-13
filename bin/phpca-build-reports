@@ -1,20 +1,20 @@
 #!/usr/bin/env php
 <?php
 
-use Chetkov\PHPCleanArchitecture\PHPCleanArchitectureFacade;
+use Chetkov\PHPCleanArchitecture\ConfigTreeRunner;
+use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeBuilder;
 
 require_once resolveAutoloadPath();
 
 $configPath = $argv[1] ?? resolveDefaultConfigPath();
 $config = require $configPath;
 
-$reportsPath = $config['reports_dir'];
+$configTree = (new ConfigTreeBuilder())->build($config);
+$reportsPath = $configTree->reportPath();
 recreateReportsDirectory($reportsPath);
 
-$analyzer = new PHPCleanArchitectureFacade($config);
-
 $allowedPaths = array_filter(explode(PHP_EOL, getenv('PHPCA_ALLOWED_PATHS'))) ?: [];
-$analyzer->generateReport($reportsPath, $allowedPaths);
+(new ConfigTreeRunner())->generateReports($configTree, $allowedPaths);
 
 echo PHP_EOL . 'Report: ' . $reportsPath . '/index.html' . PHP_EOL;
 

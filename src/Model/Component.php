@@ -165,6 +165,11 @@ class Component
         return self::$instances[$name] ?? null;
     }
 
+    public static function resetInstances(): void
+    {
+        self::$instances = [];
+    }
+
     /**
      * Проверяет, требуется-ли анализировать содержимое компонента?
      * @return bool

@@ -140,8 +140,14 @@ class UnitOfCode
 
         $unitOfCode->setComponent($component);
         $unitOfCode->path = $sourceUnit->path();
+        $unitOfCode->type = self::createTypeFromSourceUnit($sourceUnit);
 
         return $unitOfCode;
+    }
+
+    public static function resetInstances(): void
+    {
+        self::$instances = [];
     }
 
     private static function createTypeFromSourceUnit(SourceUnit $sourceUnit): Type

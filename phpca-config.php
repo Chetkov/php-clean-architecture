@@ -110,6 +110,27 @@ return [
                 //     __DIR__ . '/directory/with/private/elements',
                 // ],
             ],
+            // Вложенный конфиг для внутренней архитектуры компонента: слоев, подкомпонентов или любого следующего уровня.
+            // Формат sub такой же, как у обычного phpca-config.php. Файл можно запускать отдельно.
+            // При запуске из родительского конфига reports_dir вложенного конфига игнорируется:
+            // отчет будет создан в reports_dir корня + нормализованный путь по иерархии компонентов.
+            //
+            // 'sub' => [
+            //     // Наследование всегда явное. Если inherit отсутствует, sub ничего не наследует.
+            //     // components не наследуются никогда.
+            //     'inherit' => ['factories', 'vendor_based_components', 'exclusions'],
+            //     'components' => [
+            //         'Domain' => [
+            //             'name' => 'Domain',
+            //             'roots' => [
+            //                 [
+            //                     'path' => __DIR__ . '/src/Model/Domain',
+            //                     'namespace' => 'Chetkov\PHPCleanArchitecture\Model\Domain',
+            //                 ],
+            //             ],
+            //         ],
+            //     ],
+            // ],
         ],
         'service' => [
             'name' => 'service',

@@ -27,6 +27,26 @@ final class BinScriptsTest extends TestCase
         );
     }
 
+    public function testPhpcaCheckRunsNestedSubConfigs(): void
+    {
+        $result = $this->runBin('phpca-check', __DIR__ . '/Fixtures/Project/nested-forbidden-config.php');
+
+        self::assertSame(1, $result['exitCode']);
+        self::assertStringContainsString('[component-a]', $result['output']);
+        self::assertStringContainsString(
+            '"component-a-layer" can not depend on "component-b-layer"!',
+            $result['output']
+        );
+    }
+
+    public function testPhpcaCheckIsolatesNestedConfigsFromRootAnalysisState(): void
+    {
+        $result = $this->runBin('phpca-check', __DIR__ . '/Fixtures/Project/nested-isolation-config.php');
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertStringContainsString('No errors!', $result['output']);
+    }
+
     public function testPhpcaCheckResolvesAutoloadAndConfigFromConsumerVendorPackage(): void
     {
         $consumerRoot = $this->createConsumerProjectFixture();
@@ -67,6 +87,50 @@ final class BinScriptsTest extends TestCase
             '<script id="phpca-report-data" type="application/json">',
             (string) file_get_contents($reportPath . '/index.html')
         );
+
+        $this->removeDirectory($reportRoot);
+    }
+
+    public function testPhpcaBuildReportsCreatesNestedReportSuite(): void
+    {
+        $reportRoot = sys_get_temp_dir() . '/phpca-bin-report-root-' . bin2hex(random_bytes(8));
+        $standaloneChildReport = sys_get_temp_dir() . '/phpca-ignored-child-report';
+
+        $result = $this->runCommand(
+            implode(' ', [
+                'PHPCA_REPORTS_DIR=' . escapeshellarg($reportRoot),
+                escapeshellarg(PHP_BINARY),
+                escapeshellarg(dirname(__DIR__) . '/bin/phpca-build-reports'),
+                escapeshellarg(__DIR__ . '/Fixtures/Project/nested-report-config.php'),
+            ]),
+            dirname(__DIR__)
+        );
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertStringContainsString('Report: ' . $reportRoot . '/index.html', $result['output']);
+        self::assertFileExists($reportRoot . '/index.html');
+        self::assertFileExists($reportRoot . '/report.json');
+        self::assertFileExists($reportRoot . '/component-a/index.html');
+        self::assertFileExists($reportRoot . '/component-a/report.json');
+        self::assertFileExists($reportRoot . '/suite.json');
+        self::assertDirectoryDoesNotExist($standaloneChildReport);
+
+        $indexHtml = (string) file_get_contents($reportRoot . '/index.html');
+        self::assertStringContainsString(
+            '<script id="phpca-report-suite" type="application/json">',
+            $indexHtml
+        );
+
+        $suite = json_decode((string) file_get_contents($reportRoot . '/suite.json'), true);
+        self::assertIsArray($suite);
+        self::assertSame('root', $suite['rootId']);
+        self::assertSame('component-a', $suite['tree']['children'][0]['id']);
+        self::assertSame('component-a', $suite['tree']['children'][0]['title']);
+        self::assertArrayNotHasKey('report', $suite['tree']);
+
+        $childReport = json_decode((string) file_get_contents($reportRoot . '/component-a/report.json'), true);
+        self::assertIsArray($childReport);
+        self::assertSame(['Слой A!', 'Layer B'], array_column($childReport['components'], 'name'));
 
         $this->removeDirectory($reportRoot);
     }
