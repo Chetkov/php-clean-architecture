@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Chetkov\PHPCleanArchitecture\Service;
 
 use Chetkov\PHPCleanArchitecture\Model\Helper\PathHelper;
+use Chetkov\PHPCleanArchitecture\Model\AnalysisContext;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 
@@ -17,12 +18,16 @@ class VendorBasedComponentsCreationService
     /** @var array<string> */
     private $excludedPaths;
 
+    /** @var AnalysisContext */
+    private $context;
+
     /**
      * @param array<string> $excludedPaths
      */
-    public function __construct(array $excludedPaths = [])
+    public function __construct(array $excludedPaths, AnalysisContext $context)
     {
         $this->excludedPaths = $excludedPaths;
+        $this->context = $context;
     }
 
     /**
@@ -65,7 +70,7 @@ class VendorBasedComponentsCreationService
                 $composerFile->getPath()
             );
 
-            $components[] = Component::create($packageName, $rootPaths, $excludedPaths)
+            $components[] = Component::create($this->context, $packageName, $rootPaths, $excludedPaths)
                 ->excludeFromAnalyze();
         }
 

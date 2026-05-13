@@ -27,9 +27,6 @@ class Component
      */
     private const GLOBAL = '*global*';
 
-    /** @var array<self> */
-    private static $instances = [];
-
     /** @var bool */
     private $isEnabledForAnalysis = true;
 
@@ -74,20 +71,22 @@ class Component
      * @return self
      */
     public static function create(
+        AnalysisContext $context,
         string $name = self::UNDEFINED,
         array $rootPaths = [],
         array $excludedPaths = [],
         ?Restrictions $restrictions = null
     ): self {
-        if (!isset(self::$instances[$name])) {
-            self::$instances[$name] = new self(
+        if (!$context->componentByName($name)) {
+            $context->rememberComponent(new self(
                 $name,
                 $rootPaths,
                 $excludedPaths,
                 $restrictions
-            );
+            ));
         }
-        $component = self::$instances[$name];
+        $component = $context->componentByName($name);
+        assert($component instanceof self);
         foreach ($rootPaths as $rootPath) {
             $component->addRootPath($rootPath);
         }
@@ -104,14 +103,14 @@ class Component
      * @param UnitOfCode $unitOfCode
      * @return self
      */
-    public static function createByUnitOfCode(UnitOfCode $unitOfCode): self
+    public static function createByUnitOfCode(AnalysisContext $context, UnitOfCode $unitOfCode): self
     {
         if ($unitOfCode->isPrimitive()) {
-            return self::create(self::PRIMITIVES);
+            return self::create($context, self::PRIMITIVES);
         }
 
         if ($unitOfCode->belongToGlobalNamespace()) {
-            return self::create(self::GLOBAL);
+            return self::create($context, self::GLOBAL);
         }
 
         $isLocatedInOneOfPaths = static function (UnitOfCode $unitOfCode, Path ...$paths) {
@@ -134,7 +133,7 @@ class Component
             return false;
         };
 
-        foreach (self::$instances as $existingComponent) {
+        foreach ($context->components() as $existingComponent) {
             if (
                 $isLocatedInOneOfPaths($unitOfCode, ...$existingComponent->rootPaths())
                 && !$isLocatedInOneOfPaths($unitOfCode, ...$existingComponent->excludedPaths())
@@ -143,31 +142,7 @@ class Component
             }
         }
 
-        return self::create();
-    }
-
-    /**
-     * Возвращает все, созданные до текущего момента времени, объекты Component
-     * @return array<Component>
-     */
-    public static function getAll(): array
-    {
-        return self::$instances;
-    }
-
-    /**
-     * Выполняет поиск объекта Component по названию (среди всех ранее созданных)
-     * @param string $name
-     * @return Component|null
-     */
-    public static function findByName(string $name): ?Component
-    {
-        return self::$instances[$name] ?? null;
-    }
-
-    public static function resetInstances(): void
-    {
-        self::$instances = [];
+        return self::create($context, self::UNDEFINED);
     }
 
     /**

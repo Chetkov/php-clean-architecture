@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
-use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Config\EffectiveConfigNode;
 use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportSuiteRenderer;
 
@@ -20,7 +18,6 @@ final class ConfigTreeRunner
     {
         $errors = [];
         foreach ($rootNode->flatten() as $node) {
-            $this->resetAnalysisState();
             $nodeErrors = (new PHPCleanArchitectureFacade($node->config()))->check($allowedPaths);
             foreach ($nodeErrors as $error) {
                 $errors[] = $node->id() === 'root' ? $error : '[' . $node->id() . '] ' . $error;
@@ -36,16 +33,9 @@ final class ConfigTreeRunner
     public function generateReports(EffectiveConfigNode $rootNode, array $allowedPaths = []): void
     {
         foreach ($rootNode->flatten() as $node) {
-            $this->resetAnalysisState();
             (new PHPCleanArchitectureFacade($node->config()))->generateReport($node->reportPath(), $allowedPaths);
         }
 
         (new ReportSuiteRenderer())->render($rootNode);
-    }
-
-    private function resetAnalysisState(): void
-    {
-        UnitOfCode::resetInstances();
-        Component::resetInstances();
     }
 }

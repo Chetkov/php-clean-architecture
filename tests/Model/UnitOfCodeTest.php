@@ -4,26 +4,27 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Tests\Model;
 
+use Chetkov\PHPCleanArchitecture\Model\AnalysisContext;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\SourceUnit;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class UnitOfCodeTest extends TestCase
 {
-    #[RunInSeparateProcess]
     public function testDeclaredSourceUnitUpgradesPreviouslyUnknownDependencyType(): void
     {
-        $dependency = UnitOfCode::create('App\Future\UploadMediaAssetCommand');
+        $analysisContext = new AnalysisContext();
+        $dependency = UnitOfCode::create($analysisContext, 'App\Future\UploadMediaAssetCommand');
         self::assertFalse($dependency->isClass());
 
-        $component = Component::create('application', [
+        $component = Component::create($analysisContext, 'application', [
             new Path('/tmp/phpca-fixture-app', 'App\Future'),
         ]);
 
         $declaredUnit = UnitOfCode::createFromSourceUnit(
+            $analysisContext,
             new SourceUnit(
                 'App\Future\UploadMediaAssetCommand',
                 '/tmp/phpca-fixture-app/UploadMediaAssetCommand.php',

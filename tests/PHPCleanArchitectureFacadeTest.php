@@ -10,12 +10,10 @@ use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportRenderingService;
 use Chetkov\PHPCleanArchitecture\Tests\Support\NullEventManager;
 use Chetkov\PHPCleanArchitecture\Tests\Support\NullReportRenderingService;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class PHPCleanArchitectureFacadeTest extends TestCase
 {
-    #[RunInSeparateProcess]
     public function testCheckReportsForbiddenComponentDependency(): void
     {
         $facade = new PHPCleanArchitectureFacade($this->createConfig([
@@ -38,7 +36,6 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         );
     }
 
-    #[RunInSeparateProcess]
     public function testCheckReportsDependencyOnPrivateElement(): void
     {
         $privatePath = __DIR__ . '/Fixtures/Project/ComponentB/Internal';
@@ -65,7 +62,6 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         );
     }
 
-    #[RunInSeparateProcess]
     public function testReportDoesNotCreatePrivateViolationForInternalDependency(): void
     {
         $reportPath = sys_get_temp_dir() . '/phpca-internal-private-report-' . bin2hex(random_bytes(8));
@@ -108,7 +104,6 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         $this->removeDirectory($reportPath);
     }
 
-    #[RunInSeparateProcess]
     public function testAllowedCurrentStateSuppressesExistingDependencyErrors(): void
     {
         $storage = tempnam(sys_get_temp_dir(), 'phpca-allowed-state-');
@@ -136,7 +131,6 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         unlink($storage);
     }
 
-    #[RunInSeparateProcess]
     public function testGenerateReportCreatesSpaReportWithJsonData(): void
     {
         $reportPath = sys_get_temp_dir() . '/phpca-spa-report-' . bin2hex(random_bytes(8));
@@ -186,7 +180,6 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         $this->removeDirectory($reportPath);
     }
 
-    #[RunInSeparateProcess]
     public function testReportMarksAllowedStateOnlyForSuppressedViolations(): void
     {
         $storage = tempnam(sys_get_temp_dir(), 'phpca-allowed-state-');
@@ -247,7 +240,6 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         $this->removeDirectory($reportPath);
     }
 
-    #[RunInSeparateProcess]
     public function testReportMatrixFixtureCoversEveryDependencyStatus(): void
     {
         $allowedStateStorage = tempnam(sys_get_temp_dir(), 'phpca-report-matrix-allowed-state-');

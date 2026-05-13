@@ -4,27 +4,28 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Tests\Service\Analysis;
 
+use Chetkov\PHPCleanArchitecture\Model\AnalysisContext;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\ComponentAnalyzer;
 use Chetkov\PHPCleanArchitecture\Tests\Support\CapturingDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Tests\Support\NullEventManager;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class ComponentAnalyzerTest extends TestCase
 {
-    #[RunInSeparateProcess]
     public function testUsesDeclaredSymbolsInsteadOfPsrPathMapping(): void
     {
         $dependenciesFinder = new CapturingDependenciesFinder();
+        $analysisContext = new AnalysisContext();
         $component = Component::create(
+            $analysisContext,
             'source-discovery-non-psr',
             [new Path(__DIR__ . '/../../Fixtures/SourceDiscovery/NonPsrLayout', 'Wrong\PathNamespace')]
         );
 
-        $analyzer = new ComponentAnalyzer($dependenciesFinder, new NullEventManager());
+        $analyzer = new ComponentAnalyzer($dependenciesFinder, new NullEventManager(), $analysisContext);
         $analyzer->analyze($component);
 
         self::assertSame([
@@ -46,16 +47,17 @@ final class ComponentAnalyzerTest extends TestCase
         self::assertTrue($unitsByName['App\Domain\ActualStatus']->isClass());
     }
 
-    #[RunInSeparateProcess]
     public function testKeepsPathBasedFallbackForExecutableScriptsWithoutDeclaredSymbols(): void
     {
         $dependenciesFinder = new CapturingDependenciesFinder();
+        $analysisContext = new AnalysisContext();
         $component = Component::create(
+            $analysisContext,
             'source-discovery-scripts',
             [new Path(__DIR__ . '/../../Fixtures/SourceDiscovery/Scripts', 'Tools')]
         );
 
-        $analyzer = new ComponentAnalyzer($dependenciesFinder, new NullEventManager());
+        $analyzer = new ComponentAnalyzer($dependenciesFinder, new NullEventManager(), $analysisContext);
         $analyzer->analyze($component);
 
         self::assertSame(['Tools\phpca-tool'], self::unitNames($dependenciesFinder->unitsOfCode()));

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Chetkov\PHPCleanArchitecture\Tests\Service\Analysis\DependenciesFinder\Ast;
 
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
+use Chetkov\PHPCleanArchitecture\Model\AnalysisContext;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\Ast\AstDependenciesFinder;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\AttributeDependency;
 use Chetkov\PHPCleanArchitecture\Tests\Fixtures\DependencyParsing\CatchDependency;
@@ -122,6 +123,6 @@ final class AstDependenciesFinderTest extends TestCase
      */
     private static function find(string $unitOfCodeName, string $path): array
     {
-        return (new AstDependenciesFinder())->find(UnitOfCode::create($unitOfCodeName, null, $path));
+        return (new AstDependenciesFinder())->find(UnitOfCode::create(new AnalysisContext(), $unitOfCodeName, null, $path));
     }
 }

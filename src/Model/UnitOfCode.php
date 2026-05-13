@@ -20,9 +20,6 @@ class UnitOfCode
 {
     use CachingTrait;
 
-    /** @var array<self> */
-    private static $instances = [];
-
     /** @var string */
     private $name;
 
@@ -41,18 +38,27 @@ class UnitOfCode
     /** @var Component */
     private $component;
 
+    /** @var AnalysisContext */
+    private $context;
+
     /**
      * @param string $name
      * @param Type $type
      * @param string|null $path
      * @param Component|null $component
      */
-    private function __construct(string $name, Type $type, ?string $path = null, ?Component $component = null)
-    {
+    private function __construct(
+        AnalysisContext $context,
+        string $name,
+        Type $type,
+        ?string $path = null,
+        ?Component $component = null
+    ) {
         $this->name = $name;
         $this->type = $type;
         $this->path = $path;
-        $this->component = ($component ?? Component::createByUnitOfCode($this))
+        $this->context = $context;
+        $this->component = ($component ?? Component::createByUnitOfCode($this->context, $this))
             ->addUnitOfCode($this);
     }
 
@@ -62,12 +68,16 @@ class UnitOfCode
      * @param string|null $path
      * @return self
      */
-    public static function create(string $fullName, ?Component $component = null, ?string $path = null): self
-    {
+    public static function create(
+        AnalysisContext $context,
+        string $fullName,
+        ?Component $component = null,
+        ?string $path = null
+    ): self {
         //Приведение названий к единому виду, без обратного слэша в начале
         $fullName = trim($fullName, '\\');
 
-        $unitOfCode = self::$instances[$fullName] ?? null;
+        $unitOfCode = $context->unitOfCodeByName($fullName);
         if (!$unitOfCode) {
             switch (true) {
                 case TypeInterface::isThisType($fullName):
@@ -97,8 +107,8 @@ class UnitOfCode
                 default:
                     $type = TypeUndefined::getInstance();
             }
-            $unitOfCode = new UnitOfCode($fullName, $type, $path, $component);
-            self::$instances[$fullName] = $unitOfCode;
+            $unitOfCode = new UnitOfCode($context, $fullName, $type, $path, $component);
+            $context->rememberUnitOfCode($unitOfCode);
         }
         if ($component) {
             $unitOfCode->setComponent($component);
@@ -107,7 +117,7 @@ class UnitOfCode
             $unitOfCode->path = $path;
         }
         if (!$component && $unitOfCode->component()->isUndefined()) {
-            $resolvedComponent = Component::createByUnitOfCode($unitOfCode);
+            $resolvedComponent = Component::createByUnitOfCode($context, $unitOfCode);
             if (!$resolvedComponent->isUndefined()) {
                 $unitOfCode->setComponent($resolvedComponent);
             }
@@ -120,22 +130,26 @@ class UnitOfCode
      * @param Component $component
      * @return self
      */
-    public static function createFromSourceUnit(SourceUnit $sourceUnit, Component $component): self
-    {
+    public static function createFromSourceUnit(
+        AnalysisContext $context,
+        SourceUnit $sourceUnit,
+        Component $component
+    ): self {
         if (!$sourceUnit->isDeclaredSymbol()) {
-            return self::create($sourceUnit->name(), $component, $sourceUnit->path());
+            return self::create($context, $sourceUnit->name(), $component, $sourceUnit->path());
         }
 
         $fullName = trim($sourceUnit->name(), '\\');
-        $unitOfCode = self::$instances[$fullName] ?? null;
+        $unitOfCode = $context->unitOfCodeByName($fullName);
         if (!$unitOfCode) {
             $unitOfCode = new UnitOfCode(
+                $context,
                 $fullName,
                 self::createTypeFromSourceUnit($sourceUnit),
                 $sourceUnit->path(),
                 $component
             );
-            self::$instances[$fullName] = $unitOfCode;
+            $context->rememberUnitOfCode($unitOfCode);
         }
 
         $unitOfCode->setComponent($component);
@@ -143,11 +157,6 @@ class UnitOfCode
         $unitOfCode->type = self::createTypeFromSourceUnit($sourceUnit);
 
         return $unitOfCode;
-    }
-
-    public static function resetInstances(): void
-    {
-        self::$instances = [];
     }
 
     private static function createTypeFromSourceUnit(SourceUnit $sourceUnit): Type

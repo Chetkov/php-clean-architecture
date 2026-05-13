@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture;
 
+use Chetkov\PHPCleanArchitecture\Model\AnalysisContext;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
@@ -28,6 +29,9 @@ class PHPCleanArchitectureFacade
     /** @var ComponentAnalyzer */
     private $componentAnalyzer;
 
+    /** @var AnalysisContext */
+    private $analysisContext;
+
     /** @var EventManagerInterface */
     private $eventManager;
 
@@ -51,10 +55,14 @@ class PHPCleanArchitectureFacade
      */
     public function __construct(array $config)
     {
+        $this->analysisContext = new AnalysisContext();
         $vendorBasedComponentsConfig = $config['vendor_based_components'];
         if (!empty($vendorBasedComponentsConfig['enabled']) && !empty($vendorBasedComponentsConfig['vendor_path'])) {
             $excludedVendorPaths = $vendorBasedComponentsConfig['excluded'] ?? [];
-            $vendorBasedComponentsCreator = new VendorBasedComponentsCreationService($excludedVendorPaths);
+            $vendorBasedComponentsCreator = new VendorBasedComponentsCreationService(
+                $excludedVendorPaths,
+                $this->analysisContext
+            );
             $vendorBasedComponentsCreator->create($vendorBasedComponentsConfig['vendor_path']);
         }
 
@@ -94,10 +102,10 @@ class PHPCleanArchitectureFacade
             }
 
             foreach ($componentRestrictionsConfig['allowed_dependencies'] ?? [] as $allowedDependency) {
-                $restrictions->addAllowedDependencyComponent(Component::create($allowedDependency));
+                $restrictions->addAllowedDependencyComponent(Component::create($this->analysisContext, $allowedDependency));
             }
             foreach ($componentRestrictionsConfig['forbidden_dependencies'] ?? [] as $forbiddenDependency) {
-                $restrictions->addForbiddenDependencyComponent(Component::create($forbiddenDependency));
+                $restrictions->addForbiddenDependencyComponent(Component::create($this->analysisContext, $forbiddenDependency));
             }
 
             if (isset($allowedState[$componentConfig['name']])) {
@@ -111,6 +119,7 @@ class PHPCleanArchitectureFacade
             $restrictions->setMaxAllowableDistance($maxAllowableDistance);
 
             $component = Component::create(
+                $this->analysisContext,
                 $componentConfig['name'],
                 $rootPaths,
                 $excludedPaths,
@@ -128,7 +137,11 @@ class PHPCleanArchitectureFacade
         $eventManagerFactory = $config['factories']['event_manager'];
         $dependenciesFinderFactory = $config['factories']['dependencies_finder'];
         $this->eventManager = $eventManagerFactory();
-        $this->componentAnalyzer = new ComponentAnalyzer($dependenciesFinderFactory(), $this->eventManager);
+        $this->componentAnalyzer = new ComponentAnalyzer(
+            $dependenciesFinderFactory(),
+            $this->eventManager,
+            $this->analysisContext
+        );
         $this->reportRenderingServiceFactory = $config['factories']['report_rendering_service'];
     }
 

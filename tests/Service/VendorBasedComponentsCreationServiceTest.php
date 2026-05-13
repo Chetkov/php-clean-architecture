@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Tests\Service;
 
-use Chetkov\PHPCleanArchitecture\Model\Component;
+use Chetkov\PHPCleanArchitecture\Model\AnalysisContext;
 use Chetkov\PHPCleanArchitecture\Service\VendorBasedComponentsCreationService;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class VendorBasedComponentsCreationServiceTest extends TestCase
 {
-    #[RunInSeparateProcess]
     public function testCreatesVendorComponentFromClassmapFilesAndExcludes(): void
     {
         $vendorPath = __DIR__ . '/../Fixtures/VendorDiscovery/vendor';
+        $analysisContext = new AnalysisContext();
 
-        $components = (new VendorBasedComponentsCreationService())->create($vendorPath);
+        $components = (new VendorBasedComponentsCreationService([], $analysisContext))->create($vendorPath);
 
-        $component = Component::findByName('acme/classmap');
+        $component = $analysisContext->componentByName('acme/classmap');
         self::assertNotNull($component);
         self::assertContains($component, $components);
 

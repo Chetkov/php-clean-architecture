@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Analysis;
 
+use Chetkov\PHPCleanArchitecture\Model\AnalysisContext;
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\FileAnalyzedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\SourceDiscovery\PhpParserSourceUnitDiscovery;
@@ -28,6 +29,9 @@ class ComponentAnalyzer
     /** @var SourceUnitDiscoveryInterface */
     private $sourceUnitDiscovery;
 
+    /** @var AnalysisContext */
+    private $analysisContext;
+
     /**
      * @param DependenciesFinderInterface $dependenciesFinder
      * @param EventManagerInterface $eventManager
@@ -36,10 +40,12 @@ class ComponentAnalyzer
     public function __construct(
         DependenciesFinderInterface $dependenciesFinder,
         EventManagerInterface $eventManager,
+        AnalysisContext $analysisContext,
         ?SourceUnitDiscoveryInterface $sourceUnitDiscovery = null
     ) {
         $this->dependenciesFinder = $dependenciesFinder;
         $this->eventManager = $eventManager;
+        $this->analysisContext = $analysisContext;
         $this->sourceUnitDiscovery = $sourceUnitDiscovery ?? new PhpParserSourceUnitDiscovery();
     }
 
@@ -75,10 +81,10 @@ class ComponentAnalyzer
                 }
 
                 foreach ($this->sourceUnitDiscovery->discover($file, $path) as $sourceUnit) {
-                    $unitOfCode = UnitOfCode::createFromSourceUnit($sourceUnit, $component);
+                    $unitOfCode = UnitOfCode::createFromSourceUnit($this->analysisContext, $sourceUnit, $component);
                     $dependencies = $this->dependenciesFinder->find($unitOfCode);
                     foreach ($dependencies as $dependency) {
-                        $unitOfCode->addOutputDependency(UnitOfCode::create($dependency));
+                        $unitOfCode->addOutputDependency(UnitOfCode::create($this->analysisContext, $dependency));
                     }
                 }
 
