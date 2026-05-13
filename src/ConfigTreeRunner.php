@@ -6,7 +6,7 @@ namespace Chetkov\PHPCleanArchitecture;
 
 use Chetkov\PHPCleanArchitecture\Model\Component;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
-use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeNode;
+use Chetkov\PHPCleanArchitecture\Service\Config\EffectiveConfigNode;
 use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportSuiteRenderer;
 
 final class ConfigTreeRunner
@@ -16,7 +16,7 @@ final class ConfigTreeRunner
      *
      * @return array<string>
      */
-    public function check(ConfigTreeNode $rootNode, array $allowedPaths = []): array
+    public function check(EffectiveConfigNode $rootNode, array $allowedPaths = []): array
     {
         $errors = [];
         foreach ($rootNode->flatten() as $node) {
@@ -33,7 +33,7 @@ final class ConfigTreeRunner
     /**
      * @param array<string> $allowedPaths
      */
-    public function generateReports(ConfigTreeNode $rootNode, array $allowedPaths = []): void
+    public function generateReports(EffectiveConfigNode $rootNode, array $allowedPaths = []): void
     {
         foreach ($rootNode->flatten() as $node) {
             $this->resetAnalysisState();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Config;
 
-final class ConfigTreeNode
+final class EffectiveConfigNode
 {
     /** @var string */
     private $id;
@@ -18,12 +18,12 @@ final class ConfigTreeNode
     /** @var array<string, mixed> */
     private $config;
 
-    /** @var array<ConfigTreeNode> */
+    /** @var array<EffectiveConfigNode> */
     private $children;
 
     /**
      * @param array<string, mixed> $config
-     * @param array<ConfigTreeNode> $children
+     * @param array<EffectiveConfigNode> $children
      */
     public function __construct(string $id, string $title, string $reportPath, array $config, array $children)
     {
@@ -58,7 +58,7 @@ final class ConfigTreeNode
     }
 
     /**
-     * @return array<ConfigTreeNode>
+     * @return array<EffectiveConfigNode>
      */
     public function children(): array
     {
@@ -66,7 +66,7 @@ final class ConfigTreeNode
     }
 
     /**
-     * @return array<ConfigTreeNode>
+     * @return array<EffectiveConfigNode>
      */
     public function flatten(): array
     {

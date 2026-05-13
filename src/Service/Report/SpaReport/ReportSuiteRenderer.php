@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Chetkov\PHPCleanArchitecture\Service\Report\SpaReport;
 
-use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeNode;
+use Chetkov\PHPCleanArchitecture\Service\Config\EffectiveConfigNode;
 
 final class ReportSuiteRenderer
 {
-    public function render(ConfigTreeNode $rootNode): void
+    public function render(EffectiveConfigNode $rootNode): void
     {
         $suiteData = $this->buildSuiteData($rootNode);
         $this->writeJson($rootNode->reportPath() . '/suite.json', $this->stripInlineReports($suiteData));
@@ -18,7 +18,7 @@ final class ReportSuiteRenderer
     /**
      * @return array<string, mixed>
      */
-    private function buildSuiteData(ConfigTreeNode $node): array
+    private function buildSuiteData(EffectiveConfigNode $node): array
     {
         return [
             'schemaVersion' => 1,
@@ -30,13 +30,13 @@ final class ReportSuiteRenderer
     /**
      * @return array<string, mixed>
      */
-    private function buildSuiteNode(ConfigTreeNode $node, string $rootReportPath, bool $includeReport): array
+    private function buildSuiteNode(EffectiveConfigNode $node, string $rootReportPath, bool $includeReport): array
     {
         $suiteNode = [
             'id' => $node->id(),
             'title' => $node->title(),
             'reportPath' => $this->relativeReportPath($rootReportPath, $node->reportPath()),
-            'children' => array_map(function (ConfigTreeNode $child) use ($rootReportPath): array {
+            'children' => array_map(function (EffectiveConfigNode $child) use ($rootReportPath): array {
                 return $this->buildSuiteNode($child, $rootReportPath, true);
             }, $node->children()),
         ];
