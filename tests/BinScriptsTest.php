@@ -121,6 +121,7 @@ final class BinScriptsTest extends TestCase
             '<script id="phpca-report-data" type="application/json">',
             (string) file_get_contents($reportPath . '/index.html')
         );
+        $this->assertReportHtmlIsSelfContained($reportPath . '/index.html');
 
         $this->removeDirectory($reportRoot);
     }
@@ -150,6 +151,8 @@ final class BinScriptsTest extends TestCase
         self::assertDirectoryDoesNotExist($standaloneChildReport);
 
         $indexHtml = (string) file_get_contents($reportRoot . '/index.html');
+        $this->assertReportHtmlIsSelfContained($reportRoot . '/index.html');
+        $this->assertReportHtmlIsSelfContained($reportRoot . '/component-a/index.html');
         self::assertStringContainsString(
             '<script id="phpca-report-suite" type="application/json">',
             $indexHtml
@@ -183,6 +186,21 @@ final class BinScriptsTest extends TestCase
         self::assertSame(['Слой A!', 'Layer B'], array_column($childReport['components'], 'name'));
 
         $this->removeDirectory($reportRoot);
+    }
+
+    private function assertReportHtmlIsSelfContained(string $indexPath): void
+    {
+        $html = (string) file_get_contents($indexPath);
+
+        self::assertStringContainsString('<style data-phpca-report-asset="./assets/', $html);
+        self::assertStringContainsString('<script data-phpca-report-asset="./assets/', $html);
+        self::assertStringNotContainsString('type="module"', $html);
+        self::assertStringNotContainsString('src="./assets/', $html);
+        self::assertStringNotContainsString('href="./assets/', $html);
+        self::assertGreaterThan(
+            strpos($html, '<div id="root"></div>'),
+            strpos($html, '<script data-phpca-report-asset="./assets/')
+        );
     }
 
     /**

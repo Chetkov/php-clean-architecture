@@ -21,10 +21,14 @@ final class ReportRenderingService implements ReportRenderingServiceInterface
     /** @var ReportDataBuilder */
     private $reportDataBuilder;
 
+    /** @var ReportAssetInliner */
+    private $assetInliner;
+
     public function __construct(EventManagerInterface $eventManager)
     {
         $this->eventManager = $eventManager;
         $this->reportDataBuilder = new ReportDataBuilder();
+        $this->assetInliner = new ReportAssetInliner();
     }
 
     public function render(string $reportPath, Component ...$components): void
@@ -53,6 +57,7 @@ final class ReportRenderingService implements ReportRenderingServiceInterface
         $reportData = $this->reportDataBuilder->build(...$components);
 
         $this->copyAssets($reportPath);
+        $this->assetInliner->inline($reportPath . '/index.html');
         $this->writeJson($reportPath . '/report.json', $reportData);
         $this->embedReportData($reportPath . '/index.html', $reportData);
         $this->eventManager->notify(new ReportRenderingFinishedEvent());
