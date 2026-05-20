@@ -538,9 +538,15 @@ body.graph-fullscreen-open {
   display: flex;
   gap: 10px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.graph-panel-title {
+  margin: 0;
+  color: #263540;
+  font-size: 15px;
 }
 
 .graph-controls {
@@ -999,6 +1005,40 @@ marker#arrow-blocked path {
   border: 0;
   border-top: 1px solid #e4eaf0;
   border-radius: 0 0 8px 8px;
+}
+
+.component-internals-map {
+  border-color: #c9d9e3;
+}
+
+.sub-report-intro {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  color: #5d6c78;
+  border-top: 1px solid #e4eaf0;
+  background: #f7fafb;
+}
+
+.sub-report-intro button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 10px;
+  color: #24485f;
+  border: 1px solid #c9d2d9;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.sub-report-intro button:hover {
+  border-color: #9fb4c4;
+  background: #eef5f8;
 }
 
 .workbench {

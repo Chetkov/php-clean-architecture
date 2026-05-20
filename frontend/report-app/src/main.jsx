@@ -77,6 +77,9 @@ const dictionaries = {
     clearSelection: 'Clear',
     componentFilterSearch: 'Search components',
     componentFilterSelected: 'selected',
+    componentInternals: 'Component internals',
+    componentInternalsGraph: 'Internal component overview',
+    componentInternalsHint: 'This component has a nested report. The graph below shows its internal components.',
     componentLinksShort: 'comp',
     componentLinksSummary: '{count} component links',
     copy: 'Copy',
@@ -89,7 +92,9 @@ const dictionaries = {
     filtered: 'filtered',
     noUnitSelected: 'Select a unit to inspect its dependencies',
     openSearch: 'Search',
+    openNestedReport: 'Open nested report',
     overview: 'Overview',
+    parentComponentRelations: 'Component relations',
     showMore: 'Show more',
     zoneOfPain: 'Painful',
     zoneOfUselessness: 'Useless',
@@ -197,6 +202,9 @@ const dictionaries = {
     clearSelection: 'Сбросить',
     componentFilterSearch: 'Поиск компонентов',
     componentFilterSelected: 'выбрано',
+    componentInternals: 'Внутренности компонента',
+    componentInternalsGraph: 'Внутренний обзор компонента',
+    componentInternalsHint: 'У компонента есть вложенный отчет. Граф ниже показывает его внутренние компоненты.',
     componentLinksShort: 'комп',
     componentLinksSummary: '{count} связей компонентов',
     copy: 'Копировать',
@@ -209,7 +217,9 @@ const dictionaries = {
     filtered: 'отфильтровано',
     noUnitSelected: 'Выберите юнит, чтобы посмотреть его зависимости',
     openSearch: 'Поиск',
+    openNestedReport: 'Открыть вложенный отчет',
     overview: 'Обзор',
+    parentComponentRelations: 'Связи компонента',
     showMore: 'Показать еще',
     zoneOfPain: 'Больно',
     zoneOfUselessness: 'Бесполезно',
@@ -317,6 +327,9 @@ const dictionaries = {
     clearSelection: '清除',
     componentFilterSearch: '搜索组件',
     componentFilterSelected: '已选',
+    componentInternals: '组件内部',
+    componentInternalsGraph: '组件内部概览',
+    componentInternalsHint: '此组件包含嵌套报告。下面的图展示它的内部组件。',
     componentLinksShort: '组件',
     componentLinksSummary: '{count} 个组件连接',
     copy: '复制',
@@ -329,7 +342,9 @@ const dictionaries = {
     filtered: '已筛选',
     noUnitSelected: '选择一个单元以查看其依赖',
     openSearch: '搜索',
+    openNestedReport: '打开嵌套报告',
     overview: '概览',
+    parentComponentRelations: '组件关系',
     showMore: '显示更多',
     zoneOfPain: '痛点',
     zoneOfUselessness: '无用',
@@ -439,6 +454,7 @@ function App() {
   const [sourceComponentIds, setSourceComponentIds] = useState([]);
   const [targetComponentIds, setTargetComponentIds] = useState([]);
   const [graphComponentIds, setGraphComponentIds] = useState(null);
+  const [internalGraphComponentIds, setInternalGraphComponentIds] = useState(null);
   const [locale, setLocale] = useState(() => localStorage.getItem('phpca-report-locale') || 'ru');
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
@@ -514,6 +530,23 @@ function App() {
     () => new Map((activeSuiteNode?.children ?? []).map((child) => [child.title, child])),
     [activeSuiteNode],
   );
+  const selectedComponentChildSuiteNode = selectedComponent ? childSuiteNodesByTitle.get(selectedComponent.name) ?? null : null;
+  const selectedComponentChildReport = selectedComponentChildSuiteNode?.report ?? null;
+  const selectedComponentChildIndexed = useMemo(
+    () => selectedComponentChildReport ? buildIndex(selectedComponentChildReport) : null,
+    [selectedComponentChildReport],
+  );
+  const selectedComponentChildGraphComponents = useMemo(
+    () => selectedComponentChildReport && selectedComponentChildIndexed
+      ? buildDependencyComponentOptions(selectedComponentChildReport, selectedComponentChildIndexed)
+      : [],
+    [selectedComponentChildIndexed, selectedComponentChildReport],
+  );
+  const selectedComponentChildGraphComponentIdsAll = useMemo(
+    () => selectedComponentChildGraphComponents.map((component) => component.id),
+    [selectedComponentChildGraphComponents],
+  );
+  const selectedComponentChildGraphComponentIds = internalGraphComponentIds ?? selectedComponentChildGraphComponentIdsAll;
   const selectedComponentUnits = useMemo(
     () => report.units.filter((unit) => !selectedComponent || unit.componentId === selectedComponent.id),
     [report.units, selectedComponent],
@@ -621,6 +654,10 @@ function App() {
   useEffect(() => {
     setGraphComponentIds(null);
   }, [report]);
+
+  useEffect(() => {
+    setInternalGraphComponentIds(null);
+  }, [selectedComponentChildReport]);
 
   useEffect(() => {
     if (loadingState !== 'ready' || navigationReady.current || (activeSuiteNode?.report && report !== activeSuiteNode.report)) {
@@ -734,6 +771,24 @@ function App() {
     setComponentGraphScope('all');
   };
   const selectReport = (reportId) => {
+    pendingNavigationState.current = null;
+    setSelectedComponentId(null);
+    setSelectedUnitId(null);
+    setQuery('');
+    setView('violations');
+    setComponentGraphScope('all');
+    setDependencyStatus('all');
+    setGraphComponentIds(null);
+    setActiveReportId(reportId);
+  };
+  const selectNestedReportComponent = (reportId, componentId) => {
+    pendingNavigationState.current = {
+      componentId,
+      query: '',
+      reportId,
+      unitId: null,
+      view: 'violations',
+    };
     setSelectedComponentId(null);
     setSelectedUnitId(null);
     setQuery('');
@@ -744,12 +799,6 @@ function App() {
     setActiveReportId(reportId);
   };
   const selectComponentRow = (component) => {
-    const childSuiteNode = childSuiteNodesByTitle.get(component.name);
-    if (childSuiteNode) {
-      selectReport(childSuiteNode.id);
-      return;
-    }
-
     selectComponent(component.id);
   };
   const changeComponentGraphScope = (scope) => {
@@ -933,7 +982,7 @@ function App() {
                 onClick={() => selectComponentRow(component)}
                 type="button"
               >
-                {childSuiteNode ? <ChevronRight className="component-row-action" size={15} /> : <ComponentStatus component={component} violations={violations} />}
+                <ComponentStatus component={component} violations={violations} />
                 <span>{component.name}</span>
                 <SidebarMetrics
                   metrics={[
@@ -1018,8 +1067,38 @@ function App() {
             report={report}
             scope={componentGraphScope}
             t={t}
+            title={selectedComponent ? t('parentComponentRelations') : t('globalComponentGraph')}
           />
         </details>
+
+        {selectedComponentChildSuiteNode && selectedComponentChildReport && selectedComponentChildIndexed && (
+          <details className="component-map component-internals-map" open>
+            <summary>
+              <Layers3 size={16} />
+              <span>{t('componentInternals')}</span>
+            </summary>
+            <div className="sub-report-intro">
+              <span>{t('componentInternalsHint')}</span>
+              <button onClick={() => selectReport(selectedComponentChildSuiteNode.id)} type="button">
+                <ChevronRight size={15} />
+                {t('openNestedReport')}
+              </button>
+            </div>
+            <ComponentGraphPanel
+              component={null}
+              graphComponentIds={selectedComponentChildGraphComponentIds}
+              graphComponents={selectedComponentChildGraphComponents}
+              indexed={selectedComponentChildIndexed}
+              onGraphComponentsChange={setInternalGraphComponentIds}
+              onScopeChange={() => {}}
+              onSelectComponent={(componentId) => selectNestedReportComponent(selectedComponentChildSuiteNode.id, componentId)}
+              report={selectedComponentChildReport}
+              scope="all"
+              t={t}
+              title={t('componentInternalsGraph')}
+            />
+          </details>
+        )}
 
         <section className={view === 'units' ? 'workbench' : 'workbench single'}>
           <div className="workbench-main">
@@ -1294,6 +1373,7 @@ function ComponentGraphPanel({
   report,
   scope,
   t,
+  title,
 }) {
   const [graphLayout, setGraphLayout] = useState(() => readGraphLayout(report));
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1501,6 +1581,7 @@ function ComponentGraphPanel({
   return (
     <section className={isFullscreen ? 'panel graph-panel fullscreen' : 'panel graph-panel'}>
       <header className="graph-panel-header">
+        {title && <h2 className="graph-panel-title">{title}</h2>}
         <div className="graph-controls">
           <div className="graph-layout-switcher" aria-label={t('graphLayout')}>
             {graphLayouts.map((layout) => (
