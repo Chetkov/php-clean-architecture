@@ -40,6 +40,8 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 
 - `reports_dir` - директория, куда `phpca-build-reports` сохранит HTML-отчет. В образцовом конфиге значение можно
   переопределить через `PHPCA_REPORTS_DIR`.
+- `debug_scan_paths` - необязательные директории или файлы, которые `phpca-debug-unmatched-files` будет сканировать
+  для поиска PHP-файлов вне компонентов.
 - `components` - список архитектурных компонентов проекта.
 - `roots` - директории или файлы компонента: `path` задает путь, `namespace` задает соответствующий PHP namespace.
 - `excluded` - пути внутри компонента, которые нужно исключить из анализа этого компонента.
@@ -135,6 +137,7 @@ closures/first-class callables и casts в constant expressions, attributes on c
 vendor/bin/phpca-check phpca-config.php
 vendor/bin/phpca-build-reports phpca-config.php
 vendor/bin/phpca-allow-current-state phpca-config.php
+vendor/bin/phpca-debug-unmatched-files phpca-config.php
 ```
 
 `PHPCA_ALLOWED_PATHS` ограничивает анализ списком файлов. Это удобно для CI по измененным файлам. Значение передается как
@@ -142,6 +145,13 @@ vendor/bin/phpca-allow-current-state phpca-config.php
 
 `PHPCA_REPORTS_DIR` можно использовать в образцовом конфиге для переопределения `reports_dir` без изменения файла
 конфигурации.
+
+`phpca-debug-unmatched-files` также принимает дополнительные пути после конфига. Если они переданы, команда сканирует
+только их:
+
+```shell
+vendor/bin/phpca-debug-unmatched-files phpca-config.php src
+```
 
 ## Использование
 
@@ -225,3 +235,20 @@ vendor/bin/phpca-allow-current-state phpca-config.php
 ```shell
 PHPCA_ALLOWED_PATHS="$(git diff master --name-only)" PHPCA_REPORTS_DIR="phpca-report" vendor/bin/phpca-build-reports phpca-config.php
 ```
+
+5. Поиск файлов вне компонентов.
+
+```shell script
+vendor/bin/phpca-debug-unmatched-files phpca-config.php src
+```
+
+Команда показывает PHP-файлы, которые находятся в области сканирования, но не попали ни в один компонент и не исключены
+явно. Это удобно при первичной настройке конфига и при развитии большой системы: можно быстро увидеть файлы, для которых
+еще не принято архитектурное решение.
+
+Если пути после конфига не переданы, команда использует `PHPCA_ALLOWED_PATHS`. Если и он пустой, команда выбирает область
+сканирования из конфига: для обычного конфига это общий родитель component roots, для вложенного `sub`-конфига - roots
+родительского компонента. Поведение можно переопределить секцией `debug_scan_paths`.
+
+Если unmatched-файлы найдены, команда выводит их список и завершается с кодом `1`; если все файлы покрыты компонентами
+или exclusions, выводит `No unmatched files!` и завершается с кодом `0`.

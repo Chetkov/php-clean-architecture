@@ -29,6 +29,9 @@ class ComponentAnalyzer
     /** @var SourceUnitDiscoveryInterface */
     private $sourceUnitDiscovery;
 
+    /** @var SourceFileFinder */
+    private $sourceFileFinder;
+
     /** @var AnalysisContext */
     private $analysisContext;
 
@@ -47,6 +50,7 @@ class ComponentAnalyzer
         $this->eventManager = $eventManager;
         $this->analysisContext = $analysisContext;
         $this->sourceUnitDiscovery = $sourceUnitDiscovery ?? new PhpParserSourceUnitDiscovery();
+        $this->sourceFileFinder = new SourceFileFinder();
     }
 
     /**
@@ -60,11 +64,11 @@ class ComponentAnalyzer
         }
 
         $analyzedFileIndex = 0;
-        $totalFiles = $this->getFiles($component->rootPaths())->count();
+        $totalFiles = $this->sourceFileFinder->find($component->rootPaths())->count();
 
         foreach ($component->rootPaths() as $path) {
             /** @var \SplFileInfo $file */
-            foreach ($this->getFiles([$path]) as $file) {
+            foreach ($this->sourceFileFinder->find([$path]) as $file) {
                 $analyzedFileIndex++;
 
                 $fullPath = $file->getRealPath();
@@ -91,65 +95,5 @@ class ComponentAnalyzer
                 $this->eventManager->notify($fileAnalyzedEvent);
             }
         }
-    }
-
-    /**
-     * @param array<Path> $paths
-     * @param string $fileExtension
-     * @param array<string> $shebangTemplates example: ['/usr/bin/env php', '/usr/bin/php']
-     *
-     * @return CompositeCountableIterator<\SplFileInfo>
-     */
-    private function getFiles(
-        array $paths,
-        string $fileExtension = '.php',
-        array $shebangTemplates = ['/usr/bin/env php', '/usr/bin/php']
-    ): CompositeCountableIterator {
-        $filesIterator = new CompositeCountableIterator();
-        foreach ($paths as $path) {
-            if (is_file($path->path())) {
-                $filesIterator->addIterator(new \ArrayIterator([new \SplFileInfo($path->path())]));
-                continue;
-            }
-            if (!is_dir($path->path())) {
-                continue;
-            }
-
-            $recursiveDirectoryIterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path->path()));
-            $phpExtIterator = new \RegexIterator($recursiveDirectoryIterator, "/\\$fileExtension$/i");
-            $filesIterator->addIterator($phpExtIterator);
-
-            $phpFilesWithoutPhpExtensions = [];
-            $notPhpExtIterator = new \RegexIterator($recursiveDirectoryIterator, "/^((?!\\$fileExtension).)*$/i");
-            /** @var \SplFileInfo $notPhpFile */
-            foreach ($notPhpExtIterator as $notPhpFile) {
-                if (!$notPhpFile->isFile()) {
-                    continue;
-                }
-
-                $notPhpFilePath = $notPhpFile->getRealPath();
-                if (!$notPhpFilePath) {
-                    continue;
-                }
-
-                $content = file_get_contents($notPhpFilePath);
-                if (!$content) {
-                    continue;
-                }
-
-                foreach ($shebangTemplates as $shebang) {
-                    if (false !== stripos($content, "#!$shebang")) {
-                        $phpFilesWithoutPhpExtensions[] = $notPhpFile;
-                        break;
-                    }
-                }
-            }
-
-            if (!empty($phpFilesWithoutPhpExtensions)) {
-                $filesIterator->addIterator(new \ArrayIterator($phpFilesWithoutPhpExtensions));
-            }
-        }
-
-        return $filesIterator;
     }
 }

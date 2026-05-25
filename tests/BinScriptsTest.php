@@ -97,6 +97,39 @@ final class BinScriptsTest extends TestCase
         self::assertStringContainsString('No errors!', $result['output']);
     }
 
+    public function testPhpcaDebugUnmatchedFilesReturnsSuccessWhenEveryFileIsCovered(): void
+    {
+        $result = $this->runBin('phpca-debug-unmatched-files', __DIR__ . '/Fixtures/Project/clean-config.php', [
+            __DIR__ . '/Fixtures/Project/ComponentA',
+            __DIR__ . '/Fixtures/Project/ComponentB',
+        ]);
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertStringContainsString('No unmatched files!', $result['output']);
+    }
+
+    public function testPhpcaDebugUnmatchedFilesPrintsFilesOutsideConfiguredComponents(): void
+    {
+        $result = $this->runBin('phpca-debug-unmatched-files', __DIR__ . '/Fixtures/Project/unmatched-files-config.php', [
+            __DIR__ . '/Fixtures/Project/Unmatched',
+        ]);
+
+        self::assertSame(1, $result['exitCode']);
+        self::assertStringContainsString('Unmatched files found:', $result['output']);
+        self::assertStringContainsString('[root] 1 file(s)', $result['output']);
+        self::assertStringContainsString(__DIR__ . '/Fixtures/Project/Unmatched/LooseClass.php', $result['output']);
+        self::assertStringNotContainsString(__DIR__ . '/Fixtures/Project/Unmatched/ExcludedLooseClass.php', $result['output']);
+    }
+
+    public function testPhpcaDebugUnmatchedFilesRunsNestedSubConfigs(): void
+    {
+        $result = $this->runBin('phpca-debug-unmatched-files', __DIR__ . '/Fixtures/Project/nested-unmatched-config.php');
+
+        self::assertSame(1, $result['exitCode']);
+        self::assertStringContainsString('[component-a] 1 file(s)', $result['output']);
+        self::assertStringContainsString(__DIR__ . '/Fixtures/Project/NestedUnmatched/ComponentA/UnmatchedLayer.php', $result['output']);
+    }
+
     public function testPhpcaBuildReportsCreatesSpaReport(): void
     {
         $reportRoot = sys_get_temp_dir() . '/phpca-bin-report-root-' . bin2hex(random_bytes(8));
@@ -206,15 +239,23 @@ final class BinScriptsTest extends TestCase
     /**
      * @return array{exitCode: int, output: string}
      */
-    private function runBin(string $name, string $configPath): array
+    /**
+     * @param array<string> $arguments
+     *
+     * @return array{exitCode: int, output: string}
+     */
+    private function runBin(string $name, string $configPath, array $arguments = []): array
     {
-        $command = implode(' ', [
+        $commandParts = [
             escapeshellarg(PHP_BINARY),
             escapeshellarg(dirname(__DIR__) . '/bin/' . $name),
             escapeshellarg($configPath),
-        ]);
+        ];
+        foreach ($arguments as $argument) {
+            $commandParts[] = escapeshellarg($argument);
+        }
 
-        return $this->runCommand($command, dirname(__DIR__));
+        return $this->runCommand(implode(' ', $commandParts), dirname(__DIR__));
     }
 
     /**

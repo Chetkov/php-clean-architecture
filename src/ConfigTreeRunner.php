@@ -61,4 +61,95 @@ final class ConfigTreeRunner
 
         (new ReportSuiteRenderer())->render($rootNode);
     }
+
+    /**
+     * @param array<string> $scanPaths
+     *
+     * @return array<string, array<string>>
+     */
+    public function findUnmatchedFiles(EffectiveConfigNode $rootNode, array $scanPaths = []): array
+    {
+        $unmatchedFilesByNode = [];
+        foreach ($rootNode->flatten() as $node) {
+            $nodeScanPaths = $scanPaths === [] ? $this->defaultScanPaths($node) : $scanPaths;
+            $unmatchedFiles = (new PHPCleanArchitectureFacade($node->config()))->findUnmatchedFiles($nodeScanPaths);
+            if ($unmatchedFiles !== []) {
+                $unmatchedFilesByNode[$node->id()] = $unmatchedFiles;
+            }
+        }
+
+        return $unmatchedFilesByNode;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function defaultScanPaths(EffectiveConfigNode $node): array
+    {
+        if (isset($node->config()['debug_scan_paths']) && is_array($node->config()['debug_scan_paths'])) {
+            return array_values(array_filter($node->config()['debug_scan_paths'], static function ($path): bool {
+                return is_string($path) && $path !== '';
+            }));
+        }
+
+        $rootPaths = [];
+        foreach ($node->config()['components'] as $componentConfig) {
+            if (!is_array($componentConfig)) {
+                continue;
+            }
+
+            foreach ($componentConfig['roots'] ?? [] as $rootConfig) {
+                if (!is_array($rootConfig) || empty($rootConfig['path']) || !is_string($rootConfig['path'])) {
+                    continue;
+                }
+
+                $rootPath = realpath($rootConfig['path']) ?: $rootConfig['path'];
+                $rootPaths[] = is_file($rootPath) ? dirname($rootPath) : $rootPath;
+            }
+        }
+
+        if ($rootPaths === []) {
+            return [];
+        }
+
+        return [$this->commonParentPath($rootPaths)];
+    }
+
+    /**
+     * @param array<string> $paths
+     */
+    private function commonParentPath(array $paths): string
+    {
+        $parts = array_map(static function (string $path): array {
+            return explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR));
+        }, $paths);
+
+        $commonParts = [];
+        $firstParts = array_shift($parts);
+        if ($firstParts === null) {
+            return $this->currentWorkingDirectory();
+        }
+
+        foreach ($firstParts as $index => $part) {
+            foreach ($parts as $pathParts) {
+                if (!isset($pathParts[$index]) || $pathParts[$index] !== $part) {
+                    return DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $commonParts);
+                }
+            }
+
+            $commonParts[] = $part;
+        }
+
+        return DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $commonParts);
+    }
+
+    private function currentWorkingDirectory(): string
+    {
+        $currentWorkingDirectory = getcwd();
+        if ($currentWorkingDirectory === false) {
+            throw new \RuntimeException('Current working directory is not available.');
+        }
+
+        return $currentWorkingDirectory;
+    }
 }

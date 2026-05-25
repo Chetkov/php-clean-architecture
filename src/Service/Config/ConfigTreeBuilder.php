@@ -85,6 +85,9 @@ final class ConfigTreeBuilder
             $componentName = (string) ($component['name'] ?? 'component');
             $childIdParts = $this->pathResolver->childIdParts($idParts, $componentName, $usedChildSlugs);
             $childConfig = $this->inheritanceResolver->createEffectiveSubConfig($component['sub'], $inheritedContext);
+            if (!isset($childConfig['debug_scan_paths'])) {
+                $childConfig['debug_scan_paths'] = $this->componentRootPaths($component);
+            }
             $childReportPath = $this->pathResolver->childReportPath($this->rootReportsPath, $childIdParts);
             $childConfig['reports_dir'] = $childReportPath;
             $childAllowedStateContext = $this->allowedStateStorageResolver->configureChildStorage(
@@ -108,5 +111,24 @@ final class ConfigTreeBuilder
         $config['components'] = $this->normalizer->stripSubConfigs($components);
 
         return new EffectiveConfigNode($id, $title, $reportPath, $config, $children);
+    }
+
+    /**
+     * @param array<string, mixed> $component
+     *
+     * @return array<string>
+     */
+    private function componentRootPaths(array $component): array
+    {
+        $paths = [];
+        foreach ($component['roots'] ?? [] as $rootConfig) {
+            if (!is_array($rootConfig) || empty($rootConfig['path']) || !is_string($rootConfig['path'])) {
+                continue;
+            }
+
+            $paths[] = $rootConfig['path'];
+        }
+
+        return $paths;
     }
 }

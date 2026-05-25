@@ -1,0 +1,68 @@
+#!/usr/bin/env php
+<?php
+
+use Chetkov\PHPCleanArchitecture\ConfigTreeRunner;
+use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeBuilder;
+
+require_once resolveAutoloadPath();
+
+$configPath = $argv[1] ?? resolveDefaultConfigPath();
+$config = require $configPath;
+
+$scanPaths = array_slice($argv, 2);
+if ($scanPaths === []) {
+    $scanPaths = array_filter(explode(PHP_EOL, getenv('PHPCA_ALLOWED_PATHS'))) ?: [];
+}
+
+$configTree = (new ConfigTreeBuilder())->build($config);
+$unmatchedFilesByNode = (new ConfigTreeRunner())->findUnmatchedFiles($configTree, $scanPaths);
+
+if ($unmatchedFilesByNode === []) {
+    echo 'No unmatched files!' . PHP_EOL;
+    exit(0);
+}
+
+$total = 0;
+echo 'Unmatched files found:' . PHP_EOL;
+foreach ($unmatchedFilesByNode as $nodeId => $unmatchedFiles) {
+    $total += count($unmatchedFiles);
+    echo PHP_EOL . '[' . $nodeId . '] ' . count($unmatchedFiles) . ' file(s)' . PHP_EOL;
+    foreach ($unmatchedFiles as $unmatchedFile) {
+        echo '- ' . $unmatchedFile . PHP_EOL;
+    }
+}
+
+echo PHP_EOL . 'Total unmatched files: ' . $total . PHP_EOL;
+exit(1);
+
+function resolveAutoloadPath(): string
+{
+    $candidates = [
+        dirname(__DIR__) . '/vendor/autoload.php',
+        dirname(__DIR__, 3) . '/autoload.php',
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate)) {
+            return $candidate;
+        }
+    }
+
+    throw new \RuntimeException('Composer autoload.php was not found.');
+}
+
+function resolveDefaultConfigPath(): string
+{
+    $candidates = [
+        dirname(__DIR__) . '/phpca-config.php',
+        dirname(__DIR__, 4) . '/phpca-config.php',
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate)) {
+            return $candidate;
+        }
+    }
+
+    return dirname(__DIR__) . '/phpca-config.php';
+}

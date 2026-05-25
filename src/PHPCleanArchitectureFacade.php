@@ -10,6 +10,7 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\SourceFileFinder;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
@@ -28,6 +29,9 @@ class PHPCleanArchitectureFacade
 {
     /** @var ComponentAnalyzer */
     private $componentAnalyzer;
+
+    /** @var SourceFileFinder */
+    private $sourceFileFinder;
 
     /** @var AnalysisContext */
     private $analysisContext;
@@ -137,12 +141,39 @@ class PHPCleanArchitectureFacade
         $eventManagerFactory = $config['factories']['event_manager'];
         $dependenciesFinderFactory = $config['factories']['dependencies_finder'];
         $this->eventManager = $eventManagerFactory();
+        $this->sourceFileFinder = new SourceFileFinder();
         $this->componentAnalyzer = new ComponentAnalyzer(
             $dependenciesFinderFactory(),
             $this->eventManager,
             $this->analysisContext
         );
         $this->reportRenderingServiceFactory = $config['factories']['report_rendering_service'];
+    }
+
+    /**
+     * @param array<string> $scanPaths
+     *
+     * @return array<string>
+     */
+    public function findUnmatchedFiles(array $scanPaths): array
+    {
+        $paths = array_map(static function (string $path) {
+            return new Path($path);
+        }, $scanPaths);
+
+        $unmatchedFiles = [];
+        foreach ($this->sourceFileFinder->find($paths) as $file) {
+            $fullPath = $file->getRealPath();
+            if (!$fullPath || $this->isExcludedByKnownComponent($fullPath) || $this->isMatchedByKnownComponent($fullPath)) {
+                continue;
+            }
+
+            $unmatchedFiles[] = $fullPath;
+        }
+
+        sort($unmatchedFiles);
+
+        return array_values(array_unique($unmatchedFiles));
     }
 
     /**
@@ -295,5 +326,29 @@ class PHPCleanArchitectureFacade
     {
         $reportRenderingServiceFactory = $this->reportRenderingServiceFactory;
         return $reportRenderingServiceFactory($this->eventManager);
+    }
+
+    private function isMatchedByKnownComponent(string $fullPath): bool
+    {
+        foreach ($this->analysisContext->components() as $component) {
+            foreach ($component->rootPaths() as $rootPath) {
+                if ($rootPath->isPartOfPath($fullPath)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function isExcludedByKnownComponent(string $fullPath): bool
+    {
+        foreach ($this->analysisContext->components() as $component) {
+            if ($component->isExcluded($fullPath)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

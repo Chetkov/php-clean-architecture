@@ -38,6 +38,8 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 
 - `reports_dir` - directory where `phpca-build-reports` writes the HTML report. In the sample config, it can be
   overridden through `PHPCA_REPORTS_DIR`.
+- `debug_scan_paths` - optional directories or files scanned by `phpca-debug-unmatched-files` to find PHP files outside
+  configured components.
 - `components` - list of architecture components in the project.
 - `roots` - component directories or files: `path` defines the filesystem path, `namespace` defines the matching PHP
   namespace.
@@ -134,12 +136,20 @@ project is used.
 vendor/bin/phpca-check phpca-config.php
 vendor/bin/phpca-build-reports phpca-config.php
 vendor/bin/phpca-allow-current-state phpca-config.php
+vendor/bin/phpca-debug-unmatched-files phpca-config.php
 ```
 
 `PHPCA_ALLOWED_PATHS` limits analysis to a list of files. This is useful for CI checks on changed files. The value is a
 newline-separated list of paths.
 
 `PHPCA_REPORTS_DIR` can be used by the sample config to override `reports_dir` without changing the config file.
+
+`phpca-debug-unmatched-files` also accepts extra paths after the config. When they are passed, only those paths are
+scanned:
+
+```shell
+vendor/bin/phpca-debug-unmatched-files phpca-config.php src
+```
 
 ## Usage
 
@@ -223,3 +233,20 @@ Example:
 ```shell
 PHPCA_ALLOWED_PATHS="$(git diff master --name-only)" PHPCA_REPORTS_DIR="phpca-report" vendor/bin/phpca-build-reports phpca-config.php
 ```
+
+5. Find files outside components.
+
+```shell script
+vendor/bin/phpca-debug-unmatched-files phpca-config.php src
+```
+
+The command prints PHP files that are inside the scan scope, but are not assigned to any configured component and are not
+explicitly excluded. This is useful when setting up the config for the first time or evolving a large system: it quickly
+shows files that still need an architecture decision.
+
+When no paths are passed after the config, the command uses `PHPCA_ALLOWED_PATHS`. When that is empty too, it derives the
+scan scope from the config: for a regular config it uses the common parent of component roots, and for a nested `sub`
+config it uses the parent component roots. This can be overridden with `debug_scan_paths`.
+
+When unmatched files are found, the command prints them and exits with code `1`; when everything is covered by components
+or exclusions, it prints `No unmatched files!` and exits with code `0`.
