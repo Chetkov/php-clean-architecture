@@ -1090,11 +1090,7 @@ function App() {
         </header>
 
         <section className={selectedComponent ? 'overview-grid' : 'overview-grid global-overview'} aria-label={t('overview')}>
-          {selectedComponent ? (
-            <MetricPanel component={selectedComponent} t={t} />
-          ) : (
-            <LegacyProgressPanel compact framed legacy={report.summary.legacy} t={t} />
-          )}
+          {selectedComponent && <MetricPanel component={selectedComponent} t={t} />}
           <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
           <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
           {selectedComponent && <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />}

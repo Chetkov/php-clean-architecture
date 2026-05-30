@@ -454,7 +454,7 @@ td span,
 }
 
 .overview-grid.global-overview {
-  grid-template-columns: minmax(260px, 0.75fr) minmax(360px, 1.25fr) minmax(300px, 0.75fr);
+  grid-template-columns: minmax(360px, 1.3fr) minmax(300px, 0.8fr);
 }
 
 .panel,
