@@ -533,6 +533,7 @@ td span,
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .legacy-progress-heading span,
@@ -546,6 +547,8 @@ td span,
   color: #172026;
   font-size: 34px;
   line-height: 1;
+  flex: 0 0 auto;
+  text-align: right;
 }
 
 .legacy-progress.compact .legacy-progress-heading strong {
@@ -567,7 +570,7 @@ td span,
   width: var(--modern-width);
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #2a9f69, #7dbd3b);
+  background: var(--modern-color);
 }
 
 .legacy-split {
@@ -609,7 +612,9 @@ td span,
 .legacy-progress.compact .legacy-split span {
   flex-direction: row;
   align-items: baseline;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  overflow-wrap: anywhere;
 }
 
 .chart-panel svg,

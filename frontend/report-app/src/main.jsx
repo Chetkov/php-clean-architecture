@@ -1316,6 +1316,7 @@ function LegacyProgressPanel({ compact = false, framed = false, sidebar = false,
         className="legacy-meter"
         role="img"
         style={{
+          '--modern-color': qualityColor(metrics.modernRate),
           '--modern-width': `${Math.max(metrics.modernRate * 100, metrics.modernLinesOfCode > 0 ? 2 : 0)}%`,
         }}
       >
@@ -3578,7 +3579,7 @@ function formatRate(value) {
 }
 
 function formatPercent(value) {
-  return `${Math.round(clamp01(value) * 100)}%`;
+  return `${(clamp01(value) * 100).toFixed(2)}%`;
 }
 
 function formatInteger(value) {
