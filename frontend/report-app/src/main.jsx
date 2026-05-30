@@ -2239,6 +2239,7 @@ function DependencyExplorer({
                     direction={direction}
                     focused={group.dependencies.some((dependency) => dependency.id === focusedDependencyId)}
                     group={group}
+                    indexed={indexed}
                     onSelectUnit={onSelectUnit}
                     t={t}
                   />
@@ -2388,9 +2389,25 @@ function ComponentFilter({ compact = false, components, id, isOpen, label, selec
   );
 }
 
-function DependencyGroupCard({ direction, focused, group, onSelectUnit, t }) {
+function DependencyGroupCard({ direction, focused, group, indexed, onSelectUnit, t }) {
+  const [open, setOpen] = useState(focused);
+  const tree = useMemo(
+    () => open ? buildDependencyTree(group.dependencies, indexed, direction) : null,
+    [direction, group.dependencies, indexed, open],
+  );
+
+  useEffect(() => {
+    if (focused) {
+      setOpen(true);
+    }
+  }, [focused]);
+
   return (
-    <details className={`dependency-group-card ${group.status}${focused ? ' focused-search-target' : ''}`} open={focused || undefined}>
+    <details
+      className={`dependency-group-card ${group.status}${focused ? ' focused-search-target' : ''}`}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      open={open}
+    >
       <summary>
         <CircleDot size={16} />
         <div>
@@ -2401,15 +2418,17 @@ function DependencyGroupCard({ direction, focused, group, onSelectUnit, t }) {
         </div>
         <DependencyGroupBadges group={group} t={t} />
       </summary>
-      <div className="dependency-tree">
-        <h3>{t('directoryTree')}</h3>
-        {group.tree.children.map((node) => (
-          <DependencyTreeNode key={node.id} node={node} onSelectUnit={onSelectUnit} t={t} />
-        ))}
-        {group.tree.files.map((file) => (
-          <DependencyFileGroup file={file} key={file.id} onSelectUnit={onSelectUnit} t={t} />
-        ))}
-      </div>
+      {tree && (
+        <div className="dependency-tree">
+          <h3>{t('directoryTree')}</h3>
+          {tree.children.map((node) => (
+            <DependencyTreeNode key={node.id} node={node} onSelectUnit={onSelectUnit} t={t} />
+          ))}
+          {tree.files.map((file) => (
+            <DependencyFileGroup file={file} key={file.id} onSelectUnit={onSelectUnit} t={t} />
+          ))}
+        </div>
+      )}
     </details>
   );
 }
@@ -3707,13 +3726,11 @@ function buildDependencyGroups(dependencies, indexed, direction) {
       secondaryName: secondaryComponentName,
       dependencies: [],
       counts: { allowed: 0, allowedState: 0, blocked: 0, internal: 0, private: 0 },
-      tree: createDirectoryNode('root', 'root'),
       filePaths: new Set(),
     };
 
     group.dependencies.push(dependency);
     incrementDependencyCount(group.counts, dependencyStatusKey(dependency));
-    addDependencyToTree(group.tree, dependency, indexed, direction);
     group.filePaths.add(primaryUnitPath(dependency, indexed, direction) ?? 'unknown');
     groups.set(key, group);
   }
@@ -3723,9 +3740,15 @@ function buildDependencyGroups(dependencies, indexed, direction) {
       ...group,
       fileCount: group.filePaths.size,
       status: worstDependencyStatus(group.counts),
-      tree: sortDirectoryNode(group.tree),
     }))
     .sort((left, right) => right.dependencies.length - left.dependencies.length || left.primaryName.localeCompare(right.primaryName));
+}
+
+function buildDependencyTree(dependencies, indexed, direction) {
+  const tree = createDirectoryNode('root', 'root');
+  dependencies.forEach((dependency) => addDependencyToTree(tree, dependency, indexed, direction));
+
+  return sortDirectoryNode(tree);
 }
 
 function incrementDependencyCount(counts, status) {
