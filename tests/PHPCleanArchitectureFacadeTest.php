@@ -167,7 +167,7 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         $embeddedReportData = json_decode($embeddedJson, true);
         self::assertIsArray($embeddedReportData);
         self::assertSame($reportData['summary'], $embeddedReportData['summary']);
-        self::assertSame(2, $reportData['schemaVersion']);
+        self::assertSame(3, $reportData['schemaVersion']);
         self::assertSame(2, $reportData['summary']['components']);
         self::assertGreaterThanOrEqual(3, $reportData['summary']['units']);
         self::assertGreaterThanOrEqual(1, $reportData['summary']['dependencies']);
@@ -178,10 +178,8 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         self::assertNotEmpty($reportData['violations']);
         self::assertArrayHasKey('externalComponents', $reportData);
         self::assertArrayHasKey('externalUnits', $reportData);
-        self::assertArrayNotHasKey('fromUnitName', $reportData['dependencies'][0]);
-        self::assertArrayNotHasKey('toUnitName', $reportData['dependencies'][0]);
-        self::assertArrayNotHasKey('fromComponentName', $reportData['dependencies'][0]);
-        self::assertArrayNotHasKey('toComponentName', $reportData['dependencies'][0]);
+        self::assertTrue(array_is_list($reportData['dependencies'][0]));
+        self::assertCount(5, $reportData['dependencies'][0]);
 
         $this->removeDirectory($reportPath);
     }
@@ -413,8 +411,9 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
     private function findDependencyByTarget(array $reportData, string $targetUnitName): array
     {
         foreach ($reportData['dependencies'] as $dependency) {
-            if ($this->unitName($reportData, $dependency['toUnitId']) === $targetUnitName) {
-                return $dependency;
+            $normalizedDependency = $this->normalizeDependency($dependency);
+            if ($this->unitName($reportData, $normalizedDependency['toUnitId']) === $targetUnitName) {
+                return $normalizedDependency;
             }
         }
 
@@ -428,15 +427,50 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
     private function findDependency(array $reportData, string $fromUnitName, string $toUnitName): array
     {
         foreach ($reportData['dependencies'] as $dependency) {
+            $normalizedDependency = $this->normalizeDependency($dependency);
             if (
-                $this->unitName($reportData, $dependency['fromUnitId']) === $fromUnitName
-                && $this->unitName($reportData, $dependency['toUnitId']) === $toUnitName
+                $this->unitName($reportData, $normalizedDependency['fromUnitId']) === $fromUnitName
+                && $this->unitName($reportData, $normalizedDependency['toUnitId']) === $toUnitName
             ) {
-                return $dependency;
+                return $normalizedDependency;
             }
         }
 
         self::fail(sprintf('Dependency %s -> %s was not found in report data.', $fromUnitName, $toUnitName));
+    }
+
+    /**
+     * @param array<int|string, mixed> $dependency
+     * @return array{id: string, fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, isInternal: bool, isComponentAllowed: bool, isTargetPublic: bool, isAllowedState: bool}
+     */
+    private function normalizeDependency(array $dependency): array
+    {
+        if (array_is_list($dependency)) {
+            $flags = $dependency[4];
+            return [
+                'id' => $dependency[0] . '->' . $dependency[1],
+                'fromUnitId' => $dependency[0],
+                'toUnitId' => $dependency[1],
+                'fromComponentId' => $dependency[2],
+                'toComponentId' => $dependency[3],
+                'isInternal' => (bool) ($flags & 1),
+                'isComponentAllowed' => (bool) ($flags & 2),
+                'isTargetPublic' => (bool) ($flags & 4),
+                'isAllowedState' => (bool) ($flags & 8),
+            ];
+        }
+
+        return [
+            'id' => $dependency['id'],
+            'fromUnitId' => $dependency['fromUnitId'],
+            'toUnitId' => $dependency['toUnitId'],
+            'fromComponentId' => $dependency['fromComponentId'],
+            'toComponentId' => $dependency['toComponentId'],
+            'isInternal' => $dependency['isInternal'],
+            'isComponentAllowed' => $dependency['isComponentAllowed'],
+            'isTargetPublic' => $dependency['isTargetPublic'],
+            'isAllowedState' => $dependency['isAllowedState'],
+        ];
     }
 
     /**

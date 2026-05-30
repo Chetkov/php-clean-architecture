@@ -32,9 +32,15 @@ const graphHeight = 420;
 const graphPadding = 58;
 const graphLayouts = ['circle', 'grid', 'layers'];
 const defaultGraphViewport = { x: 0, y: 0, scale: 1 };
+const dependencyFlags = {
+  internal: 1,
+  componentAllowed: 2,
+  targetPublic: 4,
+  allowedState: 8,
+};
 
 const fallbackReport = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   generatedAt: null,
   summary: {
     components: 0,
@@ -3398,7 +3404,7 @@ function normalizeReportData(report) {
   const externalUnits = report.externalUnits ?? [];
   const componentsById = new Map([...components, ...externalComponents].map((component) => [component.id, component]));
   const unitsById = new Map([...units, ...externalUnits].map((unit) => [unit.id, unit]));
-  const dependencies = (report.dependencies ?? []).map((dependency) => enrichDependencyData(
+  const dependencies = (report.dependencies ?? []).map((dependency) => normalizeDependencyData(
     dependency,
     componentsById,
     unitsById,
@@ -3414,6 +3420,25 @@ function normalizeReportData(report) {
     dependencies,
     violations: report.violations ?? [],
   };
+}
+
+function normalizeDependencyData(dependency, componentsById, unitsById) {
+  if (Array.isArray(dependency)) {
+    const [fromUnitId, toUnitId, fromComponentId, toComponentId, flags = 0] = dependency;
+    return enrichDependencyData({
+      id: `${fromUnitId}->${toUnitId}`,
+      fromUnitId,
+      toUnitId,
+      fromComponentId,
+      toComponentId,
+      isInternal: Boolean(flags & dependencyFlags.internal),
+      isComponentAllowed: Boolean(flags & dependencyFlags.componentAllowed),
+      isTargetPublic: Boolean(flags & dependencyFlags.targetPublic),
+      isAllowedState: Boolean(flags & dependencyFlags.allowedState),
+    }, componentsById, unitsById);
+  }
+
+  return enrichDependencyData(dependency, componentsById, unitsById);
 }
 
 function enrichDependencyData(dependency, componentsById, unitsById) {

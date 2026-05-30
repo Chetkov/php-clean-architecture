@@ -9,6 +9,11 @@ use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 
 final class ReportDataBuilder
 {
+    private const DEPENDENCY_FLAG_INTERNAL = 1;
+    private const DEPENDENCY_FLAG_COMPONENT_ALLOWED = 2;
+    private const DEPENDENCY_FLAG_TARGET_PUBLIC = 4;
+    private const DEPENDENCY_FLAG_ALLOWED_STATE = 8;
+
     /**
      * @return array<string, mixed>
      */
@@ -37,8 +42,10 @@ final class ReportDataBuilder
                         continue;
                     }
 
-                    $dependency = $this->dependencyData($unitOfCode, $dependencyUnitOfCode);
-                    $dependencies[$dependency['id']] = $dependency;
+                    $dependencies[$this->dependencyId($unitOfCode, $dependencyUnitOfCode)] = $this->dependencyData(
+                        $unitOfCode,
+                        $dependencyUnitOfCode
+                    );
                     $this->rememberExternalReference($dependencyUnitOfCode, $units, $externalUnits, $enabledComponentIds, $externalComponents);
                     foreach ($this->violationsForDependency($unitOfCode, $dependencyUnitOfCode) as $violation) {
                         $violations[$violation['id']] = $violation;
@@ -52,7 +59,7 @@ final class ReportDataBuilder
         }, $enabledComponents);
 
         return [
-            'schemaVersion' => 2,
+            'schemaVersion' => 3,
             'generatedAt' => date(DATE_ATOM),
             'summary' => [
                 'components' => count($componentData),
@@ -191,7 +198,7 @@ final class ReportDataBuilder
     }
 
     /**
-     * @return array{id: string, fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, isInternal: bool, isComponentAllowed: bool, isTargetPublic: bool, isAllowedState: bool}
+     * @return array{0: string, 1: string, 2: string, 3: string, 4: int}
      */
     private function dependencyData(UnitOfCode $unitOfCode, UnitOfCode $dependencyUnitOfCode): array
     {
@@ -199,17 +206,33 @@ final class ReportDataBuilder
         $dependencyComponent = $dependencyUnitOfCode->component();
         $isComponentAllowed = $component->isDependencyAllowed($dependencyComponent);
         $isTargetPublic = $dependencyUnitOfCode->isAccessibleFromOutside();
+        $isInternal = $dependencyUnitOfCode->belongToComponent($component);
+        $isAllowedState = $this->isAllowedStateViolation(
+            $unitOfCode,
+            $dependencyUnitOfCode,
+            $isComponentAllowed,
+            $isTargetPublic
+        );
+        $flags = 0;
+        if ($isInternal) {
+            $flags |= self::DEPENDENCY_FLAG_INTERNAL;
+        }
+        if ($isComponentAllowed) {
+            $flags |= self::DEPENDENCY_FLAG_COMPONENT_ALLOWED;
+        }
+        if ($isTargetPublic) {
+            $flags |= self::DEPENDENCY_FLAG_TARGET_PUBLIC;
+        }
+        if ($isAllowedState) {
+            $flags |= self::DEPENDENCY_FLAG_ALLOWED_STATE;
+        }
 
         return [
-            'id' => $this->dependencyId($unitOfCode, $dependencyUnitOfCode),
-            'fromUnitId' => $this->unitId($unitOfCode),
-            'toUnitId' => $this->unitId($dependencyUnitOfCode),
-            'fromComponentId' => $this->componentId($component),
-            'toComponentId' => $this->componentId($dependencyComponent),
-            'isInternal' => $dependencyUnitOfCode->belongToComponent($component),
-            'isComponentAllowed' => $isComponentAllowed,
-            'isTargetPublic' => $isTargetPublic,
-            'isAllowedState' => $this->isAllowedStateViolation($unitOfCode, $dependencyUnitOfCode, $isComponentAllowed, $isTargetPublic),
+            $this->unitId($unitOfCode),
+            $this->unitId($dependencyUnitOfCode),
+            $this->componentId($component),
+            $this->componentId($dependencyComponent),
+            $flags,
         ];
     }
 
