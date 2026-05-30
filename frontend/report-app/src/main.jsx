@@ -2239,6 +2239,7 @@ function DependencyExplorer({
                   <DependencyGroupCard
                     direction={direction}
                     focused={group.dependencies.some((dependency) => dependency.id === focusedDependencyId)}
+                    focusedDependencyId={focusedDependencyId}
                     group={group}
                     indexed={indexed}
                     onSelectUnit={onSelectUnit}
@@ -2390,7 +2391,7 @@ function ComponentFilter({ compact = false, components, id, isOpen, label, selec
   );
 }
 
-function DependencyGroupCard({ direction, focused, group, indexed, onSelectUnit, t }) {
+function DependencyGroupCard({ direction, focused, focusedDependencyId, group, indexed, onSelectUnit, t }) {
   const [open, setOpen] = useState(focused);
   const tree = useMemo(
     () => open ? buildDependencyTree(group.dependencies, indexed, direction) : null,
@@ -2423,10 +2424,10 @@ function DependencyGroupCard({ direction, focused, group, indexed, onSelectUnit,
         <div className="dependency-tree">
           <h3>{t('directoryTree')}</h3>
           {tree.children.map((node) => (
-            <DependencyTreeNode key={node.id} node={node} onSelectUnit={onSelectUnit} t={t} />
+            <DependencyTreeNode focusedDependencyId={focusedDependencyId} key={node.id} node={node} onSelectUnit={onSelectUnit} t={t} />
           ))}
           {tree.files.map((file) => (
-            <DependencyFileGroup file={file} key={file.id} onSelectUnit={onSelectUnit} t={t} />
+            <DependencyFileGroup file={file} focusedDependencyId={focusedDependencyId} key={file.id} onSelectUnit={onSelectUnit} t={t} />
           ))}
         </div>
       )}
@@ -2446,33 +2447,57 @@ function DependencyGroupBadges({ group, t }) {
   );
 }
 
-function DependencyTreeNode({ node, onSelectUnit, t }) {
+function DependencyTreeNode({ focusedDependencyId, node, onSelectUnit, t }) {
+  const containsFocusedDependency = treeNodeContainsDependency(node, focusedDependencyId);
+  const [open, setOpen] = useState(containsFocusedDependency);
+
+  useEffect(() => {
+    if (containsFocusedDependency) {
+      setOpen(true);
+    }
+  }, [containsFocusedDependency]);
+
   return (
-    <details className="dependency-tree-node">
+    <details className="dependency-tree-node" onToggle={(event) => setOpen(event.currentTarget.open)} open={open}>
       <summary>
         <span>{node.name}</span>
         <small>{node.count} {t('dependencyRows')}</small>
       </summary>
-      <div className="dependency-tree-children">
-        {node.children.map((child) => (
-          <DependencyTreeNode key={child.id} node={child} onSelectUnit={onSelectUnit} t={t} />
-        ))}
-        {node.files.map((file) => (
-          <DependencyFileGroup file={file} key={file.id} onSelectUnit={onSelectUnit} t={t} />
-        ))}
-      </div>
+      {open && (
+        <div className="dependency-tree-children">
+          {node.children.map((child) => (
+            <DependencyTreeNode focusedDependencyId={focusedDependencyId} key={child.id} node={child} onSelectUnit={onSelectUnit} t={t} />
+          ))}
+          {node.files.map((file) => (
+            <DependencyFileGroup file={file} focusedDependencyId={focusedDependencyId} key={file.id} onSelectUnit={onSelectUnit} t={t} />
+          ))}
+        </div>
+      )}
     </details>
   );
 }
 
-function DependencyFileGroup({ file, onSelectUnit, t }) {
-  const [expanded, setExpanded] = useState(false);
-  const visibleDependencies = expanded ? file.dependencies : file.dependencies.slice(0, 12);
+function DependencyFileGroup({ file, focusedDependencyId, onSelectUnit, t }) {
+  const focusedDependencyIndex = focusedDependencyId
+    ? file.dependencies.findIndex((dependency) => dependency.id === focusedDependencyId)
+    : -1;
+  const containsFocusedDependency = focusedDependencyIndex >= 0;
+  const initialVisibleLimit = Math.max(12, focusedDependencyIndex + 1);
+  const [open, setOpen] = useState(containsFocusedDependency);
+  const [visibleLimit, setVisibleLimit] = useState(initialVisibleLimit);
+  const visibleDependencies = open ? file.dependencies.slice(0, visibleLimit) : [];
   const hiddenCount = file.dependencies.length - visibleDependencies.length;
   const copyValue = file.path ?? file.fallbackName ?? file.name;
 
+  useEffect(() => {
+    if (containsFocusedDependency) {
+      setOpen(true);
+      setVisibleLimit((current) => Math.max(current, focusedDependencyIndex + 1));
+    }
+  }, [containsFocusedDependency, focusedDependencyIndex]);
+
   return (
-    <details className="dependency-file-group">
+    <details className="dependency-file-group" onToggle={(event) => setOpen(event.currentTarget.open)} open={open}>
       <summary>
         <FileCode2 size={15} />
         <span>{file.name}</span>
@@ -2485,25 +2510,27 @@ function DependencyFileGroup({ file, onSelectUnit, t }) {
           t={t}
         />
       </summary>
-      <div className="dependency-file-rows">
-        {visibleDependencies.map((dependency) => (
-          <article className={`dependency-row ${dependencyStatusKey(dependency)}`} key={dependency.id}>
-            <CircleDot size={16} />
-            <div>
-              <strong title={`${dependency.fromUnitName} -> ${dependency.toUnitName}`}>
-                {shortUnitName(dependency.fromUnitName)} {'->'} {shortUnitName(dependency.toUnitName)}
-              </strong>
-              <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
-            </div>
-            <mark className={dependencyStatusKey(dependency)}>{dependencyStatusLabel(dependency, t)}</mark>
-          </article>
-        ))}
-        {hiddenCount > 0 && (
-          <button className="show-more-row" onClick={() => setExpanded(true)} type="button">
-            {t('showMore')} · {hiddenCount}
-          </button>
-        )}
-      </div>
+      {open && (
+        <div className="dependency-file-rows">
+          {visibleDependencies.map((dependency) => (
+            <article className={`dependency-row ${dependencyStatusKey(dependency)}`} data-search-target={dependency.id} key={dependency.id}>
+              <CircleDot size={16} />
+              <div>
+                <strong title={`${dependency.fromUnitName} -> ${dependency.toUnitName}`}>
+                  {shortUnitName(dependency.fromUnitName)} {'->'} {shortUnitName(dependency.toUnitName)}
+                </strong>
+                <DependencyEndpoints dependency={dependency} onSelectUnit={onSelectUnit} t={t} />
+              </div>
+              <mark className={dependencyStatusKey(dependency)}>{dependencyStatusLabel(dependency, t)}</mark>
+            </article>
+          ))}
+          {hiddenCount > 0 && (
+            <button className="show-more-row" onClick={() => setVisibleLimit((current) => current + 50)} type="button">
+              {t('showMore')} · {hiddenCount}
+            </button>
+          )}
+        </div>
+      )}
     </details>
   );
 }
@@ -3849,6 +3876,15 @@ function sortDirectoryNode(node) {
       .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name)),
     files: [...node.files].sort((left, right) => right.dependencies.length - left.dependencies.length || left.name.localeCompare(right.name)),
   };
+}
+
+function treeNodeContainsDependency(node, dependencyId) {
+  if (!dependencyId) {
+    return false;
+  }
+
+  return node.files.some((file) => file.dependencies.some((dependency) => dependency.id === dependencyId))
+    || node.children.some((child) => treeNodeContainsDependency(child, dependencyId));
 }
 
 function primaryUnitPath(dependency, indexed, direction) {
