@@ -431,7 +431,7 @@ td span,
 }
 
 .overview-grid.global-overview {
-  grid-template-columns: minmax(360px, 1.25fr) minmax(300px, 0.75fr);
+  grid-template-columns: minmax(260px, 0.75fr) minmax(360px, 1.25fr) minmax(300px, 0.75fr);
 }
 
 .panel,
@@ -458,7 +458,7 @@ td span,
 
 .metrics-panel {
   display: grid;
-  gap: 10px;
+  gap: 9px;
   align-content: space-between;
 }
 
@@ -487,6 +487,101 @@ td span,
   width: var(--metric-width);
   height: 100%;
   background: var(--metric-color);
+}
+
+.legacy-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.legacy-progress.compact {
+  gap: 7px;
+  padding-top: 2px;
+}
+
+.legacy-progress-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.legacy-progress-heading span,
+.legacy-split,
+.legacy-split em,
+.legacy-split span {
+  color: #5b6874;
+}
+
+.legacy-progress-heading strong {
+  color: #172026;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.legacy-progress.compact .legacy-progress-heading strong {
+  font-size: 18px;
+}
+
+.legacy-meter {
+  display: block;
+  width: 100%;
+  height: 14px;
+  overflow: hidden;
+  border: 1px solid #cfd8df;
+  border-radius: 999px;
+  background: #f7e6d8;
+}
+
+.legacy-meter i {
+  display: block;
+  width: var(--modern-width);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2a9f69, #7dbd3b);
+}
+
+.legacy-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.legacy-split div,
+.legacy-split span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.legacy-split em {
+  overflow: hidden;
+  font-style: normal;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legacy-split b {
+  color: #172026;
+}
+
+.legacy-progress.compact .legacy-split {
+  gap: 10px;
+  font-size: 11px;
+}
+
+.legacy-progress.compact .legacy-split div {
+  gap: 2px;
+}
+
+.legacy-progress.compact .legacy-split span {
+  flex-direction: row;
+  align-items: baseline;
+  white-space: nowrap;
 }
 
 .chart-panel svg,
@@ -751,6 +846,26 @@ body.graph-fullscreen-open {
 .fan-row:hover {
   border-color: #9ab3c5;
   background: #f4f8fa;
+}
+
+.unit-legacy {
+  display: inline-flex;
+  align-items: center;
+  min-width: 72px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.unit-legacy.modern {
+  color: #186443;
+  background: #e5f6ec;
+}
+
+.unit-legacy.legacy {
+  color: #8b3c16;
+  background: #faeadb;
 }
 
 .fan-row.disabled {

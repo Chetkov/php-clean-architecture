@@ -43,7 +43,8 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 - `debug_scan_paths` - необязательные директории или файлы, которые `phpca-debug-unmatched-files` будет сканировать
   для поиска PHP-файлов вне компонентов.
 - `components` - список архитектурных компонентов проекта.
-- `roots` - директории или файлы компонента: `path` задает путь, `namespace` задает соответствующий PHP namespace.
+- `roots` - директории или файлы компонента: `path` задает путь, `namespace` задает соответствующий PHP namespace,
+  `legacy` помечает root как старую часть кода для отчета о прогрессе миграции.
 - `excluded` - пути внутри компонента, которые нужно исключить из анализа этого компонента.
 - `restrictions.allowed_dependencies` - компоненты, от которых текущему компоненту разрешено зависеть.
 - `restrictions.forbidden_dependencies` - компоненты, от которых текущему компоненту явно запрещено зависеть. Не стоит
@@ -68,6 +69,28 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 
 А вот `ComponentB\Service` не должен зависеть от `ComponentA\Internal\Model`, если этот элемент не входит в публичный API
 `ComponentA` или явно указан в `private_elements`.
+
+### Legacy rate и прогресс миграции
+
+Если проект постепенно переезжает из старой структуры в новую, root компонента можно пометить как legacy:
+
+```php
+'roots' => [
+    [
+        'path' => __DIR__ . '/src/Catalog',
+        'namespace' => 'App\Catalog',
+    ],
+    [
+        'path' => __DIR__ . '/legacy/Catalog',
+        'namespace' => 'Legacy\Catalog',
+        'legacy' => true,
+    ],
+],
+```
+
+Все файлы, найденные в root с `legacy: true`, считаются legacy. Если ключ не указан, root считается modern. В отчете
+появляется прогресс модернизации: основной процент считается по физическим строкам PHP-файлов, а рядом показываются
+и строки кода, и количество `UnitOfCode` для всей системы, каждого компонента и каждого вложенного `sub`-отчета.
 
 ### Вложенные отчеты
 

@@ -18,13 +18,18 @@ class Path
     /** @var string */
     private $namespace;
 
+    /** @var bool */
+    private $isLegacy;
+
     /**
      * @param string $path
      * @param string $namespace
+     * @param bool $isLegacy
      */
-    public function __construct(string $path, string $namespace = '')
+    public function __construct(string $path, string $namespace = '', bool $isLegacy = false)
     {
         $this->namespace = $namespace;
+        $this->isLegacy = $isLegacy;
         $this->path = $path;
         if ($path) {
             $this->path = (string) realpath($path) ?: $path;
@@ -63,6 +68,11 @@ class Path
     public function namespace(): string
     {
         return $this->namespace;
+    }
+
+    public function isLegacy(): bool
+    {
+        return $this->isLegacy;
     }
 
     /**

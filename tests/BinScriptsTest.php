@@ -221,6 +221,79 @@ final class BinScriptsTest extends TestCase
         $this->removeDirectory($reportRoot);
     }
 
+    public function testPhpcaBuildReportsShowsLegacyRateForRootAndNestedReports(): void
+    {
+        $reportRoot = sys_get_temp_dir() . '/phpca-legacy-rate-report-' . bin2hex(random_bytes(8));
+
+        $result = $this->runCommand(
+            implode(' ', [
+                'PHPCA_REPORTS_DIR=' . escapeshellarg($reportRoot),
+                escapeshellarg(PHP_BINARY),
+                escapeshellarg(dirname(__DIR__) . '/bin/phpca-build-reports'),
+                escapeshellarg(__DIR__ . '/Fixtures/LegacyRateProject/config.php'),
+            ]),
+            dirname(__DIR__)
+        );
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertFileExists($reportRoot . '/report.json');
+        self::assertFileExists($reportRoot . '/feature/report.json');
+
+        $rootReport = json_decode((string) file_get_contents($reportRoot . '/report.json'), true);
+        self::assertIsArray($rootReport);
+        $modernLines = $this->fixtureLineCount('/Fixtures/LegacyRateProject/Modern/ModernService.php');
+        $legacyLines = $this->fixtureLineCount('/Fixtures/LegacyRateProject/Legacy/LegacyService.php')
+            + $this->fixtureLineCount('/Fixtures/LegacyRateProject/Legacy/LegacyHelper.php');
+        $totalLines = $modernLines + $legacyLines;
+
+        self::assertSame($totalLines, $rootReport['summary']['legacy']['linesOfCode']);
+        self::assertSame($legacyLines, $rootReport['summary']['legacy']['legacyLinesOfCode']);
+        self::assertSame($modernLines, $rootReport['summary']['legacy']['modernLinesOfCode']);
+        self::assertSame(3, $rootReport['summary']['legacy']['units']);
+        self::assertSame(2, $rootReport['summary']['legacy']['legacyUnits']);
+        self::assertSame(1, $rootReport['summary']['legacy']['modernUnits']);
+        self::assertSame($legacyLines / $totalLines, $rootReport['summary']['legacy']['legacyRate']);
+        self::assertSame($modernLines / $totalLines, $rootReport['summary']['legacy']['modernRate']);
+
+        $legacyUnit = $this->findReportUnit($rootReport, 'LegacyService');
+        $modernUnit = $this->findReportUnit($rootReport, 'ModernService');
+        self::assertTrue($legacyUnit['isLegacy']);
+        self::assertFalse($modernUnit['isLegacy']);
+        self::assertSame(
+            $this->fixtureLineCount('/Fixtures/LegacyRateProject/Legacy/LegacyService.php'),
+            $legacyUnit['linesOfCode']
+        );
+
+        $featureComponent = $this->findReportComponent($rootReport, 'Feature');
+        self::assertSame($legacyLines, $featureComponent['legacy']['legacyLinesOfCode']);
+        self::assertSame($modernLines, $featureComponent['legacy']['modernLinesOfCode']);
+        self::assertSame(2, $featureComponent['legacy']['legacyUnits']);
+        self::assertSame(1, $featureComponent['legacy']['modernUnits']);
+
+        $nestedReport = json_decode((string) file_get_contents($reportRoot . '/feature/report.json'), true);
+        self::assertIsArray($nestedReport);
+        self::assertSame($totalLines, $nestedReport['summary']['legacy']['linesOfCode']);
+        self::assertSame($legacyLines, $nestedReport['summary']['legacy']['legacyLinesOfCode']);
+        self::assertSame($modernLines, $nestedReport['summary']['legacy']['modernLinesOfCode']);
+        self::assertSame(3, $nestedReport['summary']['legacy']['units']);
+        self::assertSame(2, $nestedReport['summary']['legacy']['legacyUnits']);
+        self::assertSame(1, $nestedReport['summary']['legacy']['modernUnits']);
+        self::assertSame(
+            0,
+            $this->findReportComponent($nestedReport, 'Modern Layer')['legacy']['legacyLinesOfCode']
+        );
+        self::assertSame(
+            $legacyLines,
+            $this->findReportComponent($nestedReport, 'Legacy Layer')['legacy']['legacyLinesOfCode']
+        );
+
+        $indexHtml = (string) file_get_contents($reportRoot . '/index.html');
+        self::assertStringContainsString('legacyRate', $indexHtml);
+        self::assertStringContainsString('modernRate', $indexHtml);
+
+        $this->removeDirectory($reportRoot);
+    }
+
     private function assertReportHtmlIsSelfContained(string $indexPath): void
     {
         $html = (string) file_get_contents($indexPath);
@@ -234,6 +307,43 @@ final class BinScriptsTest extends TestCase
             strpos($html, '<div id="root"></div>'),
             strpos($html, '<script data-phpca-report-asset="./assets/')
         );
+    }
+
+    /**
+     * @param array<string, mixed> $report
+     * @return array<string, mixed>
+     */
+    private function findReportUnit(array $report, string $shortName): array
+    {
+        foreach ($report['units'] as $unit) {
+            if ($unit['shortName'] === $shortName) {
+                return $unit;
+            }
+        }
+
+        self::fail('Unit ' . $shortName . ' was not found.');
+    }
+
+    /**
+     * @param array<string, mixed> $report
+     * @return array<string, mixed>
+     */
+    private function findReportComponent(array $report, string $name): array
+    {
+        foreach ($report['components'] as $component) {
+            if ($component['name'] === $name) {
+                return $component;
+            }
+        }
+
+        self::fail('Component ' . $name . ' was not found.');
+    }
+
+    private function fixtureLineCount(string $path): int
+    {
+        $lines = file(__DIR__ . $path);
+
+        return is_array($lines) ? count($lines) : 0;
     }
 
     /**

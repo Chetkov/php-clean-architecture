@@ -32,6 +32,9 @@ class ComponentAnalyzer
     /** @var SourceFileFinder */
     private $sourceFileFinder;
 
+    /** @var SourceLineCounter */
+    private $sourceLineCounter;
+
     /** @var AnalysisContext */
     private $analysisContext;
 
@@ -44,13 +47,15 @@ class ComponentAnalyzer
         DependenciesFinderInterface $dependenciesFinder,
         EventManagerInterface $eventManager,
         AnalysisContext $analysisContext,
-        ?SourceUnitDiscoveryInterface $sourceUnitDiscovery = null
+        ?SourceUnitDiscoveryInterface $sourceUnitDiscovery = null,
+        ?SourceLineCounter $sourceLineCounter = null
     ) {
         $this->dependenciesFinder = $dependenciesFinder;
         $this->eventManager = $eventManager;
         $this->analysisContext = $analysisContext;
         $this->sourceUnitDiscovery = $sourceUnitDiscovery ?? new PhpParserSourceUnitDiscovery();
         $this->sourceFileFinder = new SourceFileFinder();
+        $this->sourceLineCounter = $sourceLineCounter ?? new SourceLineCounter();
     }
 
     /**
@@ -84,8 +89,15 @@ class ComponentAnalyzer
                     continue;
                 }
 
+                $linesOfCode = $this->sourceLineCounter->count($file);
                 foreach ($this->sourceUnitDiscovery->discover($file, $path) as $sourceUnit) {
-                    $unitOfCode = UnitOfCode::createFromSourceUnit($this->analysisContext, $sourceUnit, $component);
+                    $unitOfCode = UnitOfCode::createFromSourceUnit(
+                        $this->analysisContext,
+                        $sourceUnit,
+                        $component,
+                        $path->isLegacy(),
+                        $linesOfCode
+                    );
                     $dependencies = $this->dependenciesFinder->find($unitOfCode);
                     foreach ($dependencies as $dependency) {
                         $unitOfCode->addOutputDependency(UnitOfCode::create($this->analysisContext, $dependency));

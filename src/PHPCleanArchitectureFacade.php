@@ -87,7 +87,11 @@ class PHPCleanArchitectureFacade
         foreach ($config['components'] as $componentConfig) {
             $rootPaths = [];
             foreach ($componentConfig['roots'] ?? [] as $rootPathConfig) {
-                $rootPaths[] = new Path($rootPathConfig['path'], $rootPathConfig['namespace']);
+                $rootPaths[] = new Path(
+                    $rootPathConfig['path'],
+                    $rootPathConfig['namespace'],
+                    $rootPathConfig['legacy'] ?? false
+                );
             }
 
             $excludedPaths = [];
@@ -304,6 +308,10 @@ class PHPCleanArchitectureFacade
      */
     private function filterByPaths(array $allowedPaths): void
     {
+        if ($allowedPaths === []) {
+            return;
+        }
+
         $allowedPaths = array_map(static function (string $path) {
             return new Path($path);
         }, $allowedPaths);

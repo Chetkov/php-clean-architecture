@@ -64,6 +64,49 @@ final class ComponentAnalyzerTest extends TestCase
         self::assertSame('source-discovery-scripts', $dependenciesFinder->unitsOfCode()[0]->component()->name());
     }
 
+    public function testMarksUnitsDiscoveredFromLegacyRootPath(): void
+    {
+        $dependenciesFinder = new CapturingDependenciesFinder();
+        $analysisContext = new AnalysisContext();
+        $component = Component::create(
+            $analysisContext,
+            'legacy-rate',
+            [
+                new Path(
+                    __DIR__ . '/../../Fixtures/LegacyRateProject/Modern',
+                    'Chetkov\PHPCleanArchitecture\Tests\Fixtures\LegacyRateProject\Modern'
+                ),
+                new Path(
+                    __DIR__ . '/../../Fixtures/LegacyRateProject/Legacy',
+                    'Chetkov\PHPCleanArchitecture\Tests\Fixtures\LegacyRateProject\Legacy',
+                    true
+                ),
+            ]
+        );
+
+        $analyzer = new ComponentAnalyzer($dependenciesFinder, new NullEventManager(), $analysisContext);
+        $analyzer->analyze($component);
+
+        $legacyByName = [];
+        $linesByName = [];
+        foreach ($dependenciesFinder->unitsOfCode() as $unitOfCode) {
+            $legacyByName[$unitOfCode->name()] = $unitOfCode->isLegacy();
+            $linesByName[$unitOfCode->name()] = $unitOfCode->linesOfCode();
+        }
+
+        self::assertFalse($legacyByName['Chetkov\PHPCleanArchitecture\Tests\Fixtures\LegacyRateProject\Modern\ModernService']);
+        self::assertTrue($legacyByName['Chetkov\PHPCleanArchitecture\Tests\Fixtures\LegacyRateProject\Legacy\LegacyService']);
+        self::assertTrue($legacyByName['Chetkov\PHPCleanArchitecture\Tests\Fixtures\LegacyRateProject\Legacy\LegacyHelper']);
+        self::assertSame(
+            self::countFixtureLines('/../../Fixtures/LegacyRateProject/Modern/ModernService.php'),
+            $linesByName['Chetkov\PHPCleanArchitecture\Tests\Fixtures\LegacyRateProject\Modern\ModernService']
+        );
+        self::assertSame(
+            self::countFixtureLines('/../../Fixtures/LegacyRateProject/Legacy/LegacyService.php'),
+            $linesByName['Chetkov\PHPCleanArchitecture\Tests\Fixtures\LegacyRateProject\Legacy\LegacyService']
+        );
+    }
+
     /**
      * @param array<UnitOfCode> $unitsOfCode
      * @return array<string>
@@ -73,5 +116,12 @@ final class ComponentAnalyzerTest extends TestCase
         return array_map(static function (UnitOfCode $unitOfCode): string {
             return $unitOfCode->name();
         }, $unitsOfCode);
+    }
+
+    private static function countFixtureLines(string $fixturePath): int
+    {
+        $lines = file(__DIR__ . $fixturePath);
+
+        return is_array($lines) ? count($lines) : 0;
     }
 }

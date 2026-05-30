@@ -39,4 +39,27 @@ final class UnitOfCodeTest extends TestCase
         self::assertSame('/tmp/phpca-fixture-app/UploadMediaAssetCommand.php', $declaredUnit->path());
         self::assertSame('application', $declaredUnit->component()->name());
     }
+
+    public function testDeclaredSourceUnitCanBeMarkedAsLegacy(): void
+    {
+        $analysisContext = new AnalysisContext();
+        $component = Component::create($analysisContext, 'legacy', [
+            new Path('/tmp/phpca-fixture-legacy', 'App\Legacy', true),
+        ]);
+
+        $declaredUnit = UnitOfCode::createFromSourceUnit(
+            $analysisContext,
+            new SourceUnit(
+                'App\Legacy\LegacyService',
+                '/tmp/phpca-fixture-legacy/LegacyService.php',
+                SourceUnit::KIND_CLASS
+            ),
+            $component,
+            true,
+            42
+        );
+
+        self::assertTrue($declaredUnit->isLegacy());
+        self::assertSame(42, $declaredUnit->linesOfCode());
+    }
 }

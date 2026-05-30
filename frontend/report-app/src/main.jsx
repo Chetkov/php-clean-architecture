@@ -36,7 +36,23 @@ const defaultGraphViewport = { x: 0, y: 0, scale: 1 };
 const fallbackReport = {
   schemaVersion: 1,
   generatedAt: null,
-  summary: { components: 0, units: 0, dependencies: 0, violations: 0, activeViolations: 0 },
+  summary: {
+    components: 0,
+    units: 0,
+    dependencies: 0,
+    violations: 0,
+    activeViolations: 0,
+    legacy: {
+      units: 0,
+      legacyUnits: 0,
+      modernUnits: 0,
+      linesOfCode: 0,
+      legacyLinesOfCode: 0,
+      modernLinesOfCode: 0,
+      legacyRate: 0,
+      modernRate: 0,
+    },
+  },
   components: [],
   units: [],
   dependencies: [],
@@ -61,6 +77,15 @@ const dictionaries = {
     aiMatrix: 'A/I matrix',
     api: 'API',
     architectureReport: 'Architecture report',
+    modernizationProgress: 'Modernization progress',
+    modernized: 'Modernized',
+    modernCode: 'Modern',
+    legacyCode: 'Legacy',
+    legacyLines: 'legacy LoC',
+    modernLines: 'modern LoC',
+    legacyUnits: 'legacy UoC',
+    modernUnits: 'modern UoC',
+    linesOfCode: 'LoC',
     abstract: 'Abstract',
     abstractness: 'Abstractness',
     all: 'All',
@@ -186,6 +211,15 @@ const dictionaries = {
     aiMatrix: 'Матрица A/I',
     api: 'API',
     architectureReport: 'Архитектурный отчет',
+    modernizationProgress: 'Прогресс модернизации',
+    modernized: 'Модернизировано',
+    modernCode: 'Новый код',
+    legacyCode: 'Легаси',
+    legacyLines: 'строк легаси',
+    modernLines: 'строк нового кода',
+    legacyUnits: 'легаси UoC',
+    modernUnits: 'новых UoC',
+    linesOfCode: 'строк кода',
     abstract: 'Абстрактный',
     abstractness: 'Абстрактность',
     all: 'Все',
@@ -311,6 +345,15 @@ const dictionaries = {
     aiMatrix: 'A/I 矩阵',
     api: 'API',
     architectureReport: '架构报告',
+    modernizationProgress: '现代化进度',
+    modernized: '已现代化',
+    modernCode: '现代代码',
+    legacyCode: '遗留代码',
+    legacyLines: '遗留代码行',
+    modernLines: '现代代码行',
+    legacyUnits: '遗留 UoC',
+    modernUnits: '现代 UoC',
+    linesOfCode: '代码行',
     abstract: '抽象',
     abstractness: '抽象度',
     all: '全部',
@@ -987,6 +1030,7 @@ function App() {
                 <SidebarMetrics
                   metrics={[
                     [<FileCode2 size={13} />, component.metrics.units, t('units')],
+                    [<CheckCircle2 size={13} />, formatPercent(component.legacy?.modernRate), t('modernized')],
                     [<ArrowRight size={13} />, component.metrics.outgoingComponents, t('componentDependsOn')],
                     [<ShieldAlert size={13} />, activeViolations, t('activeIssues')],
                   ]}
@@ -1045,7 +1089,11 @@ function App() {
         </header>
 
         <section className={selectedComponent ? 'overview-grid' : 'overview-grid global-overview'} aria-label={t('overview')}>
-          {selectedComponent && <MetricPanel component={selectedComponent} t={t} />}
+          {selectedComponent ? (
+            <MetricPanel component={selectedComponent} t={t} />
+          ) : (
+            <LegacyProgressPanel legacy={report.summary.legacy} t={t} />
+          )}
           <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
           <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
           {selectedComponent && <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />}
@@ -1196,6 +1244,7 @@ function SummaryGrid({ summary, t }) {
   const items = [
     [t('components'), summary.components, <Layers3 size={18} />],
     [t('units'), summary.units, <FileCode2 size={18} />],
+    [t('modernized'), formatPercent(summary.legacy?.modernRate), <CheckCircle2 size={18} />],
     [t('dependencies'), summary.dependencies, <ArrowRight size={18} />],
     [t('activeIssues'), summary.activeViolations, <ShieldAlert size={18} />],
   ];
@@ -1239,6 +1288,81 @@ function MetricPanel({ component, t }) {
           <ProgressMeter value={value} quality={quality} />
         </div>
       ))}
+      <LegacyProgressPanel compact legacy={component.legacy} t={t} />
+    </section>
+  );
+}
+
+function LegacyProgressPanel({ compact = false, legacy, t }) {
+  const metrics = legacyMetrics(legacy);
+
+  return (
+    <section className={compact ? 'legacy-progress compact' : 'panel legacy-progress'}>
+      {!compact && <h2>{t('modernizationProgress')}</h2>}
+      <div className="legacy-progress-heading">
+        <span>{t('modernized')}</span>
+        <strong>{formatPercent(metrics.modernRate)}</strong>
+      </div>
+      <div
+        aria-label={`${t('modernized')}: ${formatPercent(metrics.modernRate)}`}
+        className="legacy-meter"
+        role="img"
+        style={{
+          '--modern-width': `${Math.max(metrics.modernRate * 100, metrics.modernLinesOfCode > 0 ? 2 : 0)}%`,
+        }}
+      >
+        <i />
+      </div>
+      <div className="legacy-split">
+        <div>
+          <em>{t('modernCode')}</em>
+          {compact ? (
+            <span>
+              <b>{formatInteger(metrics.modernLinesOfCode)}</b>
+              {' LoC · '}
+              <b>{formatInteger(metrics.modernUnits)}</b>
+              {' UoC'}
+            </span>
+          ) : (
+            <>
+              <span>
+                <b>{formatInteger(metrics.modernLinesOfCode)}</b>
+                {' '}
+                {t('modernLines')}
+              </span>
+              <span>
+                <b>{formatInteger(metrics.modernUnits)}</b>
+                {' '}
+                {t('modernUnits')}
+              </span>
+            </>
+          )}
+        </div>
+        <div>
+          <em>{t('legacyCode')}</em>
+          {compact ? (
+            <span>
+              <b>{formatInteger(metrics.legacyLinesOfCode)}</b>
+              {' LoC · '}
+              <b>{formatInteger(metrics.legacyUnits)}</b>
+              {' UoC'}
+            </span>
+          ) : (
+            <>
+              <span>
+                <b>{formatInteger(metrics.legacyLinesOfCode)}</b>
+                {' '}
+                {t('legacyLines')}
+              </span>
+              <span>
+                <b>{formatInteger(metrics.legacyUnits)}</b>
+                {' '}
+                {t('legacyUnits')}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
@@ -1896,6 +2020,8 @@ function UnitsTable({ focusedUnitId, units, selectedUnitId, onSelectUnit, t }) {
             <th>{t('name')}</th>
             <th>{t('type')}</th>
             <th>{t('api')}</th>
+            <th>{t('legacyCode')}</th>
+            <th>{t('linesOfCode')}</th>
             <th>{t('in')}</th>
             <th>{t('out')}</th>
           </tr>
@@ -1914,6 +2040,12 @@ function UnitsTable({ focusedUnitId, units, selectedUnitId, onSelectUnit, t }) {
               </td>
               <td>{unit.type}</td>
               <td>{unit.isPublic ? t('publicApi') : t('privateApi')}</td>
+              <td>
+                <span className={unit.isLegacy ? 'unit-legacy legacy' : 'unit-legacy modern'}>
+                  {unit.isLegacy ? t('legacyCode') : t('modernCode')}
+                </span>
+              </td>
+              <td>{formatInteger(unit.linesOfCode ?? 0)}</td>
               <td>{unit.metrics.incoming}</td>
               <td>{unit.metrics.outgoing}</td>
             </tr>
@@ -3242,6 +3374,27 @@ function findSuitePath(node, id, path = []) {
 
 function formatRate(value) {
   return Number(value ?? 0).toFixed(3);
+}
+
+function formatPercent(value) {
+  return `${Math.round(clamp01(value) * 100)}%`;
+}
+
+function formatInteger(value) {
+  return new Intl.NumberFormat().format(Number(value ?? 0));
+}
+
+function legacyMetrics(legacy) {
+  return {
+    units: Number(legacy?.units ?? 0),
+    legacyUnits: Number(legacy?.legacyUnits ?? 0),
+    modernUnits: Number(legacy?.modernUnits ?? 0),
+    linesOfCode: Number(legacy?.linesOfCode ?? 0),
+    legacyLinesOfCode: Number(legacy?.legacyLinesOfCode ?? 0),
+    modernLinesOfCode: Number(legacy?.modernLinesOfCode ?? 0),
+    legacyRate: clamp01(legacy?.legacyRate),
+    modernRate: clamp01(legacy?.modernRate),
+  };
 }
 
 function formatDate(value, locale) {

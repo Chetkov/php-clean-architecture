@@ -38,6 +38,12 @@ class UnitOfCode
     /** @var Component */
     private $component;
 
+    /** @var bool */
+    private $isLegacy = false;
+
+    /** @var int */
+    private $linesOfCode = 0;
+
     /** @var AnalysisContext */
     private $context;
 
@@ -133,10 +139,14 @@ class UnitOfCode
     public static function createFromSourceUnit(
         AnalysisContext $context,
         SourceUnit $sourceUnit,
-        Component $component
+        Component $component,
+        bool $isLegacy = false,
+        int $linesOfCode = 0
     ): self {
         if (!$sourceUnit->isDeclaredSymbol()) {
-            return self::create($context, $sourceUnit->name(), $component, $sourceUnit->path());
+            return self::create($context, $sourceUnit->name(), $component, $sourceUnit->path())
+                ->setLegacy($isLegacy)
+                ->setLinesOfCode($linesOfCode);
         }
 
         $fullName = trim($sourceUnit->name(), '\\');
@@ -155,6 +165,8 @@ class UnitOfCode
         $unitOfCode->setComponent($component);
         $unitOfCode->path = $sourceUnit->path();
         $unitOfCode->type = self::createTypeFromSourceUnit($sourceUnit);
+        $unitOfCode->setLegacy($isLegacy);
+        $unitOfCode->setLinesOfCode($linesOfCode);
 
         return $unitOfCode;
     }
@@ -190,6 +202,30 @@ class UnitOfCode
     public function path(): ?string
     {
         return $this->path;
+    }
+
+    public function isLegacy(): bool
+    {
+        return $this->isLegacy;
+    }
+
+    public function setLegacy(bool $isLegacy): self
+    {
+        $this->isLegacy = $isLegacy;
+
+        return $this;
+    }
+
+    public function linesOfCode(): int
+    {
+        return $this->linesOfCode;
+    }
+
+    public function setLinesOfCode(int $linesOfCode): self
+    {
+        $this->linesOfCode = max(0, $linesOfCode);
+
+        return $this;
     }
 
     /**

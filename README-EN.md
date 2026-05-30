@@ -42,7 +42,7 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
   configured components.
 - `components` - list of architecture components in the project.
 - `roots` - component directories or files: `path` defines the filesystem path, `namespace` defines the matching PHP
-  namespace.
+  namespace, and `legacy` marks the root as old code for migration progress reporting.
 - `excluded` - paths inside a component that should be excluded from that component analysis.
 - `restrictions.allowed_dependencies` - components the current component is allowed to depend on.
 - `restrictions.forbidden_dependencies` - components the current component is explicitly forbidden to depend on. Avoid
@@ -67,6 +67,28 @@ may still be shown in the dependency graph as internal, but it is not a private 
 
 However, `ComponentB\Service` must not depend on `ComponentA\Internal\Model` when that element is outside
 `ComponentA`'s public API or is explicitly listed in `private_elements`.
+
+### Legacy Rate And Migration Progress
+
+When a project is gradually moving from an old structure to a new one, a component root can be marked as legacy:
+
+```php
+'roots' => [
+    [
+        'path' => __DIR__ . '/src/Catalog',
+        'namespace' => 'App\Catalog',
+    ],
+    [
+        'path' => __DIR__ . '/legacy/Catalog',
+        'namespace' => 'Legacy\Catalog',
+        'legacy' => true,
+    ],
+],
+```
+
+Every file discovered from a root with `legacy: true` is treated as legacy. When the key is omitted, the root is treated
+as modern. The report shows modernization progress: the main percentage is calculated by physical PHP file lines, while
+both LoC and `UnitOfCode` counts are shown for the whole system, every component, and every nested `sub` report.
 
 ### Nested Reports
 

@@ -51,6 +51,7 @@ final class ReportDataBuilder
                 'activeViolations' => count(array_filter($violations, static function (array $violation): bool {
                     return $violation['status'] === 'active';
                 })),
+                'legacy' => $this->legacyMetrics($units),
             ],
             'components' => array_values($componentData),
             'units' => array_values($units),
@@ -102,6 +103,7 @@ final class ReportDataBuilder
                 'hasForbiddenDependencies' => count($component->getIllegalDependencyComponents()) > 0,
                 'hasPrivateApiDependencies' => count($component->getIllegalDependencyUnitsOfCode(true)) > 0,
             ],
+            'legacy' => $this->legacyMetrics($component->unitsOfCode()),
         ];
     }
 
@@ -120,6 +122,8 @@ final class ReportDataBuilder
             'type' => $this->unitType($unitOfCode),
             'isPublic' => $unitOfCode->isAccessibleFromOutside(),
             'isAbstract' => $unitOfCode->isAbstract(),
+            'isLegacy' => $unitOfCode->isLegacy(),
+            'linesOfCode' => $unitOfCode->linesOfCode(),
             'metrics' => [
                 'instability' => $unitOfCode->calculateInstabilityRate(),
                 'primitiveness' => $unitOfCode->calculatePrimitivenessRate(),
@@ -273,6 +277,69 @@ final class ReportDataBuilder
         }
 
         return 'unknown';
+    }
+
+    /**
+     * @param array<UnitOfCode|array<string, mixed>> $units
+     *
+     * @return array{units: int, legacyUnits: int, modernUnits: int, linesOfCode: int, legacyLinesOfCode: int, modernLinesOfCode: int, legacyRate: float, modernRate: float}
+     */
+    private function legacyMetrics(array $units): array
+    {
+        $totalUnits = count($units);
+        $legacyUnits = count(array_filter($units, static function ($unit): bool {
+            if ($unit instanceof UnitOfCode) {
+                return $unit->isLegacy();
+            }
+
+            return !empty($unit['isLegacy']);
+        }));
+        $modernUnits = $totalUnits - $legacyUnits;
+        $files = [];
+        foreach ($units as $index => $unit) {
+            $path = null;
+            $isLegacy = false;
+            $linesOfCode = 0;
+
+            if ($unit instanceof UnitOfCode) {
+                $path = $unit->path();
+                $isLegacy = $unit->isLegacy();
+                $linesOfCode = $unit->linesOfCode();
+            } else {
+                $path = $unit['path'] ?? null;
+                $isLegacy = !empty($unit['isLegacy']);
+                $linesOfCode = (int) ($unit['linesOfCode'] ?? 0);
+            }
+
+            $key = $path ? 'path:' . $path : 'unit:' . (string) $index;
+            if (!isset($files[$key])) {
+                $files[$key] = [
+                    'isLegacy' => $isLegacy,
+                    'linesOfCode' => max(0, $linesOfCode),
+                ];
+                continue;
+            }
+
+            $files[$key]['isLegacy'] = $files[$key]['isLegacy'] || $isLegacy;
+            $files[$key]['linesOfCode'] = max($files[$key]['linesOfCode'], max(0, $linesOfCode));
+        }
+
+        $totalLinesOfCode = array_sum(array_column($files, 'linesOfCode'));
+        $legacyLinesOfCode = array_sum(array_map(static function (array $file): int {
+            return $file['isLegacy'] ? $file['linesOfCode'] : 0;
+        }, $files));
+        $modernLinesOfCode = $totalLinesOfCode - $legacyLinesOfCode;
+
+        return [
+            'units' => $totalUnits,
+            'legacyUnits' => $legacyUnits,
+            'modernUnits' => $modernUnits,
+            'linesOfCode' => $totalLinesOfCode,
+            'legacyLinesOfCode' => $legacyLinesOfCode,
+            'modernLinesOfCode' => $modernLinesOfCode,
+            'legacyRate' => $totalLinesOfCode > 0 ? $legacyLinesOfCode / $totalLinesOfCode : 0.0,
+            'modernRate' => $totalLinesOfCode > 0 ? $modernLinesOfCode / $totalLinesOfCode : 0.0,
+        ];
     }
 
     private function generateUid(string $name): string
