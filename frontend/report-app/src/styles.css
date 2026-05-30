@@ -1211,6 +1211,67 @@ marker#arrow-blocked path {
   overflow: auto;
 }
 
+.unit-table-shell {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.unit-table-header,
+.unit-table-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.6fr) minmax(90px, 0.55fr) minmax(110px, 0.65fr) minmax(110px, 0.7fr) minmax(80px, 0.45fr) minmax(56px, 0.32fr) minmax(56px, 0.32fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.unit-table-header {
+  min-width: 760px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #dbe4eb;
+  color: #5d6c78;
+  font-size: 12px;
+  text-transform: uppercase;
+  background: #ffffff;
+}
+
+.unit-table-body {
+  min-width: 760px;
+  max-height: min(72vh, 780px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.unit-table-row {
+  min-height: 72px;
+  padding: 12px 14px;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid #e4eaf0;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.unit-table-row:hover,
+.unit-table-row.selected-row {
+  background: #f4f8fa;
+}
+
+.unit-table-row > span {
+  min-width: 0;
+}
+
+.unit-table-row strong,
+.unit-table-row small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.unit-table-row small {
+  color: #6b7a86;
+}
+
 table {
   width: 100%;
   border-spacing: 0;

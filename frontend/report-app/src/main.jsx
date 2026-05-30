@@ -2008,50 +2008,81 @@ function ViolationsTable({ focusedViolationId, violations, indexed, onSelectUnit
 }
 
 function UnitsTable({ focusedUnitId, units, selectedUnitId, onSelectUnit, t }) {
+  const listRef = useRef(null);
+  const rowVirtualizer = useVirtualizer({
+    count: units.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 72,
+    overscan: 12,
+  });
+  const focusedUnitIndex = useMemo(
+    () => focusedUnitId ? units.findIndex((unit) => unit.id === focusedUnitId) : -1,
+    [focusedUnitId, units],
+  );
+
+  useEffect(() => {
+    if (focusedUnitIndex >= 0) {
+      rowVirtualizer.scrollToIndex(focusedUnitIndex, { align: 'center' });
+    }
+  }, [focusedUnitIndex, rowVirtualizer]);
+
   if (!units.length) {
     return <EmptyState icon={<FileCode2 size={22} />} title={t('noMatchingUnits')} />;
   }
 
   return (
-    <section className="table-shell">
-      <table>
-        <thead>
-          <tr>
-            <th>{t('name')}</th>
-            <th>{t('type')}</th>
-            <th>{t('api')}</th>
-            <th>{t('legacyCode')}</th>
-            <th>{t('linesOfCode')}</th>
-            <th>{t('in')}</th>
-            <th>{t('out')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {units.map((unit) => (
-            <tr
-              className={`${unit.id === selectedUnitId ? 'selected-row' : ''}${unit.id === focusedUnitId ? ' focused-search-target' : ''}`}
-              data-search-target={unit.id}
-              key={unit.id}
-              onClick={() => onSelectUnit(unit.id)}
-            >
-              <td>
-                <strong>{unit.shortName}</strong>
-                <span title={unit.name}>{compactNamespace(unit.name, unit.shortName)}</span>
-              </td>
-              <td>{unit.type}</td>
-              <td>{unit.isPublic ? t('publicApi') : t('privateApi')}</td>
-              <td>
-                <span className={unit.isLegacy ? 'unit-legacy legacy' : 'unit-legacy modern'}>
-                  {unit.isLegacy ? t('legacyCode') : t('modernCode')}
+    <section className="table-shell unit-table-shell">
+      <div className="unit-table-header" role="row">
+        <strong role="columnheader">{t('name')}</strong>
+        <strong role="columnheader">{t('type')}</strong>
+        <strong role="columnheader">{t('api')}</strong>
+        <strong role="columnheader">{t('legacyCode')}</strong>
+        <strong role="columnheader">{t('linesOfCode')}</strong>
+        <strong role="columnheader">{t('in')}</strong>
+        <strong role="columnheader">{t('out')}</strong>
+      </div>
+      <div className="unit-table-body" ref={listRef} role="table" aria-rowcount={units.length}>
+        <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const unit = units[virtualRow.index];
+
+            return (
+              <button
+                className={`unit-table-row ${unit.id === selectedUnitId ? 'selected-row' : ''}${unit.id === focusedUnitId ? ' focused-search-target' : ''}`}
+                data-index={virtualRow.index}
+                data-search-target={unit.id}
+                key={unit.id}
+                onClick={() => onSelectUnit(unit.id)}
+                ref={rowVirtualizer.measureElement}
+                role="row"
+                style={{
+                  left: 0,
+                  position: 'absolute',
+                  top: 0,
+                  transform: `translateY(${virtualRow.start}px)`,
+                  width: '100%',
+                }}
+                type="button"
+              >
+                <span role="cell">
+                  <strong>{unit.shortName}</strong>
+                  <small title={unit.name}>{compactNamespace(unit.name, unit.shortName)}</small>
                 </span>
-              </td>
-              <td>{formatInteger(unit.linesOfCode ?? 0)}</td>
-              <td>{unit.metrics.incoming}</td>
-              <td>{unit.metrics.outgoing}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                <span role="cell">{unit.type}</span>
+                <span role="cell">{unit.isPublic ? t('publicApi') : t('privateApi')}</span>
+                <span role="cell">
+                  <span className={unit.isLegacy ? 'unit-legacy legacy' : 'unit-legacy modern'}>
+                    {unit.isLegacy ? t('legacyCode') : t('modernCode')}
+                  </span>
+                </span>
+                <span role="cell">{formatInteger(unit.linesOfCode ?? 0)}</span>
+                <span role="cell">{unit.metrics.incoming}</span>
+                <span role="cell">{unit.metrics.outgoing}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }
