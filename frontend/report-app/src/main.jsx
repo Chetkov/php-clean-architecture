@@ -1092,7 +1092,7 @@ function App() {
           {selectedComponent ? (
             <MetricPanel component={selectedComponent} t={t} />
           ) : (
-            <LegacyProgressPanel legacy={report.summary.legacy} t={t} />
+            <LegacyProgressPanel compact framed legacy={report.summary.legacy} t={t} />
           )}
           <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
           <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
@@ -1293,11 +1293,14 @@ function MetricPanel({ component, t }) {
   );
 }
 
-function LegacyProgressPanel({ compact = false, legacy, t }) {
+function LegacyProgressPanel({ compact = false, framed = false, legacy, t }) {
   const metrics = legacyMetrics(legacy);
+  const className = ['legacy-progress', compact ? 'compact' : '', framed ? 'panel' : '']
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <section className={compact ? 'legacy-progress compact' : 'panel legacy-progress'}>
+    <section className={className}>
       {!compact && <h2>{t('modernizationProgress')}</h2>}
       <div className="legacy-progress-heading">
         <span>{t('modernized')}</span>
