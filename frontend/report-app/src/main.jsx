@@ -1288,7 +1288,6 @@ function MetricPanel({ component, t }) {
           <ProgressMeter value={value} quality={quality} />
         </div>
       ))}
-      <LegacyProgressPanel compact legacy={component.legacy} t={t} />
     </section>
   );
 }
