@@ -500,6 +500,11 @@ td span,
   padding-top: 2px;
 }
 
+.legacy-progress.compact.panel {
+  justify-content: flex-start;
+  min-height: 0;
+}
+
 .legacy-progress-heading {
   display: flex;
   align-items: baseline;
