@@ -178,6 +178,7 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         self::assertNotEmpty($reportData['violations']);
         self::assertArrayHasKey('externalComponents', $reportData);
         self::assertArrayHasKey('externalUnits', $reportData);
+        self::assertArrayNotHasKey('componentName', $reportData['units'][0]);
         self::assertTrue(array_is_list($reportData['dependencies'][0]));
         self::assertCount(5, $reportData['dependencies'][0]);
 

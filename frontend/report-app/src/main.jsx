@@ -3403,7 +3403,9 @@ function normalizeReportData(report) {
   const units = report.units ?? [];
   const externalUnits = report.externalUnits ?? [];
   const componentsById = new Map([...components, ...externalComponents].map((component) => [component.id, component]));
-  const unitsById = new Map([...units, ...externalUnits].map((unit) => [unit.id, unit]));
+  const normalizedUnits = units.map((unit) => normalizeUnitData(unit, componentsById));
+  const normalizedExternalUnits = externalUnits.map((unit) => normalizeUnitData(unit, componentsById));
+  const unitsById = new Map([...normalizedUnits, ...normalizedExternalUnits].map((unit) => [unit.id, unit]));
   const dependencies = (report.dependencies ?? []).map((dependency) => normalizeDependencyData(
     dependency,
     componentsById,
@@ -3415,10 +3417,17 @@ function normalizeReportData(report) {
     ...report,
     components,
     externalComponents,
-    units,
-    externalUnits,
+    units: normalizedUnits,
+    externalUnits: normalizedExternalUnits,
     dependencies,
     violations: report.violations ?? [],
+  };
+}
+
+function normalizeUnitData(unit, componentsById) {
+  return {
+    ...unit,
+    componentName: unit.componentName ?? componentsById.get(unit.componentId)?.name ?? unit.componentId,
   };
 }
 

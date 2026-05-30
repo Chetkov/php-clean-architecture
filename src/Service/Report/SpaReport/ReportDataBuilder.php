@@ -138,7 +138,6 @@ final class ReportDataBuilder
             'shortName' => $this->shortName($unitOfCode->name()),
             'path' => $unitOfCode->path(),
             'componentId' => $this->componentId($unitOfCode->component()),
-            'componentName' => $unitOfCode->component()->name(),
             'type' => $this->unitType($unitOfCode),
             'isPublic' => $unitOfCode->isAccessibleFromOutside(),
             'isAbstract' => $unitOfCode->isAbstract(),
@@ -183,7 +182,7 @@ final class ReportDataBuilder
     }
 
     /**
-     * @return array{id: string, name: string, shortName: string, path: string|null, componentId: string, componentName: string}
+     * @return array{id: string, name: string, shortName: string, path: string|null, componentId: string}
      */
     private function unitReferenceData(UnitOfCode $unitOfCode): array
     {
@@ -193,7 +192,6 @@ final class ReportDataBuilder
             'shortName' => $this->shortName($unitOfCode->name()),
             'path' => $unitOfCode->path(),
             'componentId' => $this->componentId($unitOfCode->component()),
-            'componentName' => $unitOfCode->component()->name(),
         ];
     }
 
