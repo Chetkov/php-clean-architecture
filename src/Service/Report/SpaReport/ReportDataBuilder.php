@@ -27,6 +27,7 @@ final class ReportDataBuilder
         $externalUnits = [];
         $externalComponents = [];
         $dependencies = [];
+        $componentEdges = [];
         $violations = [];
 
         foreach ($enabledComponents as $component) {
@@ -42,10 +43,9 @@ final class ReportDataBuilder
                         continue;
                     }
 
-                    $dependencies[$this->dependencyId($unitOfCode, $dependencyUnitOfCode)] = $this->dependencyData(
-                        $unitOfCode,
-                        $dependencyUnitOfCode
-                    );
+                    $dependencyFacts = $this->dependencyFacts($unitOfCode, $dependencyUnitOfCode);
+                    $dependencies[$this->dependencyId($unitOfCode, $dependencyUnitOfCode)] = $this->dependencyData($dependencyFacts);
+                    $this->rememberComponentEdge($componentEdges, $dependencyFacts);
                     $this->rememberExternalReference($dependencyUnitOfCode, $units, $externalUnits, $enabledComponentIds, $externalComponents);
                     foreach ($this->violationsForDependency($unitOfCode, $dependencyUnitOfCode) as $violation) {
                         $violations[$violation['id']] = $violation;
@@ -59,7 +59,7 @@ final class ReportDataBuilder
         }, $enabledComponents);
 
         return [
-            'schemaVersion' => 3,
+            'schemaVersion' => 4,
             'generatedAt' => date(DATE_ATOM),
             'summary' => [
                 'components' => count($componentData),
@@ -75,6 +75,7 @@ final class ReportDataBuilder
             'units' => array_values($units),
             'externalComponents' => array_values($externalComponents),
             'externalUnits' => array_values($externalUnits),
+            'componentEdges' => $this->componentEdgeData($componentEdges),
             'dependencies' => array_values($dependencies),
             'violations' => array_values($violations),
         ];
@@ -196,9 +197,9 @@ final class ReportDataBuilder
     }
 
     /**
-     * @return array{0: string, 1: string, 2: string, 3: string, 4: int}
+     * @return array{fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, isInternal: bool, isComponentAllowed: bool, isTargetPublic: bool, isAllowedState: bool, flags: int, status: string}
      */
-    private function dependencyData(UnitOfCode $unitOfCode, UnitOfCode $dependencyUnitOfCode): array
+    private function dependencyFacts(UnitOfCode $unitOfCode, UnitOfCode $dependencyUnitOfCode): array
     {
         $component = $unitOfCode->component();
         $dependencyComponent = $dependencyUnitOfCode->component();
@@ -225,13 +226,139 @@ final class ReportDataBuilder
             $flags |= self::DEPENDENCY_FLAG_ALLOWED_STATE;
         }
 
+        $isPrivateApiViolation = !$isInternal && $isComponentAllowed && !$isTargetPublic;
+
         return [
-            $this->unitId($unitOfCode),
-            $this->unitId($dependencyUnitOfCode),
-            $this->componentId($component),
-            $this->componentId($dependencyComponent),
-            $flags,
+            'fromUnitId' => $this->unitId($unitOfCode),
+            'toUnitId' => $this->unitId($dependencyUnitOfCode),
+            'fromComponentId' => $this->componentId($component),
+            'toComponentId' => $this->componentId($dependencyComponent),
+            'isInternal' => $isInternal,
+            'isComponentAllowed' => $isComponentAllowed,
+            'isTargetPublic' => $isTargetPublic,
+            'isAllowedState' => $isAllowedState,
+            'flags' => $flags,
+            'status' => $this->dependencyCountKey(!$isComponentAllowed, $isAllowedState, $isPrivateApiViolation, $isInternal),
         ];
+    }
+
+    /**
+     * @param array{fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, flags: int} $dependencyFacts
+     *
+     * @return array{0: string, 1: string, 2: string, 3: string, 4: int}
+     */
+    private function dependencyData(array $dependencyFacts): array
+    {
+        return [
+            $dependencyFacts['fromUnitId'],
+            $dependencyFacts['toUnitId'],
+            $dependencyFacts['fromComponentId'],
+            $dependencyFacts['toComponentId'],
+            $dependencyFacts['flags'],
+        ];
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $componentEdges
+     * @param array{fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, isInternal: bool, status: string} $dependencyFacts
+     *
+     * @return void
+     */
+    private function rememberComponentEdge(array &$componentEdges, array $dependencyFacts): void
+    {
+        if ($dependencyFacts['isInternal'] || $dependencyFacts['fromComponentId'] === $dependencyFacts['toComponentId']) {
+            return;
+        }
+
+        $edgeId = $dependencyFacts['fromComponentId'] . '->' . $dependencyFacts['toComponentId'];
+        if (!isset($componentEdges[$edgeId])) {
+            $componentEdges[$edgeId] = [
+                'id' => $edgeId,
+                'fromComponentId' => $dependencyFacts['fromComponentId'],
+                'toComponentId' => $dependencyFacts['toComponentId'],
+                'weight' => 0,
+                'sourceUnitIds' => [],
+                'targetUnitIds' => [],
+                'counts' => [
+                    'allowed' => 0,
+                    'allowedState' => 0,
+                    'blocked' => 0,
+                    'internal' => 0,
+                    'private' => 0,
+                ],
+            ];
+        }
+
+        $componentEdges[$edgeId]['weight']++;
+        $componentEdges[$edgeId]['sourceUnitIds'][$dependencyFacts['fromUnitId']] = true;
+        $componentEdges[$edgeId]['targetUnitIds'][$dependencyFacts['toUnitId']] = true;
+        $componentEdges[$edgeId]['counts'][$dependencyFacts['status']]++;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $componentEdges
+     *
+     * @return array<array{id: string, fromComponentId: string, toComponentId: string, weight: int, sourceUnitCount: int, targetUnitCount: int, counts: array{allowed: int, allowedState: int, blocked: int, internal: int, private: int}, status: string}>
+     */
+    private function componentEdgeData(array $componentEdges): array
+    {
+        return array_values(array_map(function (array $edge): array {
+            $counts = $edge['counts'];
+
+            return [
+                'id' => $edge['id'],
+                'fromComponentId' => $edge['fromComponentId'],
+                'toComponentId' => $edge['toComponentId'],
+                'weight' => $edge['weight'],
+                'sourceUnitCount' => count($edge['sourceUnitIds']),
+                'targetUnitCount' => count($edge['targetUnitIds']),
+                'counts' => $counts,
+                'status' => $this->worstDependencyStatus($counts),
+            ];
+        }, $componentEdges));
+    }
+
+    private function dependencyCountKey(
+        bool $isForbiddenComponent,
+        bool $isAllowedState,
+        bool $isPrivateApiViolation,
+        bool $isInternal
+    ): string {
+        if ($isAllowedState) {
+            return 'allowedState';
+        }
+        if ($isForbiddenComponent) {
+            return 'blocked';
+        }
+        if ($isPrivateApiViolation) {
+            return 'private';
+        }
+        if ($isInternal) {
+            return 'internal';
+        }
+
+        return 'allowed';
+    }
+
+    /**
+     * @param array{allowed: int, allowedState: int, blocked: int, internal: int, private: int} $counts
+     */
+    private function worstDependencyStatus(array $counts): string
+    {
+        if ($counts['blocked'] > 0) {
+            return 'blocked';
+        }
+        if ($counts['private'] > 0) {
+            return 'private';
+        }
+        if ($counts['allowedState'] > 0) {
+            return 'allowed-state';
+        }
+        if ($counts['internal'] > 0) {
+            return 'internal';
+        }
+
+        return 'allowed';
     }
 
     /**

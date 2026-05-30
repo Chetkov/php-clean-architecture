@@ -167,7 +167,7 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         $embeddedReportData = json_decode($embeddedJson, true);
         self::assertIsArray($embeddedReportData);
         self::assertSame($reportData['summary'], $embeddedReportData['summary']);
-        self::assertSame(3, $reportData['schemaVersion']);
+        self::assertSame(4, $reportData['schemaVersion']);
         self::assertSame(2, $reportData['summary']['components']);
         self::assertGreaterThanOrEqual(3, $reportData['summary']['units']);
         self::assertGreaterThanOrEqual(1, $reportData['summary']['dependencies']);
@@ -178,9 +178,13 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         self::assertNotEmpty($reportData['violations']);
         self::assertArrayHasKey('externalComponents', $reportData);
         self::assertArrayHasKey('externalUnits', $reportData);
+        self::assertArrayHasKey('componentEdges', $reportData);
+        self::assertNotEmpty($reportData['componentEdges']);
         self::assertArrayNotHasKey('componentName', $reportData['units'][0]);
         self::assertTrue(array_is_list($reportData['dependencies'][0]));
         self::assertCount(5, $reportData['dependencies'][0]);
+        self::assertArrayHasKey('sourceUnitCount', $reportData['componentEdges'][0]);
+        self::assertArrayHasKey('targetUnitCount', $reportData['componentEdges'][0]);
 
         $this->removeDirectory($reportPath);
     }

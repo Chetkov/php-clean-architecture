@@ -40,7 +40,7 @@ const dependencyFlags = {
 };
 
 const fallbackReport = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   generatedAt: null,
   summary: {
     components: 0,
@@ -63,6 +63,7 @@ const fallbackReport = {
   units: [],
   externalComponents: [],
   externalUnits: [],
+  componentEdges: [],
   dependencies: [],
   violations: [],
 };
@@ -2713,17 +2714,19 @@ function SidebarMetrics({ metrics }) {
 
 function buildIndex(report) {
   const componentsById = new Map(report.components.map((component) => [component.id, component]));
+  const allComponentsById = new Map([...report.components, ...(report.externalComponents ?? [])].map((component) => [component.id, component]));
   const unitsById = new Map([...report.units, ...(report.externalUnits ?? [])].map((unit) => [unit.id, unit]));
   const dependenciesById = new Map(report.dependencies.map((dependency) => [dependency.id, dependency]));
   const dependenciesByFromUnit = new Map();
   const dependenciesByToUnit = new Map();
   const violationsByComponent = new Map();
-  const componentEdges = new Map();
+  const shouldBuildComponentEdges = !(report.componentEdges ?? []).length;
+  const componentEdges = shouldBuildComponentEdges ? new Map() : null;
 
   for (const dependency of report.dependencies) {
     pushMapList(dependenciesByFromUnit, dependency.fromUnitId, dependency);
     pushMapList(dependenciesByToUnit, dependency.toUnitId, dependency);
-    if (!dependency.isInternal && dependency.fromComponentId !== dependency.toComponentId) {
+    if (componentEdges && !dependency.isInternal && dependency.fromComponentId !== dependency.toComponentId) {
       const key = `${dependency.fromComponentId}->${dependency.toComponentId}`;
       const edge = componentEdges.get(key) ?? {
         id: key,
@@ -2750,12 +2753,14 @@ function buildIndex(report) {
 
   const outgoingComponentEdges = new Map();
   const incomingComponentEdges = new Map();
-  const componentEdgeList = [...componentEdges.values()].map(({ sourceUnitIds, targetUnitIds, ...edge }) => ({
-    ...edge,
-    sourceUnitCount: sourceUnitIds.size,
-    targetUnitCount: targetUnitIds.size,
-    status: worstDependencyStatus(edge.counts),
-  }));
+  const componentEdgeList = componentEdges
+    ? [...componentEdges.values()].map(({ sourceUnitIds, targetUnitIds, ...edge }) => ({
+      ...edge,
+      sourceUnitCount: sourceUnitIds.size,
+      targetUnitCount: targetUnitIds.size,
+      status: worstDependencyStatus(edge.counts),
+    }))
+    : report.componentEdges.map((edge) => normalizeComponentEdge(edge, allComponentsById));
   for (const edge of componentEdgeList) {
     pushMapList(outgoingComponentEdges, edge.fromComponentId, edge);
     pushMapList(incomingComponentEdges, edge.toComponentId, edge);
@@ -2780,21 +2785,42 @@ function pushMapList(map, key, item) {
   map.set(key, list);
 }
 
+function normalizeComponentEdge(edge, componentsById) {
+  const fromComponent = componentsById.get(edge.fromComponentId);
+  const toComponent = componentsById.get(edge.toComponentId);
+  const counts = edge.counts ?? { allowed: 0, allowedState: 0, blocked: 0, internal: 0, private: 0 };
+
+  return {
+    ...edge,
+    fromComponentName: edge.fromComponentName ?? fromComponent?.name ?? edge.fromComponentId,
+    toComponentName: edge.toComponentName ?? toComponent?.name ?? edge.toComponentId,
+    counts,
+    status: edge.status ?? worstDependencyStatus(counts),
+  };
+}
+
 function buildDependencyComponentOptions(report, indexed) {
   const components = new Map(report.components.map((component) => [component.id, component]));
 
-  report.dependencies.forEach((dependency) => {
-    if (!components.has(dependency.fromComponentId)) {
-      components.set(dependency.fromComponentId, {
-        id: dependency.fromComponentId,
-        name: dependency.fromComponentName,
+  (report.externalComponents ?? []).forEach((component) => {
+    components.set(component.id, {
+      ...component,
+      metrics: component.metrics ?? { units: 0 },
+    });
+  });
+
+  indexed.componentEdges.forEach((edge) => {
+    if (!components.has(edge.fromComponentId)) {
+      components.set(edge.fromComponentId, {
+        id: edge.fromComponentId,
+        name: edge.fromComponentName,
         metrics: { units: 0 },
       });
     }
-    if (!components.has(dependency.toComponentId)) {
-      components.set(dependency.toComponentId, {
-        id: dependency.toComponentId,
-        name: dependency.toComponentName,
+    if (!components.has(edge.toComponentId)) {
+      components.set(edge.toComponentId, {
+        id: edge.toComponentId,
+        name: edge.toComponentName,
         metrics: { units: 0 },
       });
     }
