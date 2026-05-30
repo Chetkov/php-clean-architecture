@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
@@ -510,6 +510,7 @@ function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [scrollTarget, setScrollTarget] = useState(null);
+  const deferredQuery = useDeferredValue(query);
   const navigationReady = useRef(false);
   const applyingNavigation = useRef(false);
   const lastNavigationHash = useRef(null);
@@ -602,38 +603,38 @@ function App() {
     () => report.units.filter((unit) => !selectedComponent || unit.componentId === selectedComponent.id),
     [report.units, selectedComponent],
   );
-  const unitsForCurrentSearch = query ? report.units : selectedComponentUnits;
+  const unitsForCurrentSearch = deferredQuery ? report.units : selectedComponentUnits;
   const visibleUnits = useMemo(
-    () => unitsForCurrentSearch.filter((unit) => matchesUnit(unit, query)),
-    [query, unitsForCurrentSearch],
+    () => unitsForCurrentSearch.filter((unit) => matchesUnit(unit, deferredQuery)),
+    [deferredQuery, unitsForCurrentSearch],
   );
-  const violationsForCurrentSearch = query
+  const violationsForCurrentSearch = deferredQuery
     ? report.violations
     : report.violations.filter((violation) => !selectedComponent || violation.fromComponentId === selectedComponent.id);
   const visibleViolations = useMemo(
-    () => violationsForCurrentSearch.filter((violation) => matchesViolation(violation, indexed, query)),
-    [indexed, query, violationsForCurrentSearch],
+    () => violationsForCurrentSearch.filter((violation) => matchesViolation(violation, indexed, deferredQuery)),
+    [deferredQuery, indexed, violationsForCurrentSearch],
   );
   const visibleDependencies = useMemo(
     () => filterDependencies(
       report.dependencies,
       indexed,
-      query,
+      deferredQuery,
       sourceComponentIds,
       targetComponentIds,
       dependencyStatus,
       selectedComponentId,
       componentGraphScope,
     ),
-    [componentGraphScope, dependencyStatus, indexed, query, report.dependencies, selectedComponentId, sourceComponentIds, targetComponentIds],
+    [componentGraphScope, deferredQuery, dependencyStatus, indexed, report.dependencies, selectedComponentId, sourceComponentIds, targetComponentIds],
   );
   const visibleDependencyLinks = useMemo(
     () => countComponentDependencyLinks(visibleDependencies),
     [visibleDependencies],
   );
   const searchSuggestions = useMemo(
-    () => buildSearchSuggestions(query, report, indexed, t),
-    [indexed, query, report, t],
+    () => buildSearchSuggestions(deferredQuery, report, indexed, t),
+    [deferredQuery, indexed, report, t],
   );
   const flatSearchSuggestions = useMemo(
     () => searchSuggestions.flatMap((group) => group.items),
@@ -663,10 +664,10 @@ function App() {
       return;
     }
 
-    if (selectedUnit.componentId !== selectedComponent?.id || !matchesUnit(selectedUnit, query)) {
+    if (selectedUnit.componentId !== selectedComponent?.id || !matchesUnit(selectedUnit, deferredQuery)) {
       setSelectedUnitId(null);
     }
-  }, [query, selectedComponent?.id, selectedUnit]);
+  }, [deferredQuery, selectedComponent?.id, selectedUnit]);
 
   useEffect(() => {
     if (keepManualDependencyFilters.current) {
@@ -1205,7 +1206,7 @@ function App() {
                 onSourceComponentsChange={changeSourceComponents}
                 onStatusChange={setDependencyStatus}
                 onTargetComponentsChange={setTargetComponentIds}
-                query={query}
+                query={deferredQuery}
                 relationComponentId={selectedComponentId}
                 relationScope={componentGraphScope}
                 sourceComponents={sourceComponentOptions}
