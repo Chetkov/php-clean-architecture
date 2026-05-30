@@ -573,6 +573,7 @@ function App() {
   );
   const selectedGraphComponentIds = graphComponentIds ?? graphComponentIdsAll;
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? null;
+  const sidebarLegacy = selectedComponent?.legacy ?? report.summary.legacy;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
   const activeSuitePath = useMemo(
     () => suite ? findSuitePath(suite.tree, activeReportId) ?? [] : [],
@@ -992,7 +993,7 @@ function App() {
           </div>
           <LocaleSwitcher locale={locale} onChange={setLocale} label={t('reportLanguage')} />
         </div>
-        <LegacyProgressPanel compact sidebar legacy={report.summary.legacy} t={t} />
+        <LegacyProgressPanel compact sidebar legacy={sidebarLegacy} t={t} />
         <SummaryGrid summary={report.summary} t={t} />
         <div className="component-list">
           {parentSuiteNode && (
