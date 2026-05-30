@@ -15,13 +15,23 @@ final class ReportDataBuilder
     public function build(Component ...$components): array
     {
         $enabledComponents = $this->enabledComponents(...$components);
+        $enabledComponentIds = array_flip(array_map(function (Component $component): string {
+            return $this->componentId($component);
+        }, $enabledComponents));
         $units = [];
+        $externalUnits = [];
+        $externalComponents = [];
         $dependencies = [];
         $violations = [];
 
         foreach ($enabledComponents as $component) {
             foreach ($component->unitsOfCode() as $unitOfCode) {
                 $units[$this->unitId($unitOfCode)] = $this->unitData($unitOfCode);
+            }
+        }
+
+        foreach ($enabledComponents as $component) {
+            foreach ($component->unitsOfCode() as $unitOfCode) {
                 foreach ($unitOfCode->outputDependencies() as $dependencyUnitOfCode) {
                     if ($this->shouldSkipDependency($dependencyUnitOfCode)) {
                         continue;
@@ -29,6 +39,7 @@ final class ReportDataBuilder
 
                     $dependency = $this->dependencyData($unitOfCode, $dependencyUnitOfCode);
                     $dependencies[$dependency['id']] = $dependency;
+                    $this->rememberExternalReference($dependencyUnitOfCode, $units, $externalUnits, $enabledComponentIds, $externalComponents);
                     foreach ($this->violationsForDependency($unitOfCode, $dependencyUnitOfCode) as $violation) {
                         $violations[$violation['id']] = $violation;
                     }
@@ -41,7 +52,7 @@ final class ReportDataBuilder
         }, $enabledComponents);
 
         return [
-            'schemaVersion' => 1,
+            'schemaVersion' => 2,
             'generatedAt' => date(DATE_ATOM),
             'summary' => [
                 'components' => count($componentData),
@@ -55,6 +66,8 @@ final class ReportDataBuilder
             ],
             'components' => array_values($componentData),
             'units' => array_values($units),
+            'externalComponents' => array_values($externalComponents),
+            'externalUnits' => array_values($externalUnits),
             'dependencies' => array_values($dependencies),
             'violations' => array_values($violations),
         ];
@@ -134,7 +147,51 @@ final class ReportDataBuilder
     }
 
     /**
-     * @return array{id: string, fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, fromUnitName: string, toUnitName: string, fromComponentName: string, toComponentName: string, isInternal: bool, isComponentAllowed: bool, isTargetPublic: bool, isAllowedState: bool}
+     * @param array<string, array<string, mixed>> $units
+     * @param array<string, array<string, mixed>> $externalUnits
+     * @param array<string, int> $enabledComponentIds
+     * @param array<string, array<string, mixed>> $externalComponents
+     * @return void
+     */
+    private function rememberExternalReference(
+        UnitOfCode $unitOfCode,
+        array $units,
+        array &$externalUnits,
+        array $enabledComponentIds,
+        array &$externalComponents
+    ): void {
+        $unitId = $this->unitId($unitOfCode);
+        if (!isset($units[$unitId]) && !isset($externalUnits[$unitId])) {
+            $externalUnits[$unitId] = $this->unitReferenceData($unitOfCode);
+        }
+
+        $component = $unitOfCode->component();
+        $componentId = $this->componentId($component);
+        if (!isset($enabledComponentIds[$componentId]) && !isset($externalComponents[$componentId])) {
+            $externalComponents[$componentId] = [
+                'id' => $componentId,
+                'name' => $component->name(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{id: string, name: string, shortName: string, path: string|null, componentId: string, componentName: string}
+     */
+    private function unitReferenceData(UnitOfCode $unitOfCode): array
+    {
+        return [
+            'id' => $this->unitId($unitOfCode),
+            'name' => $unitOfCode->name(),
+            'shortName' => $this->shortName($unitOfCode->name()),
+            'path' => $unitOfCode->path(),
+            'componentId' => $this->componentId($unitOfCode->component()),
+            'componentName' => $unitOfCode->component()->name(),
+        ];
+    }
+
+    /**
+     * @return array{id: string, fromUnitId: string, toUnitId: string, fromComponentId: string, toComponentId: string, isInternal: bool, isComponentAllowed: bool, isTargetPublic: bool, isAllowedState: bool}
      */
     private function dependencyData(UnitOfCode $unitOfCode, UnitOfCode $dependencyUnitOfCode): array
     {
@@ -149,10 +206,6 @@ final class ReportDataBuilder
             'toUnitId' => $this->unitId($dependencyUnitOfCode),
             'fromComponentId' => $this->componentId($component),
             'toComponentId' => $this->componentId($dependencyComponent),
-            'fromUnitName' => $unitOfCode->name(),
-            'toUnitName' => $dependencyUnitOfCode->name(),
-            'fromComponentName' => $component->name(),
-            'toComponentName' => $dependencyComponent->name(),
             'isInternal' => $dependencyUnitOfCode->belongToComponent($component),
             'isComponentAllowed' => $isComponentAllowed,
             'isTargetPublic' => $isTargetPublic,

@@ -34,7 +34,7 @@ const graphLayouts = ['circle', 'grid', 'layers'];
 const defaultGraphViewport = { x: 0, y: 0, scale: 1 };
 
 const fallbackReport = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedAt: null,
   summary: {
     components: 0,
@@ -55,6 +55,8 @@ const fallbackReport = {
   },
   components: [],
   units: [],
+  externalComponents: [],
+  externalUnits: [],
   dependencies: [],
   violations: [],
 };
@@ -484,7 +486,7 @@ function App() {
     () => suite ? findSuiteNode(suite.tree, activeReportId) ?? suite.tree : null,
     [activeReportId, suite],
   );
-  const [initialReport] = useState(() => activeSuiteNode?.report ?? embeddedReport);
+  const [initialReport] = useState(() => normalizeReportData(activeSuiteNode?.report ?? embeddedReport));
   const [report, setReport] = useState(() => initialReport ?? fallbackReport);
   const [loadingState, setLoadingState] = useState(initialReport ? 'ready' : 'loading');
   const [query, setQuery] = useState('');
@@ -516,7 +518,7 @@ function App() {
 
   useEffect(() => {
     if (activeSuiteNode?.report) {
-      setReport(activeSuiteNode.report);
+      setReport(normalizeReportData(activeSuiteNode.report));
       setSelectedComponentId(null);
       setSelectedUnitId(null);
       setQuery('');
@@ -538,7 +540,7 @@ function App() {
         return response.json();
       })
       .then((data) => {
-        setReport(data);
+        setReport(normalizeReportData(data));
         setSelectedComponentId(null);
         setSelectedUnitId(null);
         setLoadingState('ready');
@@ -2654,7 +2656,7 @@ function SidebarMetrics({ metrics }) {
 
 function buildIndex(report) {
   const componentsById = new Map(report.components.map((component) => [component.id, component]));
-  const unitsById = new Map(report.units.map((unit) => [unit.id, unit]));
+  const unitsById = new Map([...report.units, ...(report.externalUnits ?? [])].map((unit) => [unit.id, unit]));
   const dependenciesById = new Map(report.dependencies.map((dependency) => [dependency.id, dependency]));
   const dependenciesByFromUnit = new Map();
   const dependenciesByToUnit = new Map();
@@ -3305,7 +3307,7 @@ function readEmbeddedReport() {
   }
 
   try {
-    return JSON.parse(element.textContent);
+    return normalizeReportData(JSON.parse(element.textContent));
   } catch {
     return null;
   }
@@ -3318,7 +3320,7 @@ function readEmbeddedSuite(rootReport) {
   }
 
   try {
-    const suite = JSON.parse(element.textContent);
+    const suite = normalizeSuiteData(JSON.parse(element.textContent));
     if (rootReport && suite?.tree && !suite.tree.report) {
       return {
         ...suite,
@@ -3333,6 +3335,69 @@ function readEmbeddedSuite(rootReport) {
   } catch {
     return null;
   }
+}
+
+function normalizeSuiteData(suite) {
+  if (!suite?.tree) {
+    return suite;
+  }
+
+  return {
+    ...suite,
+    tree: normalizeSuiteNode(suite.tree),
+  };
+}
+
+function normalizeSuiteNode(node) {
+  return {
+    ...node,
+    report: normalizeReportData(node.report),
+    children: (node.children ?? []).map(normalizeSuiteNode),
+  };
+}
+
+function normalizeReportData(report) {
+  if (!report) {
+    return report;
+  }
+
+  const components = report.components ?? [];
+  const externalComponents = report.externalComponents ?? [];
+  const units = report.units ?? [];
+  const externalUnits = report.externalUnits ?? [];
+  const componentsById = new Map([...components, ...externalComponents].map((component) => [component.id, component]));
+  const unitsById = new Map([...units, ...externalUnits].map((unit) => [unit.id, unit]));
+  const dependencies = (report.dependencies ?? []).map((dependency) => enrichDependencyData(
+    dependency,
+    componentsById,
+    unitsById,
+  ));
+
+  return {
+    ...fallbackReport,
+    ...report,
+    components,
+    externalComponents,
+    units,
+    externalUnits,
+    dependencies,
+    violations: report.violations ?? [],
+  };
+}
+
+function enrichDependencyData(dependency, componentsById, unitsById) {
+  const fromUnit = unitsById.get(dependency.fromUnitId);
+  const toUnit = unitsById.get(dependency.toUnitId);
+  const fromComponent = componentsById.get(dependency.fromComponentId);
+  const toComponent = componentsById.get(dependency.toComponentId);
+
+  return {
+    ...dependency,
+    fromUnitName: dependency.fromUnitName ?? fromUnit?.name ?? dependency.fromUnitId,
+    toUnitName: dependency.toUnitName ?? toUnit?.name ?? dependency.toUnitId,
+    fromComponentName: dependency.fromComponentName ?? fromComponent?.name ?? dependency.fromComponentId,
+    toComponentName: dependency.toComponentName ?? toComponent?.name ?? dependency.toComponentId,
+  };
 }
 
 function findSuiteNode(node, id) {

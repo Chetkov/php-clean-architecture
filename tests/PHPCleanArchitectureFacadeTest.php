@@ -167,7 +167,7 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         $embeddedReportData = json_decode($embeddedJson, true);
         self::assertIsArray($embeddedReportData);
         self::assertSame($reportData['summary'], $embeddedReportData['summary']);
-        self::assertSame(1, $reportData['schemaVersion']);
+        self::assertSame(2, $reportData['schemaVersion']);
         self::assertSame(2, $reportData['summary']['components']);
         self::assertGreaterThanOrEqual(3, $reportData['summary']['units']);
         self::assertGreaterThanOrEqual(1, $reportData['summary']['dependencies']);
@@ -176,6 +176,12 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         self::assertNotEmpty($reportData['units']);
         self::assertNotEmpty($reportData['dependencies']);
         self::assertNotEmpty($reportData['violations']);
+        self::assertArrayHasKey('externalComponents', $reportData);
+        self::assertArrayHasKey('externalUnits', $reportData);
+        self::assertArrayNotHasKey('fromUnitName', $reportData['dependencies'][0]);
+        self::assertArrayNotHasKey('toUnitName', $reportData['dependencies'][0]);
+        self::assertArrayNotHasKey('fromComponentName', $reportData['dependencies'][0]);
+        self::assertArrayNotHasKey('toComponentName', $reportData['dependencies'][0]);
 
         $this->removeDirectory($reportPath);
     }
@@ -407,7 +413,7 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
     private function findDependencyByTarget(array $reportData, string $targetUnitName): array
     {
         foreach ($reportData['dependencies'] as $dependency) {
-            if ($dependency['toUnitName'] === $targetUnitName) {
+            if ($this->unitName($reportData, $dependency['toUnitId']) === $targetUnitName) {
                 return $dependency;
             }
         }
@@ -422,12 +428,29 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
     private function findDependency(array $reportData, string $fromUnitName, string $toUnitName): array
     {
         foreach ($reportData['dependencies'] as $dependency) {
-            if ($dependency['fromUnitName'] === $fromUnitName && $dependency['toUnitName'] === $toUnitName) {
+            if (
+                $this->unitName($reportData, $dependency['fromUnitId']) === $fromUnitName
+                && $this->unitName($reportData, $dependency['toUnitId']) === $toUnitName
+            ) {
                 return $dependency;
             }
         }
 
         self::fail(sprintf('Dependency %s -> %s was not found in report data.', $fromUnitName, $toUnitName));
+    }
+
+    /**
+     * @param array<string, mixed> $reportData
+     */
+    private function unitName(array $reportData, string $unitId): string
+    {
+        foreach (array_merge($reportData['units'], $reportData['externalUnits'] ?? []) as $unit) {
+            if ($unit['id'] === $unitId) {
+                return $unit['name'];
+            }
+        }
+
+        self::fail('Unit ' . $unitId . ' was not found in report data.');
     }
 
     /**
