@@ -982,6 +982,7 @@ function App() {
           </div>
           <LocaleSwitcher locale={locale} onChange={setLocale} label={t('reportLanguage')} />
         </div>
+        <LegacyProgressPanel compact sidebar legacy={report.summary.legacy} t={t} />
         <SummaryGrid summary={report.summary} t={t} />
         <div className="component-list">
           {parentSuiteNode && (
@@ -1244,7 +1245,6 @@ function SummaryGrid({ summary, t }) {
   const items = [
     [t('components'), summary.components, <Layers3 size={18} />],
     [t('units'), summary.units, <FileCode2 size={18} />],
-    [t('modernized'), formatPercent(summary.legacy?.modernRate), <CheckCircle2 size={18} />],
     [t('dependencies'), summary.dependencies, <ArrowRight size={18} />],
     [t('activeIssues'), summary.activeViolations, <ShieldAlert size={18} />],
   ];
@@ -1293,9 +1293,9 @@ function MetricPanel({ component, t }) {
   );
 }
 
-function LegacyProgressPanel({ compact = false, framed = false, legacy, t }) {
+function LegacyProgressPanel({ compact = false, framed = false, sidebar = false, legacy, t }) {
   const metrics = legacyMetrics(legacy);
-  const className = ['legacy-progress', compact ? 'compact' : '', framed ? 'panel' : '']
+  const className = ['legacy-progress', compact ? 'compact' : '', framed ? 'panel' : '', sidebar ? 'sidebar-progress' : '']
     .filter(Boolean)
     .join(' ');
 

@@ -127,6 +127,29 @@ td span,
   font-size: 22px;
 }
 
+.sidebar-progress {
+  padding: 10px;
+  border: 1px solid #293643;
+  border-radius: 8px;
+  background: #18222c;
+}
+
+.sidebar-progress .legacy-progress-heading span,
+.sidebar-progress .legacy-split,
+.sidebar-progress .legacy-split em,
+.sidebar-progress .legacy-split span {
+  color: #a9b7c2;
+}
+
+.sidebar-progress .legacy-progress-heading strong,
+.sidebar-progress .legacy-split b {
+  color: #f8fafc;
+}
+
+.sidebar-progress .legacy-meter {
+  border-color: #344657;
+}
+
 .component-list {
   display: flex;
   flex-direction: column;
