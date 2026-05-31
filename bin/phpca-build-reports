@@ -6,7 +6,8 @@ use Chetkov\PHPCleanArchitecture\Service\Config\ConfigTreeBuilder;
 
 require_once resolveAutoloadPath();
 
-$configPath = $argv[1] ?? resolveDefaultConfigPath();
+$options = parseArguments($argv);
+$configPath = $options['configPath'];
 $config = require $configPath;
 
 $configTree = (new ConfigTreeBuilder())->build($config);
@@ -14,7 +15,7 @@ $reportsPath = $configTree->reportPath();
 recreateReportsDirectory($reportsPath);
 
 $allowedPaths = array_filter(explode(PHP_EOL, getenv('PHPCA_ALLOWED_PATHS'))) ?: [];
-(new ConfigTreeRunner())->generateReports($configTree, $allowedPaths);
+(new ConfigTreeRunner())->generateReports($configTree, $allowedPaths, $options['recordHistory']);
 
 echo PHP_EOL . 'Report: ' . $reportsPath . '/index.html' . PHP_EOL;
 
@@ -72,4 +73,30 @@ function removeDirectory(string $path): void
         }
         rmdir($path);
     }
+}
+
+/**
+ * @param array<int, string> $argv
+ *
+ * @return array{configPath: string, recordHistory: bool}
+ */
+function parseArguments(array $argv): array
+{
+    $configPath = null;
+    $recordHistory = false;
+    foreach (array_slice($argv, 1) as $argument) {
+        if ($argument === '--with-history') {
+            $recordHistory = true;
+            continue;
+        }
+
+        if ($configPath === null) {
+            $configPath = $argument;
+        }
+    }
+
+    return [
+        'configPath' => $configPath ?? resolveDefaultConfigPath(),
+        'recordHistory' => $recordHistory,
+    ];
 }

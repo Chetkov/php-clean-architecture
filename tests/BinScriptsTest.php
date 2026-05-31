@@ -221,6 +221,66 @@ final class BinScriptsTest extends TestCase
         $this->removeDirectory($reportRoot);
     }
 
+    public function testPhpcaBuildReportsRecordsAndEmbedsHistory(): void
+    {
+        $workspace = sys_get_temp_dir() . '/phpca-report-history-' . bin2hex(random_bytes(8));
+        $reportRoot = $workspace . '/report';
+        $historyRoot = $workspace . '/history';
+        self::assertTrue(mkdir($workspace, 0777, true));
+        $configPath = $this->createHistoryConfig($workspace, __DIR__ . '/Fixtures/Project/nested-report-config.php', $historyRoot);
+
+        $result = $this->runCommand(
+            implode(' ', [
+                'PHPCA_REPORTS_DIR=' . escapeshellarg($reportRoot),
+                escapeshellarg(PHP_BINARY),
+                escapeshellarg(dirname(__DIR__) . '/bin/phpca-build-reports'),
+                escapeshellarg($configPath),
+                '--with-history',
+            ]),
+            dirname(__DIR__)
+        );
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertFileExists($historyRoot . '/index.json');
+        self::assertFileExists($reportRoot . '/history.json');
+        self::assertStringContainsString(
+            '<script id="phpca-report-history" type="application/json">',
+            (string) file_get_contents($reportRoot . '/index.html')
+        );
+
+        $history = json_decode((string) file_get_contents($reportRoot . '/history.json'), true);
+        self::assertIsArray($history);
+        self::assertSame(1, $history['schemaVersion']);
+        self::assertCount(1, $history['snapshots']);
+        self::assertGreaterThanOrEqual(2, count($history['snapshots'][0]['reports']));
+        self::assertSame('root', $history['snapshots'][0]['reports'][0]['id']);
+        self::assertSame('component-a', $history['snapshots'][0]['reports'][1]['id']);
+        self::assertArrayHasKey('summary', $history['snapshots'][0]['reports'][0]);
+        self::assertArrayHasKey('componentEdges', $history['snapshots'][0]['reports'][0]);
+
+        $this->removeDirectory($workspace);
+    }
+
+    public function testPhpcaCheckCanRecordHistoryWithoutBuildingReport(): void
+    {
+        $workspace = sys_get_temp_dir() . '/phpca-check-history-' . bin2hex(random_bytes(8));
+        $historyRoot = $workspace . '/history';
+        self::assertTrue(mkdir($workspace, 0777, true));
+        $configPath = $this->createHistoryConfig($workspace, __DIR__ . '/Fixtures/Project/nested-report-config.php', $historyRoot);
+
+        $result = $this->runBin('phpca-check', $configPath, ['--record-history']);
+
+        self::assertSame(0, $result['exitCode']);
+        self::assertStringContainsString('No errors!', $result['output']);
+        self::assertFileExists($historyRoot . '/index.json');
+        $snapshotFiles = glob($historyRoot . '/snapshots/*.json');
+        self::assertIsArray($snapshotFiles);
+        self::assertCount(1, $snapshotFiles);
+        self::assertDirectoryDoesNotExist($workspace . '/reports');
+
+        $this->removeDirectory($workspace);
+    }
+
     public function testPhpcaBuildReportsShowsLegacyRateForRootAndNestedReports(): void
     {
         $reportRoot = sys_get_temp_dir() . '/phpca-legacy-rate-report-' . bin2hex(random_bytes(8));
@@ -347,9 +407,6 @@ final class BinScriptsTest extends TestCase
     }
 
     /**
-     * @return array{exitCode: int, output: string}
-     */
-    /**
      * @param array<string> $arguments
      *
      * @return array{exitCode: int, output: string}
@@ -414,6 +471,24 @@ final class BinScriptsTest extends TestCase
         ));
 
         return $consumerRoot;
+    }
+
+    private function createHistoryConfig(string $workspace, string $baseConfigPath, string $historyRoot): string
+    {
+        $configPath = $workspace . '/phpca-config.php';
+        self::assertNotFalse(file_put_contents(
+            $configPath,
+            '<?php' . PHP_EOL .
+            '$config = require ' . var_export($baseConfigPath, true) . ';' . PHP_EOL .
+            '$config["reports_dir"] = (string) getenv("PHPCA_REPORTS_DIR") ?: ' . var_export($workspace . '/reports', true) . ';' . PHP_EOL .
+            '$config["history"] = [' . PHP_EOL .
+            '    "enabled" => true,' . PHP_EOL .
+            '    "dir" => ' . var_export($historyRoot, true) . ',' . PHP_EOL .
+            '];' . PHP_EOL .
+            'return $config;' . PHP_EOL
+        ));
+
+        return $configPath;
     }
 
     private function removeDirectory(string $path): void

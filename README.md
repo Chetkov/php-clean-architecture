@@ -40,6 +40,7 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 
 - `reports_dir` - директория, куда `phpca-build-reports` сохранит HTML-отчет. В образцовом конфиге значение можно
   переопределить через `PHPCA_REPORTS_DIR`.
+- `history` - необязательное сохранение архитектурных снимков для timeline-режима отчета.
 - `debug_scan_paths` - необязательные директории или файлы, которые `phpca-debug-unmatched-files` будет сканировать
   для поиска PHP-файлов вне компонентов.
 - `components` - список архитектурных компонентов проекта.
@@ -91,6 +92,26 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 Все файлы, найденные в root с `legacy: true`, считаются legacy. Если ключ не указан, root считается modern. В отчете
 появляется прогресс модернизации: основной процент считается по физическим строкам PHP-файлов, а рядом показываются
 и строки кода, и количество `UnitOfCode` для всей системы, каждого компонента и каждого вложенного `sub`-отчета.
+
+### История отчетов и timeline
+
+Если нужно видеть, как архитектура меняется от релиза к релизу или от CI-запуска к CI-запуску, включите историю:
+
+```php
+'history' => [
+    'enabled' => true,
+    'dir' => __DIR__ . '/var/phpca-history',
+    'collect_on_check' => true,
+],
+```
+
+`dir` лучше хранить вне `reports_dir`, потому что директория отчета пересоздается при каждой генерации. В history
+сохраняются компактные snapshots: дата, git metadata, summary, метрики компонентов, legacy/modernization, A/I данные и
+ребра графа компонентов для корневого отчета и всех вложенных `sub`-отчетов.
+
+`phpca-build-reports` при включенной истории записывает новый snapshot и встраивает историю в self-contained HTML-отчет.
+Если нужно записать снимок без генерации UI, используйте `phpca-check --record-history` или включите
+`history.collect_on_check`.
 
 ### Вложенные отчеты
 
@@ -169,6 +190,9 @@ vendor/bin/phpca-debug-unmatched-files phpca-config.php
 `PHPCA_REPORTS_DIR` можно использовать в образцовом конфиге для переопределения `reports_dir` без изменения файла
 конфигурации.
 
+`phpca-check --record-history` сохраняет архитектурный snapshot без генерации отчета. `phpca-build-reports --with-history`
+принудительно записывает snapshot даже если `history.enabled` не включен в конфиге.
+
 `phpca-debug-unmatched-files` также принимает дополнительные пути после конфига. Если они переданы, команда сканирует
 только их:
 
@@ -209,6 +233,7 @@ vendor/bin/phpca-build-reports phpca-config.php
 - цветовая индикация `allowed`, `internal`, `allowed state`, `private API` и `blocked`;
 - копирование путей файлов и полных имен юнитов из dependency details;
 - URL-навигация: выбранный отчет, компонент, вкладка, юнит и поиск восстанавливаются после обновления страницы;
+- timeline по сохраненным снимкам с autoplay и сравнением с предыдущим снимком;
 - локализация RU / EN / 中文.
 
 Пример отчета на большом проекте:

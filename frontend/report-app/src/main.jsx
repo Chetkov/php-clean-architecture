@@ -12,9 +12,12 @@ import {
   FileCode2,
   GitBranch,
   Check,
+  History,
   Layers3,
   Maximize2,
   Minimize2,
+  Pause,
+  Play,
   Repeat2,
   RotateCcw,
   Search,
@@ -196,6 +199,29 @@ const dictionaries = {
     reportLanguage: 'Report language',
     reportView: 'Report view',
     rootReport: 'System',
+    componentStatusOk: 'OK: no active issues or metric warnings',
+    componentStatusActiveIssues: '{count} active issues',
+    componentStatusDistanceWarning: 'Metric warning: distance from main sequence is too high',
+    componentStatusPrivateApiWarning: 'Metric warning: private API dependencies detected',
+    timeline: 'Timeline',
+    timelineCurrent: 'Current',
+    timelinePlay: 'Play timeline',
+    timelinePause: 'Pause timeline',
+    timelinePlayShort: 'Play',
+    timelinePauseShort: 'Pause',
+    timelineSnapshot: 'Snapshot',
+    timelineFrom: 'A',
+    timelineTo: 'B',
+    timelineStartPoint: 'Start point',
+    timelineEndPoint: 'End point',
+    timelineSpeed: 'Speed',
+    timelineCompareRange: 'Comparison Current - A',
+    timelineSamePoint: 'Select different points to see the delta',
+    timelineDeltaComponents: 'components',
+    timelineDeltaUnits: 'units',
+    timelineDeltaDependencies: 'dependencies',
+    timelineDeltaIssues: 'active issues',
+    timelineDeltaModernized: 'modernized',
     searchPlaceholder: 'Search components, units, paths or dependencies',
     searchResults: 'Search results',
     noSearchResults: 'No matches',
@@ -330,6 +356,29 @@ const dictionaries = {
     reportLanguage: 'Язык отчета',
     reportView: 'Раздел отчета',
     rootReport: 'Система',
+    componentStatusOk: 'OK: активных проблем и предупреждений по метрикам нет',
+    componentStatusActiveIssues: '{count} активных проблем',
+    componentStatusDistanceWarning: 'Предупреждение по метрикам: слишком большое расстояние до главной последовательности',
+    componentStatusPrivateApiWarning: 'Предупреждение по метрикам: есть зависимости на private API',
+    timeline: 'Таймлайн',
+    timelineCurrent: 'Текущий',
+    timelinePlay: 'Воспроизвести таймлайн',
+    timelinePause: 'Остановить таймлайн',
+    timelinePlayShort: 'Пуск',
+    timelinePauseShort: 'Пауза',
+    timelineSnapshot: 'Снимок',
+    timelineFrom: 'A',
+    timelineTo: 'B',
+    timelineStartPoint: 'Начало',
+    timelineEndPoint: 'Конец',
+    timelineSpeed: 'Скорость',
+    timelineCompareRange: 'Сравнение Текущий - A',
+    timelineSamePoint: 'Выбери разные точки, чтобы увидеть дельту',
+    timelineDeltaComponents: 'компонентов',
+    timelineDeltaUnits: 'юнитов',
+    timelineDeltaDependencies: 'зависимостей',
+    timelineDeltaIssues: 'активных проблем',
+    timelineDeltaModernized: 'модернизировано',
     searchPlaceholder: 'Поиск по компонентам, юнитам, путям или зависимостям',
     searchResults: 'Результаты поиска',
     noSearchResults: 'Ничего не найдено',
@@ -464,6 +513,29 @@ const dictionaries = {
     reportLanguage: '报告语言',
     reportView: '报告视图',
     rootReport: '系统',
+    componentStatusOk: '正常：没有活动问题或指标警告',
+    componentStatusActiveIssues: '{count} 个活动问题',
+    componentStatusDistanceWarning: '指标警告：距离主序列过远',
+    componentStatusPrivateApiWarning: '指标警告：检测到 private API 依赖',
+    timeline: '时间线',
+    timelineCurrent: '当前',
+    timelinePlay: '播放时间线',
+    timelinePause: '暂停时间线',
+    timelinePlayShort: '播放',
+    timelinePauseShort: '暂停',
+    timelineSnapshot: '快照',
+    timelineFrom: 'A',
+    timelineTo: 'B',
+    timelineStartPoint: '起点',
+    timelineEndPoint: '终点',
+    timelineSpeed: '速度',
+    timelineCompareRange: '比较 当前 - A',
+    timelineSamePoint: '选择不同点以查看差值',
+    timelineDeltaComponents: '组件',
+    timelineDeltaUnits: '单元',
+    timelineDeltaDependencies: '依赖',
+    timelineDeltaIssues: '活动问题',
+    timelineDeltaModernized: '已现代化',
     searchPlaceholder: '搜索组件、单元、路径或依赖',
     searchResults: '搜索结果',
     noSearchResults: '没有匹配项',
@@ -488,6 +560,8 @@ const dictionaries = {
 function App() {
   const [embeddedReport] = useState(() => readEmbeddedReport());
   const [suite] = useState(() => readEmbeddedSuite(embeddedReport));
+  const [history] = useState(() => readEmbeddedHistory());
+  const [activeHistoryId, setActiveHistoryId] = useState(() => latestHistorySnapshotId(history));
   const [activeReportId, setActiveReportId] = useState(() => normalizeSuiteReportId(suite, parseNavigationHash().reportId));
   const activeSuiteNode = useMemo(
     () => suite ? findSuiteNode(suite.tree, activeReportId) ?? suite.tree : null,
@@ -557,6 +631,19 @@ function App() {
   }, [activeSuiteNode, initialReport]);
 
   const indexed = useMemo(() => buildIndex(report), [report]);
+  const activeHistorySnapshot = useMemo(
+    () => history?.snapshots.find((snapshot) => snapshot.id === activeHistoryId) ?? null,
+    [activeHistoryId, history],
+  );
+  const activeHistoryReport = useMemo(
+    () => activeHistorySnapshot ? findHistoryReport(activeHistorySnapshot, activeReportId) : null,
+    [activeHistorySnapshot, activeReportId],
+  );
+  const reportForOverview = useMemo(
+    () => view === 'history' && activeHistoryReport ? historyReportToReportData(activeHistoryReport, activeHistorySnapshot, report) : report,
+    [activeHistoryReport, activeHistorySnapshot, report, view],
+  );
+  const indexedForOverview = useMemo(() => buildIndex(reportForOverview), [reportForOverview]);
   const sourceComponentOptions = useMemo(() => [...report.components].sort((left, right) => left.name.localeCompare(right.name)), [report.components]);
   const targetComponentOptions = useMemo(() => buildDependencyComponentOptions(report, indexed), [indexed, report]);
   const sourceComponentIdsAll = useMemo(
@@ -572,8 +659,15 @@ function App() {
     [targetComponentOptions],
   );
   const selectedGraphComponentIds = graphComponentIds ?? graphComponentIdsAll;
+  const overviewGraphComponentOptions = useMemo(() => buildDependencyComponentOptions(reportForOverview, indexedForOverview), [indexedForOverview, reportForOverview]);
+  const overviewGraphComponentIdsAll = useMemo(
+    () => overviewGraphComponentOptions.map((component) => component.id),
+    [overviewGraphComponentOptions],
+  );
+  const selectedOverviewGraphComponentIds = graphComponentIds ?? overviewGraphComponentIdsAll;
   const selectedComponent = indexed.componentsById.get(selectedComponentId) ?? null;
-  const sidebarLegacy = selectedComponent?.legacy ?? report.summary.legacy;
+  const selectedComponentForOverview = indexedForOverview.componentsById.get(selectedComponentId) ?? null;
+  const sidebarLegacy = selectedComponentForOverview?.legacy ?? reportForOverview.summary.legacy;
   const selectedUnit = indexed.unitsById.get(selectedUnitId) ?? null;
   const activeSuitePath = useMemo(
     () => suite ? findSuitePath(suite.tree, activeReportId) ?? [] : [],
@@ -714,7 +808,7 @@ function App() {
   }, [selectedComponentChildReport]);
 
   useEffect(() => {
-    if (loadingState !== 'ready' || navigationReady.current || (activeSuiteNode?.report && report !== activeSuiteNode.report)) {
+    if (loadingState !== 'ready' || navigationReady.current) {
       return;
     }
 
@@ -737,7 +831,7 @@ function App() {
   }, [activeReportId, activeSuiteNode, indexed, loadingState, query, report, selectedComponentId, selectedUnitId, suite?.rootId, view]);
 
   useEffect(() => {
-    if (loadingState !== 'ready' || !pendingNavigationState.current || (activeSuiteNode?.report && report !== activeSuiteNode.report)) {
+    if (loadingState !== 'ready' || !pendingNavigationState.current) {
       return;
     }
 
@@ -799,6 +893,9 @@ function App() {
     if (applyingNavigation.current) {
       applyingNavigation.current = false;
       lastNavigationHash.current = nextHash;
+      if (window.location.hash !== nextHash) {
+        window.history.replaceState(null, '', nextHash);
+      }
       return;
     }
 
@@ -897,6 +994,10 @@ function App() {
     keepManualDependencyFilters.current = true;
     setSelectedComponentId(null);
   };
+  const toggleHistoryView = () => {
+    setSelectedUnitId(null);
+    setView((currentView) => (currentView === 'history' ? 'violations' : 'history'));
+  };
   const selectUnit = (unitId) => {
     const unit = indexed.unitsById.get(unitId);
     if (unit) {
@@ -983,7 +1084,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={view === 'history' ? 'app-shell history-mode' : 'app-shell'}>
       <aside className="sidebar">
         <div className="brand">
           <GitBranch size={24} />
@@ -994,7 +1095,7 @@ function App() {
           <LocaleSwitcher locale={locale} onChange={setLocale} label={t('reportLanguage')} />
         </div>
         <LegacyProgressPanel compact sidebar legacy={sidebarLegacy} t={t} />
-        <SummaryGrid summary={report.summary} t={t} />
+        <SummaryGrid summary={reportForOverview.summary} t={t} />
         <div className="component-list">
           {parentSuiteNode && (
             <button
@@ -1012,18 +1113,18 @@ function App() {
             onClick={selectOverview}
             type="button"
           >
-            <GitBranch size={16} />
-            <span>{t('noSelection')}</span>
-            <SidebarMetrics
-              metrics={[
-                [<Layers3 size={13} />, report.summary.components, t('components')],
-                [<ArrowRight size={13} />, report.summary.dependencies, t('dependencyRows')],
-                [<ShieldAlert size={13} />, report.summary.activeViolations, t('activeIssues')],
-              ]}
-            />
-          </button>
-          {report.components.map((component) => {
-            const violations = indexed.violationsByComponent.get(component.id) ?? [];
+              <GitBranch size={16} />
+              <span>{t('noSelection')}</span>
+              <SidebarMetrics
+                metrics={[
+                  [<Layers3 size={13} />, reportForOverview.summary.components, t('components')],
+                  [<ArrowRight size={13} />, reportForOverview.summary.dependencies, t('dependencyRows')],
+                  [<ShieldAlert size={13} />, reportForOverview.summary.activeViolations, t('activeIssues')],
+                ]}
+              />
+            </button>
+          {reportForOverview.components.map((component) => {
+            const violations = indexedForOverview.violationsByComponent.get(component.id) ?? [];
             const activeViolations = violations.filter((violation) => violation.status === 'active').length;
             const childSuiteNode = childSuiteNodesByTitle.get(component.name);
 
@@ -1037,7 +1138,7 @@ function App() {
                 onClick={() => selectComponentRow(component)}
                 type="button"
               >
-                <ComponentStatus component={component} violations={violations} />
+                <ComponentStatus component={component} t={t} violations={violations} />
                 <span>{component.name}</span>
                 <SidebarMetrics
                   metrics={[
@@ -1056,10 +1157,20 @@ function App() {
       <section className="workspace">
         <header className="toolbar">
           <div className="title-block">
-            <span>{formatDate(report.generatedAt, locale)}</span>
-            <h1>{selectedComponent?.name ?? t('overview')}</h1>
+            <span>{formatDate(reportForOverview.generatedAt, locale)}</span>
+            <h1>{selectedComponentForOverview?.name ?? selectedComponent?.name ?? t('overview')}</h1>
           </div>
           <div className="toolbar-actions">
+            {history?.snapshots.length > 0 && (
+              <button
+                className={view === 'history' ? 'history-toolbar-button active' : 'history-toolbar-button'}
+                onClick={toggleHistoryView}
+                type="button"
+              >
+                <History size={15} />
+                {t('timeline')}
+              </button>
+            )}
             <div className="search-shell">
               <label className="search-box">
                 <Search size={16} />
@@ -1100,62 +1211,103 @@ function App() {
           </div>
         </header>
 
-        <section className={selectedComponent ? 'overview-grid' : 'overview-grid global-overview'} aria-label={t('overview')}>
-          {selectedComponent && <MetricPanel component={selectedComponent} t={t} />}
-          <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
-          <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
-          {selectedComponent && <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />}
-        </section>
-
-        <details className="component-map" open>
-          <summary>
-            <GitBranch size={16} />
-            <span>{t('dependencyOverview')}</span>
-          </summary>
-          <ComponentGraphPanel
-            component={selectedComponent}
-            graphComponentIds={selectedGraphComponentIds}
-            graphComponents={targetComponentOptions}
-            indexed={indexed}
-            onGraphComponentsChange={setGraphComponentIds}
-            onScopeChange={changeComponentGraphScope}
-            onSelectComponent={selectComponent}
-            report={report}
-            scope={componentGraphScope}
-            t={t}
-            title={selectedComponent ? t('parentComponentRelations') : t('globalComponentGraph')}
-          />
-        </details>
-
-        {selectedComponentChildSuiteNode && selectedComponentChildReport && selectedComponentChildIndexed && (
-          <details className="component-map component-internals-map" open>
-            <summary>
-              <Layers3 size={16} />
-              <span>{t('componentInternals')}</span>
-            </summary>
-            <div className="sub-report-intro">
-              <span>{t('componentInternalsHint')}</span>
-              <button onClick={() => selectReport(selectedComponentChildSuiteNode.id)} type="button">
-                <ChevronRight size={15} />
-                {t('openNestedReport')}
-              </button>
-            </div>
-            <ComponentGraphPanel
-              component={null}
-              graphComponentIds={selectedComponentChildGraphComponentIds}
-              graphComponents={selectedComponentChildGraphComponents}
-              indexed={selectedComponentChildIndexed}
-              onGraphComponentsChange={setInternalGraphComponentIds}
-              onScopeChange={() => {}}
-              onSelectComponent={(componentId) => selectNestedReportComponent(selectedComponentChildSuiteNode.id, componentId)}
-              report={selectedComponentChildReport}
-              scope="all"
+        {view === 'history' && history?.snapshots.length > 0 ? (
+          <section className="history-dashboard">
+            <HistoryTimeline
+              activeSnapshotId={activeHistoryId}
+              activeReportId={activeReportId}
+              history={history}
+              locale={locale}
+              onChange={setActiveHistoryId}
               t={t}
-              title={t('componentInternalsGraph')}
             />
-          </details>
+            <section className={selectedComponent ? 'overview-grid' : 'overview-grid global-overview'} aria-label={t('overview')}>
+              {selectedComponentForOverview && <MetricPanel component={selectedComponentForOverview} t={t} />}
+              <AIMatrix components={reportForOverview.components} selectedComponentId={selectedComponentForOverview?.id} onSelectComponent={selectComponent} t={t} />
+              <DistanceRanking components={reportForOverview.components} selectedComponentId={selectedComponentForOverview?.id} onSelectComponent={selectComponent} t={t} />
+              {selectedComponentForOverview && <FanPanel component={selectedComponentForOverview} indexed={indexedForOverview} onSelectComponent={selectComponent} t={t} />}
+            </section>
+            <details className="component-map history-graph-map" open>
+              <summary>
+                <GitBranch size={16} />
+                <span>{t('dependencyOverview')}</span>
+              </summary>
+              <ComponentGraphPanel
+                component={selectedComponentForOverview}
+                graphComponentIds={selectedOverviewGraphComponentIds}
+                graphComponents={overviewGraphComponentOptions}
+                indexed={indexedForOverview}
+                onGraphComponentsChange={setGraphComponentIds}
+                onScopeChange={changeComponentGraphScope}
+                onSelectComponent={selectComponent}
+                report={reportForOverview}
+                scope={componentGraphScope}
+                t={t}
+                title={selectedComponent ? t('parentComponentRelations') : t('globalComponentGraph')}
+              />
+            </details>
+          </section>
+        ) : (
+          <>
+            <section className={selectedComponent ? 'overview-grid' : 'overview-grid global-overview'} aria-label={t('overview')}>
+              {selectedComponent && <MetricPanel component={selectedComponent} t={t} />}
+              <AIMatrix components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
+              <DistanceRanking components={report.components} selectedComponentId={selectedComponent?.id} onSelectComponent={selectComponent} t={t} />
+              {selectedComponent && <FanPanel component={selectedComponent} indexed={indexed} onSelectComponent={selectComponent} t={t} />}
+            </section>
+
+            <details className="component-map" open>
+              <summary>
+                <GitBranch size={16} />
+                <span>{t('dependencyOverview')}</span>
+              </summary>
+              <ComponentGraphPanel
+                component={selectedComponent}
+                graphComponentIds={selectedGraphComponentIds}
+                graphComponents={targetComponentOptions}
+                indexed={indexed}
+                onGraphComponentsChange={setGraphComponentIds}
+                onScopeChange={changeComponentGraphScope}
+                onSelectComponent={selectComponent}
+                report={report}
+                scope={componentGraphScope}
+                t={t}
+                title={selectedComponent ? t('parentComponentRelations') : t('globalComponentGraph')}
+              />
+            </details>
+
+            {selectedComponentChildSuiteNode && selectedComponentChildReport && selectedComponentChildIndexed && (
+              <details className="component-map component-internals-map" open>
+                <summary>
+                  <Layers3 size={16} />
+                  <span>{t('componentInternals')}</span>
+                </summary>
+                <div className="sub-report-intro">
+                  <span>{t('componentInternalsHint')}</span>
+                  <button onClick={() => selectReport(selectedComponentChildSuiteNode.id)} type="button">
+                    <ChevronRight size={15} />
+                    {t('openNestedReport')}
+                  </button>
+                </div>
+                <ComponentGraphPanel
+                  component={null}
+                  graphComponentIds={selectedComponentChildGraphComponentIds}
+                  graphComponents={selectedComponentChildGraphComponents}
+                  indexed={selectedComponentChildIndexed}
+                  onGraphComponentsChange={setInternalGraphComponentIds}
+                  onScopeChange={() => {}}
+                  onSelectComponent={(componentId) => selectNestedReportComponent(selectedComponentChildSuiteNode.id, componentId)}
+                  report={selectedComponentChildReport}
+                  scope="all"
+                  t={t}
+                  title={t('componentInternalsGraph')}
+                />
+              </details>
+            )}
+          </>
         )}
 
+        {view !== 'history' && (
         <section className={view === 'units' ? 'workbench' : 'workbench single'}>
           <div className="workbench-main">
             <nav className="tabs" aria-label={t('reportView')}>
@@ -1226,6 +1378,7 @@ function App() {
             </aside>
           )}
         </section>
+        )}
       </section>
     </main>
   );
@@ -1269,6 +1422,319 @@ function SummaryGrid({ summary, t }) {
       ))}
     </div>
   );
+}
+
+function HistoryTimeline({ activeSnapshotId, activeReportId, history, locale, onChange, t }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speedMs, setSpeedMs] = useState(700);
+  const [baselineSnapshotId, setBaselineSnapshotId] = useState(() => history?.snapshots?.[0]?.id ?? null);
+  const [endSnapshotId, setEndSnapshotId] = useState(() => latestHistorySnapshotId(history));
+  const [dragHandle, setDragHandle] = useState(null);
+  const timelineTrackRef = useRef(null);
+  const snapshots = history?.snapshots ?? [];
+  const rawActiveIndex = Math.max(0, snapshots.findIndex((snapshot) => snapshot.id === activeSnapshotId));
+  const baselineIndex = Math.max(0, snapshots.findIndex((snapshot) => snapshot.id === baselineSnapshotId));
+  const endIndex = Math.max(0, snapshots.findIndex((snapshot) => snapshot.id === endSnapshotId));
+  const activeIndex = clampIndex(rawActiveIndex, baselineIndex, endIndex);
+  const activeSnapshot = snapshots[activeIndex] ?? null;
+  const baselineSnapshot = snapshots[baselineIndex] ?? snapshots[0] ?? null;
+  const endSnapshot = snapshots[endIndex] ?? snapshots[snapshots.length - 1] ?? null;
+  const activeReport = activeSnapshot ? findHistoryReport(activeSnapshot, activeReportId) : null;
+  const baselineReport = baselineSnapshot ? findHistoryReport(baselineSnapshot, activeReportId) : null;
+  const setActiveIndex = (index) => {
+    const clampedIndex = clampIndex(index, baselineIndex, endIndex);
+    const snapshot = snapshots[clampedIndex] ?? activeSnapshot;
+    if (snapshot) {
+      onChange(snapshot.id);
+    }
+  };
+  const setBaselineIndex = (index) => {
+    const nextIndex = Math.min(clampIndex(index, 0, snapshots.length - 1), endIndex);
+    const snapshot = snapshots[nextIndex];
+    if (!snapshot) {
+      return;
+    }
+
+    setBaselineSnapshotId(snapshot.id);
+    if (activeIndex < nextIndex) {
+      onChange(snapshot.id);
+    }
+  };
+  const setEndIndex = (index) => {
+    const nextIndex = Math.max(clampIndex(index, 0, snapshots.length - 1), baselineIndex);
+    const snapshot = snapshots[nextIndex];
+    if (!snapshot) {
+      return;
+    }
+
+    setEndSnapshotId(snapshot.id);
+    if (activeIndex > nextIndex) {
+      onChange(snapshot.id);
+    }
+  };
+  const setTimelineIndex = (kind, index) => {
+    if (kind === 'baseline') {
+      setBaselineIndex(index);
+      return;
+    }
+
+    if (kind === 'end') {
+      setEndIndex(index);
+      return;
+    }
+
+    setActiveIndex(index);
+  };
+  const indexFromClientX = (clientX) => {
+    const rect = timelineTrackRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0) {
+      return activeIndex;
+    }
+
+    const ratio = clampNumber((clientX - rect.left) / rect.width, 0, 1);
+    return Math.round(ratio * Math.max(snapshots.length - 1, 0));
+  };
+  const startTimelineDrag = (kind, event) => {
+    event.preventDefault();
+    setIsPlaying(false);
+    setDragHandle(kind);
+    setTimelineIndex(kind, indexFromClientX(event.clientX));
+  };
+  const handleTimelineKeyDown = (kind, event) => {
+    const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+    if (step === 0 && event.key !== 'Home' && event.key !== 'End') {
+      return;
+    }
+
+    event.preventDefault();
+    setIsPlaying(false);
+    const limits = {
+      baseline: [0, endIndex],
+      current: [baselineIndex, endIndex],
+      end: [baselineIndex, Math.max(snapshots.length - 1, 0)],
+    }[kind];
+    const currentIndex = kind === 'baseline' ? baselineIndex : kind === 'end' ? endIndex : activeIndex;
+    const nextIndex = event.key === 'Home'
+      ? limits[0]
+      : event.key === 'End'
+        ? limits[1]
+        : clampIndex(currentIndex + step, limits[0], limits[1]);
+
+    setTimelineIndex(kind, nextIndex);
+  };
+
+  useEffect(() => {
+    if (snapshots.length === 0) {
+      setBaselineSnapshotId(null);
+      setEndSnapshotId(null);
+      return;
+    }
+
+    if (!snapshots.some((snapshot) => snapshot.id === baselineSnapshotId)) {
+      setBaselineSnapshotId(snapshots[0].id);
+    }
+
+    if (!snapshots.some((snapshot) => snapshot.id === endSnapshotId)) {
+      setEndSnapshotId(snapshots[snapshots.length - 1].id);
+    }
+  }, [baselineSnapshotId, endSnapshotId, snapshots]);
+
+  useEffect(() => {
+    if (!baselineSnapshot || !endSnapshot || !activeSnapshot) {
+      return;
+    }
+
+    if (endIndex < baselineIndex) {
+      setEndSnapshotId(baselineSnapshot.id);
+      if (activeIndex < baselineIndex) {
+        onChange(baselineSnapshot.id);
+      }
+      return;
+    }
+
+    if (rawActiveIndex < baselineIndex) {
+      onChange(baselineSnapshot.id);
+      return;
+    }
+
+    if (rawActiveIndex > endIndex) {
+      onChange(endSnapshot.id);
+    }
+  }, [
+    rawActiveIndex,
+    activeSnapshot,
+    baselineIndex,
+    baselineSnapshot,
+    endIndex,
+    endSnapshot,
+    onChange,
+  ]);
+
+  useEffect(() => {
+    if (!isPlaying || snapshots.length < 2) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      onChange((currentId) => {
+        const currentIndex = Math.max(0, snapshots.findIndex((snapshot) => snapshot.id === currentId));
+        const nextIndex = currentIndex >= endIndex ? baselineIndex : Math.min(currentIndex + 1, endIndex);
+        return snapshots[nextIndex]?.id ?? currentId;
+      });
+    }, speedMs);
+
+    return () => window.clearInterval(timer);
+  }, [baselineIndex, endIndex, isPlaying, onChange, snapshots, speedMs]);
+
+  useEffect(() => {
+    if (!dragHandle) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event) => {
+      setTimelineIndex(dragHandle, indexFromClientX(event.clientX));
+    };
+    const handlePointerUp = () => {
+      setDragHandle(null);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp, { once: true });
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [dragHandle, activeIndex, baselineIndex, endIndex, snapshots]);
+
+  if (!activeSnapshot || snapshots.length === 0) {
+    return null;
+  }
+
+  const delta = activeReport && baselineReport ? historyReportDelta(activeReport, baselineReport) : null;
+  const isSamePoint = baselineSnapshot?.id === activeSnapshot.id;
+  const speedOptions = [100, 300, 700, 1200, 2000];
+  const rangeMax = Math.max(snapshots.length - 1, 1);
+  const baselinePosition = `${(baselineIndex / rangeMax) * 100}%`;
+  const activePosition = `${(activeIndex / rangeMax) * 100}%`;
+  const endPosition = `${(endIndex / rangeMax) * 100}%`;
+  const rangeLeftPosition = `${(baselineIndex / rangeMax) * 100}%`;
+  const rangeWidth = `${((endIndex - baselineIndex) / rangeMax) * 100}%`;
+  const currentHandleClassName = activeIndex === baselineIndex || activeIndex === endIndex
+    ? 'history-range-point current boundary-overlap'
+    : 'history-range-point current';
+
+  return (
+    <section className="history-timeline panel" aria-label={t('timeline')}>
+      <div className="history-timeline-main">
+        <div className="history-timeline-heading">
+          <strong>{t('timeline')}</strong>
+          <span>{t('timelineSnapshot')} {activeIndex + 1}/{snapshots.length} · {formatDate(activeSnapshot.generatedAt, locale)}</span>
+        </div>
+        <div
+          className="history-range-dual"
+          ref={timelineTrackRef}
+          style={{
+            '--history-a': baselinePosition,
+            '--history-current': activePosition,
+            '--history-b': endPosition,
+            '--history-left': rangeLeftPosition,
+            '--history-width': rangeWidth,
+          }}
+        >
+          <div className="history-range-track" aria-hidden="true" onPointerDown={(event) => startTimelineDrag('current', event)}>
+            <i />
+          </div>
+          <button
+            aria-label={t('timelineStartPoint')}
+            className="history-range-point baseline"
+            onKeyDown={(event) => handleTimelineKeyDown('baseline', event)}
+            onPointerDown={(event) => startTimelineDrag('baseline', event)}
+            type="button"
+          >
+            {t('timelineFrom')}
+          </button>
+          <button
+            aria-label={t('timelineCurrent')}
+            className={currentHandleClassName}
+            onKeyDown={(event) => handleTimelineKeyDown('current', event)}
+            onPointerDown={(event) => startTimelineDrag('current', event)}
+            title={t('timelineCurrent')}
+            type="button"
+          />
+          <button
+            aria-label={t('timelineEndPoint')}
+            className="history-range-point end"
+            onKeyDown={(event) => handleTimelineKeyDown('end', event)}
+            onPointerDown={(event) => startTimelineDrag('end', event)}
+            type="button"
+          >
+            {t('timelineTo')}
+          </button>
+        </div>
+        <div className="history-ticks">
+          <span><b>{t('timelineFrom')}</b> {formatDate(baselineSnapshot?.generatedAt, locale)}</span>
+          <span><b>{t('timelineCurrent')}</b> {formatDate(activeSnapshot.generatedAt, locale)}</span>
+          <span><b>{t('timelineTo')}</b> {formatDate(endSnapshot?.generatedAt, locale)}</span>
+        </div>
+      </div>
+      <div className="history-footer">
+        <div className="history-controls">
+          <button
+            className="history-play"
+            onClick={() => setIsPlaying((current) => !current)}
+            title={isPlaying ? t('timelinePause') : t('timelinePlay')}
+            type="button"
+          >
+            {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+            <span>{isPlaying ? t('timelinePauseShort') : t('timelinePlayShort')}</span>
+          </button>
+          <label className="history-speed">
+            <span>{t('timelineSpeed')}</span>
+            <select onChange={(event) => setSpeedMs(Number(event.target.value))} value={speedMs}>
+              {speedOptions.map((option) => (
+                <option key={option} value={option}>{formatSeconds(option)}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="history-delta">
+          <strong>{isSamePoint ? t('timelineSamePoint') : t('timelineCompareRange')}</strong>
+          {delta && !isSamePoint && (
+            <div>
+              <HistoryDelta value={delta.components} label={t('timelineDeltaComponents')} goodWhen="positive" />
+              <HistoryDelta value={delta.units} label={t('timelineDeltaUnits')} goodWhen="positive" />
+              <HistoryDelta value={delta.dependencies} label={t('timelineDeltaDependencies')} goodWhen="negative" />
+              <HistoryDelta value={delta.activeViolations} label={t('timelineDeltaIssues')} goodWhen="negative" />
+              <HistoryDelta value={delta.modernRate} label={t('timelineDeltaModernized')} goodWhen="positive" percent />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HistoryDelta({ goodWhen = 'positive', label, percent = false, value }) {
+  const formatted = percent
+    ? `${value >= 0 ? '+' : ''}${(value * 100).toFixed(2)}%`
+    : `${value >= 0 ? '+' : ''}${formatInteger(value)}`;
+  const tone = value === 0 ? 'neutral' : (goodWhen === 'negative' ? value < 0 : value > 0) ? 'positive' : 'negative';
+
+  return <span className={tone}>{formatted} {label}</span>;
+}
+
+function formatSeconds(milliseconds) {
+  const seconds = milliseconds / 1000;
+  return `${Number.isInteger(seconds) ? seconds.toFixed(0) : seconds.toFixed(1)}s`;
+}
+
+function clampIndex(index, min, max) {
+  return Math.max(min, Math.min(max, Number.isFinite(index) ? index : min));
+}
+
+function clampNumber(value, min, max) {
+  return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
 }
 
 function MetricPanel({ component, t }) {
@@ -2718,14 +3184,46 @@ function ShellMessage({ title, text }) {
   );
 }
 
-function ComponentStatus({ component, violations }) {
-  if (violations.some((violation) => violation.status === 'active')) {
-    return <ShieldAlert className="status-icon problem" size={16} />;
+function ComponentStatus({ component, t, violations }) {
+  const activeViolationCount = violations.filter((violation) => violation.status === 'active').length;
+
+  if (activeViolationCount > 0) {
+    const title = No(t('componentStatusActiveIssues'), { count: activeViolationCount });
+
+    return (
+      <span aria-label={title} className="status-icon-tooltip" title={title}>
+        <ShieldAlert className="status-icon problem" size={16} />
+      </span>
+    );
   }
+
   if (component.health.hasDistanceOverage) {
-    return <AlertTriangle className="status-icon warning" size={16} />;
+    const title = t('componentStatusDistanceWarning');
+
+    return (
+      <span aria-label={title} className="status-icon-tooltip" title={title}>
+        <AlertTriangle className="status-icon warning" size={16} />
+      </span>
+    );
   }
-  return <CheckCircle2 className="status-icon ok" size={16} />;
+
+  if (component.health.hasPrivateApiDependencies) {
+    const title = t('componentStatusPrivateApiWarning');
+
+    return (
+      <span aria-label={title} className="status-icon-tooltip" title={title}>
+        <AlertTriangle className="status-icon warning" size={16} />
+      </span>
+    );
+  }
+
+  const title = t('componentStatusOk');
+
+  return (
+    <span aria-label={title} className="status-icon-tooltip" title={title}>
+      <CheckCircle2 className="status-icon ok" size={16} />
+    </span>
+  );
 }
 
 function SidebarMetrics({ metrics }) {
@@ -3369,7 +3867,7 @@ function applyNavigationState(state, indexed, setters) {
 }
 
 function normalizeReportView(view) {
-  return ['violations', 'dependencies', 'units'].includes(view) ? view : 'violations';
+  return ['violations', 'dependencies', 'units', 'history'].includes(view) ? view : 'violations';
 }
 
 function normalizeQuery(query) {
@@ -3447,6 +3945,79 @@ function readEmbeddedSuite(rootReport) {
   } catch {
     return null;
   }
+}
+
+function readEmbeddedHistory() {
+  const element = document.getElementById('phpca-report-history');
+  if (!element?.textContent) {
+    return null;
+  }
+
+  try {
+    return normalizeHistoryData(JSON.parse(element.textContent));
+  } catch {
+    return null;
+  }
+}
+
+function normalizeHistoryData(history) {
+  const snapshots = (history?.snapshots ?? [])
+    .filter((snapshot) => snapshot?.id)
+    .map((snapshot) => ({
+      ...snapshot,
+      reports: (snapshot.reports ?? []).map((report) => ({
+        ...report,
+        components: report.components ?? [],
+        externalComponents: report.externalComponents ?? [],
+        componentEdges: report.componentEdges ?? [],
+      })),
+    }))
+    .sort((left, right) => String(left.generatedAt ?? '').localeCompare(String(right.generatedAt ?? '')));
+
+  return {
+    ...history,
+    snapshots,
+  };
+}
+
+function latestHistorySnapshotId(history) {
+  const snapshots = history?.snapshots ?? [];
+  return snapshots.length ? snapshots[snapshots.length - 1].id : null;
+}
+
+function findHistoryReport(snapshot, reportId) {
+  return snapshot?.reports?.find((report) => report.id === reportId)
+    ?? snapshot?.reports?.find((report) => report.id === 'root')
+    ?? null;
+}
+
+function historyReportToReportData(historyReport, snapshot, currentReport) {
+  return normalizeReportData({
+    ...fallbackReport,
+    schemaVersion: currentReport.schemaVersion,
+    generatedAt: snapshot.generatedAt,
+    summary: historyReport.summary ?? fallbackReport.summary,
+    components: historyReport.components ?? [],
+    externalComponents: historyReport.externalComponents ?? [],
+    componentEdges: historyReport.componentEdges ?? [],
+    units: [],
+    externalUnits: [],
+    dependencies: [],
+    violations: [],
+  });
+}
+
+function historyReportDelta(current, previous) {
+  const currentSummary = current.summary ?? {};
+  const previousSummary = previous.summary ?? {};
+
+  return {
+    components: Number(currentSummary.components ?? 0) - Number(previousSummary.components ?? 0),
+    units: Number(currentSummary.units ?? 0) - Number(previousSummary.units ?? 0),
+    dependencies: Number(currentSummary.dependencies ?? 0) - Number(previousSummary.dependencies ?? 0),
+    activeViolations: Number(currentSummary.activeViolations ?? 0) - Number(previousSummary.activeViolations ?? 0),
+    modernRate: clamp01(currentSummary.legacy?.modernRate) - clamp01(previousSummary.legacy?.modernRate),
+  };
 }
 
 function normalizeSuiteData(suite) {

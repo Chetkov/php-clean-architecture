@@ -19,6 +19,7 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\ComponentAnalyzer;
 use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingStartedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Report\ReportRenderingServiceInterface;
+use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportDataBuilder;
 use Chetkov\PHPCleanArchitecture\Service\VendorBasedComponentsCreationService;
 
 /**
@@ -222,6 +223,18 @@ class PHPCleanArchitectureFacade
 
         $this->createReportRenderingService()->render($reportPath, ...$this->analyzedComponents);
         $this->eventManager->notify(new ReportBuildingFinishedEvent());
+    }
+
+    /**
+     * @param array<string> $allowedPaths
+     *
+     * @return array<string, mixed>
+     */
+    public function buildReportData(array $allowedPaths = []): array
+    {
+        $this->analyze()->filterByPaths($allowedPaths);
+
+        return (new ReportDataBuilder())->build(...$this->analyzedComponents);
     }
 
     /**

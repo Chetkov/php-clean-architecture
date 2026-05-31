@@ -38,6 +38,7 @@ https://github.com/Chetkov/php-clean-architecture/blob/master/example.phpca-conf
 
 - `reports_dir` - directory where `phpca-build-reports` writes the HTML report. In the sample config, it can be
   overridden through `PHPCA_REPORTS_DIR`.
+- `history` - optional architecture snapshot storage for the report timeline mode.
 - `debug_scan_paths` - optional directories or files scanned by `phpca-debug-unmatched-files` to find PHP files outside
   configured components.
 - `components` - list of architecture components in the project.
@@ -89,6 +90,26 @@ When a project is gradually moving from an old structure to a new one, a compone
 Every file discovered from a root with `legacy: true` is treated as legacy. When the key is omitted, the root is treated
 as modern. The report shows modernization progress: the main percentage is calculated by physical PHP file lines, while
 both LoC and `UnitOfCode` counts are shown for the whole system, every component, and every nested `sub` report.
+
+### Report History And Timeline
+
+To see how architecture changes from release to release or from CI run to CI run, enable history:
+
+```php
+'history' => [
+    'enabled' => true,
+    'dir' => __DIR__ . '/var/phpca-history',
+    'collect_on_check' => true,
+],
+```
+
+Keep `dir` outside `reports_dir`, because the report directory is recreated on every report generation. History stores
+compact snapshots: date, git metadata, summary, component metrics, legacy/modernization data, A/I data, and component
+graph edges for the root report and all nested `sub` reports.
+
+When history is enabled, `phpca-build-reports` records a new snapshot and embeds history into the self-contained HTML
+report. To record a snapshot without generating UI, use `phpca-check --record-history` or enable
+`history.collect_on_check`.
 
 ### Nested Reports
 
@@ -166,6 +187,9 @@ newline-separated list of paths.
 
 `PHPCA_REPORTS_DIR` can be used by the sample config to override `reports_dir` without changing the config file.
 
+`phpca-check --record-history` stores an architecture snapshot without generating a report. `phpca-build-reports --with-history`
+forces snapshot recording even when `history.enabled` is not enabled in the config.
+
 `phpca-debug-unmatched-files` also accepts extra paths after the config. When they are passed, only those paths are
 scanned:
 
@@ -206,6 +230,7 @@ Main capabilities:
 - status coloring for `allowed`, `internal`, `allowed state`, `private API`, and `blocked`;
 - copying file paths and full unit names from dependency details;
 - URL navigation: selected report, component, tab, unit, and search are restored after refresh;
+- timeline over stored snapshots with autoplay and comparison against the previous snapshot;
 - RU / EN / 中文 localization.
 
 Example report from a larger project:

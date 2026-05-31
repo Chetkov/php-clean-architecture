@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Chetkov\PHPCleanArchitecture;
 
 use Chetkov\PHPCleanArchitecture\Service\Config\EffectiveConfigNode;
+use Chetkov\PHPCleanArchitecture\Service\Report\History\ReportHistorySnapshotBuilder;
+use Chetkov\PHPCleanArchitecture\Service\Report\History\ReportHistoryStorage;
 use Chetkov\PHPCleanArchitecture\Service\Report\SpaReport\ReportSuiteRenderer;
 
 final class ConfigTreeRunner
@@ -37,7 +39,7 @@ final class ConfigTreeRunner
      *
      * @return array<string>
      */
-    public function check(EffectiveConfigNode $rootNode, array $allowedPaths = []): array
+    public function check(EffectiveConfigNode $rootNode, array $allowedPaths = [], bool $recordHistory = false): array
     {
         $errors = [];
         foreach ($rootNode->flatten() as $node) {
@@ -47,19 +49,29 @@ final class ConfigTreeRunner
             }
         }
 
+        if ($recordHistory || $this->shouldCollectHistoryOnCheck($rootNode)) {
+            $this->recordHistoryFromAnalysis($rootNode, $allowedPaths);
+        }
+
         return $errors;
     }
 
     /**
      * @param array<string> $allowedPaths
      */
-    public function generateReports(EffectiveConfigNode $rootNode, array $allowedPaths = []): void
+    public function generateReports(EffectiveConfigNode $rootNode, array $allowedPaths = [], bool $recordHistory = false): void
     {
         foreach ($rootNode->flatten() as $node) {
             (new PHPCleanArchitectureFacade($node->config()))->generateReport($node->reportPath(), $allowedPaths);
         }
 
-        (new ReportSuiteRenderer())->render($rootNode);
+        $suiteRenderer = new ReportSuiteRenderer();
+        $suiteData = $suiteRenderer->render($rootNode);
+
+        if ($recordHistory || $this->isHistoryEnabled($rootNode)) {
+            $historyData = $this->recordHistoryFromReports($rootNode, $suiteData);
+            $suiteRenderer->writeHistory($rootNode, $historyData);
+        }
     }
 
     /**
@@ -151,5 +163,135 @@ final class ConfigTreeRunner
         }
 
         return $currentWorkingDirectory;
+    }
+
+    /**
+     * @param array<string> $allowedPaths
+     */
+    private function recordHistoryFromAnalysis(EffectiveConfigNode $rootNode, array $allowedPaths): void
+    {
+        $reportDataByNodeId = [];
+        foreach ($rootNode->flatten() as $node) {
+            $reportDataByNodeId[$node->id()] = (new PHPCleanArchitectureFacade($node->config()))->buildReportData($allowedPaths);
+        }
+
+        $suiteData = $this->buildSuiteDataFromAnalysis($rootNode, $reportDataByNodeId);
+        $rootReport = $reportDataByNodeId[$rootNode->id()];
+        $this->recordHistorySnapshot($rootNode, $rootReport, $suiteData);
+    }
+
+    /**
+     * @param array<string, mixed> $suiteData
+     *
+     * @return array<string, mixed>
+     */
+    private function recordHistoryFromReports(EffectiveConfigNode $rootNode, array $suiteData): array
+    {
+        $rootReport = $this->readReportData($rootNode->reportPath());
+
+        return $this->recordHistorySnapshot($rootNode, $rootReport, $suiteData);
+    }
+
+    /**
+     * @param array<string, mixed> $rootReport
+     * @param array<string, mixed> $suiteData
+     *
+     * @return array<string, mixed>
+     */
+    private function recordHistorySnapshot(EffectiveConfigNode $rootNode, array $rootReport, array $suiteData): array
+    {
+        $historyDirectory = $this->historyDirectory($rootNode);
+        $snapshot = (new ReportHistorySnapshotBuilder())->build($rootReport, $suiteData);
+
+        return (new ReportHistoryStorage($historyDirectory))->append($snapshot);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $reportDataByNodeId
+     *
+     * @return array<string, mixed>
+     */
+    private function buildSuiteDataFromAnalysis(EffectiveConfigNode $rootNode, array $reportDataByNodeId): array
+    {
+        return [
+            'schemaVersion' => 1,
+            'rootId' => 'root',
+            'tree' => $this->buildSuiteNodeFromAnalysis($rootNode, $rootNode->reportPath(), $reportDataByNodeId),
+        ];
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $reportDataByNodeId
+     *
+     * @return array<string, mixed>
+     */
+    private function buildSuiteNodeFromAnalysis(EffectiveConfigNode $node, string $rootReportPath, array $reportDataByNodeId): array
+    {
+        return [
+            'id' => $node->id(),
+            'title' => $node->title(),
+            'reportPath' => $this->relativeReportPath($rootReportPath, $node->reportPath()),
+            'report' => $reportDataByNodeId[$node->id()],
+            'children' => array_map(function (EffectiveConfigNode $child) use ($rootReportPath, $reportDataByNodeId): array {
+                return $this->buildSuiteNodeFromAnalysis($child, $rootReportPath, $reportDataByNodeId);
+            }, $node->children()),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function readReportData(string $reportPath): array
+    {
+        $path = $reportPath . '/report.json';
+        $json = file_get_contents($path);
+        if (!is_string($json)) {
+            throw new \RuntimeException(sprintf('Report data "%s" can not be read', $path));
+        }
+
+        $data = json_decode($json, true);
+        if (!is_array($data)) {
+            throw new \RuntimeException(sprintf('Report data "%s" can not be decoded', $path));
+        }
+
+        return $data;
+    }
+
+    private function relativeReportPath(string $rootReportPath, string $reportPath): string
+    {
+        $rootReportPath = rtrim($rootReportPath, '/');
+        $reportPath = rtrim($reportPath, '/');
+
+        if ($reportPath === $rootReportPath) {
+            return '.';
+        }
+
+        $prefix = $rootReportPath . '/';
+        if (strpos($reportPath, $prefix) === 0) {
+            return substr($reportPath, strlen($prefix));
+        }
+
+        return basename($reportPath);
+    }
+
+    private function isHistoryEnabled(EffectiveConfigNode $rootNode): bool
+    {
+        return !empty($rootNode->config()['history']['enabled']);
+    }
+
+    private function shouldCollectHistoryOnCheck(EffectiveConfigNode $rootNode): bool
+    {
+        return !empty($rootNode->config()['history']['enabled'])
+            && !empty($rootNode->config()['history']['collect_on_check']);
+    }
+
+    private function historyDirectory(EffectiveConfigNode $rootNode): string
+    {
+        $directory = $rootNode->config()['history']['dir'] ?? null;
+        if (is_string($directory) && $directory !== '') {
+            return $directory;
+        }
+
+        return dirname($rootNode->reportPath()) . '/phpca-history';
     }
 }

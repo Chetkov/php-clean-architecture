@@ -8,11 +8,25 @@ use Chetkov\PHPCleanArchitecture\Service\Config\EffectiveConfigNode;
 
 final class ReportSuiteRenderer
 {
-    public function render(EffectiveConfigNode $rootNode): void
+    /**
+     * @return array<string, mixed>
+     */
+    public function render(EffectiveConfigNode $rootNode): array
     {
         $suiteData = $this->buildSuiteData($rootNode);
         $this->writeJson($rootNode->reportPath() . '/suite.json', $this->stripInlineReports($suiteData));
-        $this->embedSuiteData($rootNode->reportPath() . '/index.html', $suiteData);
+        $this->embedJsonData($rootNode->reportPath() . '/index.html', 'phpca-report-suite', $suiteData, 'Suite');
+
+        return $suiteData;
+    }
+
+    /**
+     * @param array<string, mixed> $historyData
+     */
+    public function writeHistory(EffectiveConfigNode $rootNode, array $historyData): void
+    {
+        $this->writeJson($rootNode->reportPath() . '/history.json', $historyData);
+        $this->embedJsonData($rootNode->reportPath() . '/index.html', 'phpca-report-history', $historyData, 'History');
     }
 
     /**
@@ -126,7 +140,7 @@ final class ReportSuiteRenderer
     /**
      * @param array<string, mixed> $data
      */
-    private function embedSuiteData(string $indexPath, array $data): void
+    private function embedJsonData(string $indexPath, string $scriptId, array $data, string $dataName): void
     {
         $html = file_get_contents($indexPath);
         if (!is_string($html)) {
@@ -143,7 +157,7 @@ final class ReportSuiteRenderer
             | JSON_HEX_QUOT
         );
         if (!is_string($json)) {
-            throw new \RuntimeException('Suite data can not be encoded to JSON.');
+            throw new \RuntimeException($dataName . ' data can not be encoded to JSON.');
         }
 
         $position = strpos($html, '</head>');
@@ -151,7 +165,7 @@ final class ReportSuiteRenderer
             throw new \RuntimeException('SPA report index.html can not be prepared for inline suite data.');
         }
 
-        $script = '    <script id="phpca-report-suite" type="application/json">' . $json . '</script>' . PHP_EOL;
+        $script = '    <script id="' . $scriptId . '" type="application/json">' . $json . '</script>' . PHP_EOL;
         $html = substr($html, 0, $position) . $script . substr($html, $position);
 
         if (file_put_contents($indexPath, $html) === false) {

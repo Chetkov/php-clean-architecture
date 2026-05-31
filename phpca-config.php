@@ -21,6 +21,16 @@ return [
     // Значение можно переопределить переменной окружения PHPCA_REPORTS_DIR.
     'reports_dir' => (string) getenv('PHPCA_REPORTS_DIR') ?: __DIR__ . '/phpca-reports',
 
+    // История архитектурных снимков для timeline-режима отчета.
+    // Если включить history.enabled, phpca-build-reports будет сохранять компактный snapshot метрик и графов.
+    // Директорию истории лучше держать вне reports_dir: reports_dir пересоздается при каждой генерации отчета.
+    // phpca-check тоже может сохранять snapshot, если включить collect_on_check или запустить команду с --record-history.
+    // 'history' => [
+    //     'enabled' => true,
+    //     'dir' => __DIR__ . '/var/phpca-history',
+    //     'collect_on_check' => false,
+    // ],
+
     // Область сканирования для debug-команды поиска файлов вне компонентов.
     'debug_scan_paths' => [
         __DIR__ . '/src',
