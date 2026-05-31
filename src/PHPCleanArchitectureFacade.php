@@ -91,7 +91,7 @@ class PHPCleanArchitectureFacade
             $rootPaths = [];
             foreach ($this->arrayListValue($componentConfig, 'roots') as $rootPathConfig) {
                 $rootPath = $this->stringValue($rootPathConfig, 'path');
-                $rootNamespace = $this->stringValue($rootPathConfig, 'namespace');
+                $rootNamespace = $this->stringValue($rootPathConfig, 'namespace', true);
                 if ($rootPath === null || $rootNamespace === null) {
                     continue;
                 }
@@ -240,11 +240,14 @@ class PHPCleanArchitectureFacade
     /**
      * @param array<string, mixed> $data
      */
-    private function stringValue(array $data, string $key): ?string
+    private function stringValue(array $data, string $key, bool $allowEmpty = false): ?string
     {
         $value = $data[$key] ?? null;
+        if (!is_string($value)) {
+            return null;
+        }
 
-        return is_string($value) && $value !== '' ? $value : null;
+        return $allowEmpty || $value !== '' ? $value : null;
     }
 
     /**

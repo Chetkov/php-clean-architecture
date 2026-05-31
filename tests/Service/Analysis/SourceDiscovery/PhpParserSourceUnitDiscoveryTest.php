@@ -11,6 +11,30 @@ use PHPUnit\Framework\TestCase;
 
 final class PhpParserSourceUnitDiscoveryTest extends TestCase
 {
+    public function testDiscoversScriptFallbackFromEmptyNamespaceDirectoryRoot(): void
+    {
+        $path = __DIR__ . '/../../../Fixtures/SourceDiscovery/Scripts/phpca-tool';
+        $sourceUnits = (new PhpParserSourceUnitDiscovery())->discover(
+            new \SplFileInfo($path),
+            new Path(__DIR__ . '/../../../Fixtures/SourceDiscovery/Scripts', '')
+        );
+
+        self::assertCount(1, $sourceUnits);
+        self::assertSame('phpca-tool', $sourceUnits[0]->name());
+        self::assertSame(SourceUnit::KIND_SCRIPT, $sourceUnits[0]->kind());
+    }
+
+    public function testSkipsNamelessFallbackFromExactEmptyNamespaceFileRoot(): void
+    {
+        $path = __DIR__ . '/../../../Fixtures/SourceDiscovery/Scripts/phpca-tool';
+        $sourceUnits = (new PhpParserSourceUnitDiscovery())->discover(
+            new \SplFileInfo($path),
+            new Path($path, '')
+        );
+
+        self::assertSame([], $sourceUnits);
+    }
+
     public function testDiscoversClassesFromPhp85SyntaxFiles(): void
     {
         $path = __DIR__ . '/../../../Fixtures/DependencyParsing/Php85Subject.php85';

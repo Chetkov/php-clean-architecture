@@ -131,6 +131,16 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
         unlink($storage);
     }
 
+    public function testEmptyNamespaceRootIsAnalyzed(): void
+    {
+        $config = $this->createEmptyNamespaceScriptConfig();
+        $reportData = (new PHPCleanArchitectureFacade($config))->buildReportData();
+
+        self::assertSame(1, $reportData['summary']['components']);
+        self::assertSame(1, $reportData['summary']['units']);
+        self::assertSame('phpca-tool', $reportData['units'][0]['name']);
+    }
+
     public function testGenerateReportCreatesSpaReportWithJsonData(): void
     {
         $reportPath = sys_get_temp_dir() . '/phpca-spa-report-' . bin2hex(random_bytes(8));
@@ -379,6 +389,56 @@ final class PHPCleanArchitectureFacadeTest extends TestCase
                 'allowed_state' => [
                     'enabled' => $allowedStateStorage !== null,
                     'storage' => $allowedStateStorage ?? '',
+                ],
+            ],
+            'factories' => [
+                'dependencies_finder' => static function (): AstDependenciesFinder {
+                    return new AstDependenciesFinder();
+                },
+                'report_rendering_service' => static function (): NullReportRenderingService {
+                    return new NullReportRenderingService();
+                },
+                'event_manager' => static function (): NullEventManager {
+                    return new NullEventManager();
+                },
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function createEmptyNamespaceScriptConfig(): array
+    {
+        return [
+            'reports_dir' => sys_get_temp_dir() . '/phpca-test-report',
+            'vendor_based_components' => [
+                'enabled' => false,
+                'vendor_path' => '',
+                'excluded' => [],
+            ],
+            'restrictions' => [
+                'check_acyclic_dependencies_principle' => false,
+                'check_stable_dependencies_principle' => false,
+            ],
+            'components' => [
+                [
+                    'name' => 'scripts',
+                    'roots' => [
+                        [
+                            'path' => __DIR__ . '/Fixtures/SourceDiscovery/Scripts',
+                            'namespace' => '',
+                        ],
+                    ],
+                    'restrictions' => [
+                        'allowed_dependencies' => ['scripts'],
+                    ],
+                ],
+            ],
+            'exclusions' => [
+                'allowed_state' => [
+                    'enabled' => false,
+                    'storage' => '',
                 ],
             ],
             'factories' => [

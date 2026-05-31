@@ -39,23 +39,35 @@ class PhpParserSourceUnitDiscovery implements SourceUnitDiscoveryInterface
         $fallbackName = $this->createFallbackName($fullPath, $rootPath);
         $content = file_get_contents($fullPath);
         if ($content === false) {
-            return [new SourceUnit($fallbackName, $fullPath, SourceUnit::KIND_SCRIPT)];
+            return $this->fallbackSourceUnit($fallbackName, $fullPath);
         }
 
         try {
             $ast = $this->parser->parse($content) ?? [];
         } catch (\PhpParser\Error $error) {
-            return [new SourceUnit($fallbackName, $fullPath, SourceUnit::KIND_SCRIPT)];
+            return $this->fallbackSourceUnit($fallbackName, $fullPath);
         }
 
         $sourceUnits = [];
         $this->collectSourceUnits($ast, '', $fullPath, $sourceUnits);
 
         if (empty($sourceUnits)) {
-            return [new SourceUnit($fallbackName, $fullPath, SourceUnit::KIND_SCRIPT)];
+            return $this->fallbackSourceUnit($fallbackName, $fullPath);
         }
 
         return $sourceUnits;
+    }
+
+    /**
+     * @return array<SourceUnit>
+     */
+    private function fallbackSourceUnit(string $fallbackName, string $fullPath): array
+    {
+        if ($fallbackName === '') {
+            return [];
+        }
+
+        return [new SourceUnit($fallbackName, $fullPath, SourceUnit::KIND_SCRIPT)];
     }
 
     private function createFallbackName(string $fullPath, Path $rootPath): string
