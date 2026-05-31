@@ -10,11 +10,12 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\AnalysisStartedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\ComponentAnalysisStartedEvent;
+use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\DependenciesFinderInterface;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\SourceFileFinder;
+use Chetkov\PHPCleanArchitecture\Service\Config\ConfigNormalizer;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
 use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\Restrictions;
-use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\ComponentAnalyzer;
 use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingFinishedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Report\Event\ReportBuildingStartedEvent;
@@ -60,82 +61,91 @@ class PHPCleanArchitectureFacade
      */
     public function __construct(array $config)
     {
+        $config = (new ConfigNormalizer())->normalizeConfig($config);
         $this->analysisContext = new AnalysisContext();
-        $vendorBasedComponentsConfig = $config['vendor_based_components'];
-        if (!empty($vendorBasedComponentsConfig['enabled']) && !empty($vendorBasedComponentsConfig['vendor_path'])) {
-            $excludedVendorPaths = $vendorBasedComponentsConfig['excluded'] ?? [];
+        $vendorBasedComponentsConfig = $this->arrayValue($config, 'vendor_based_components');
+        $vendorPath = $this->stringValue($vendorBasedComponentsConfig, 'vendor_path');
+        if ($this->boolValue($vendorBasedComponentsConfig, 'enabled', false) && $vendorPath !== null) {
             $vendorBasedComponentsCreator = new VendorBasedComponentsCreationService(
-                $excludedVendorPaths,
+                $this->stringListValue($vendorBasedComponentsConfig, 'excluded'),
                 $this->analysisContext
             );
-            $vendorBasedComponentsCreator->create($vendorBasedComponentsConfig['vendor_path']);
+            $vendorBasedComponentsCreator->create($vendorPath);
         }
 
         $allowedState = [];
-        $commonExclusionsConfig = $config['exclusions'] ?? [];
-        if (
-            !empty($commonExclusionsConfig['allowed_state']['enabled'])
-            && !empty($commonExclusionsConfig['allowed_state']['storage'])
-            && file_exists($commonExclusionsConfig['allowed_state']['storage'])
-        ) {
-            $allowedState = require $commonExclusionsConfig['allowed_state']['storage'];
+        $allowedStateConfig = $this->arrayValue($this->arrayValue($config, 'exclusions'), 'allowed_state');
+        $allowedStateStorage = $this->stringValue($allowedStateConfig, 'storage');
+        if ($this->boolValue($allowedStateConfig, 'enabled', false) && $allowedStateStorage !== null && file_exists($allowedStateStorage)) {
+            $loadedAllowedState = require $allowedStateStorage;
+            if (is_array($loadedAllowedState)) {
+                $allowedState = $loadedAllowedState;
+            }
         }
 
         $this->analyzedComponents = [];
-        $commonRestrictionsConfig = $config['restrictions'] ?? [];
-        $this->checkAcyclicDependenciesPrinciple = $commonRestrictionsConfig['check_acyclic_dependencies_principle'] ?? true;
-        $this->checkStableDependenciesPrinciple = $commonRestrictionsConfig['check_stable_dependencies_principle'] ?? true;
-        foreach ($config['components'] as $componentConfig) {
+        $commonRestrictionsConfig = $this->arrayValue($config, 'restrictions');
+        $this->checkAcyclicDependenciesPrinciple = $this->boolValue($commonRestrictionsConfig, 'check_acyclic_dependencies_principle', true);
+        $this->checkStableDependenciesPrinciple = $this->boolValue($commonRestrictionsConfig, 'check_stable_dependencies_principle', true);
+        foreach ($this->componentConfigs($config) as $componentConfig) {
             $rootPaths = [];
-            foreach ($componentConfig['roots'] ?? [] as $rootPathConfig) {
+            foreach ($this->arrayListValue($componentConfig, 'roots') as $rootPathConfig) {
+                $rootPath = $this->stringValue($rootPathConfig, 'path');
+                $rootNamespace = $this->stringValue($rootPathConfig, 'namespace');
+                if ($rootPath === null || $rootNamespace === null) {
+                    continue;
+                }
+
                 $rootPaths[] = new Path(
-                    $rootPathConfig['path'],
-                    $rootPathConfig['namespace'],
-                    $rootPathConfig['legacy'] ?? false
+                    $rootPath,
+                    $rootNamespace,
+                    $this->boolValue($rootPathConfig, 'legacy', false)
                 );
             }
 
             $excludedPaths = [];
-            foreach ($componentConfig['excluded'] ?? [] as $excludedPath) {
+            foreach ($this->stringListValue($componentConfig, 'excluded') as $excludedPath) {
                 $excludedPaths[] = new Path($excludedPath, '');
             }
 
             $restrictions = new Restrictions();
-            $componentRestrictionsConfig = $componentConfig['restrictions'] ?? [];
+            $componentRestrictionsConfig = $this->arrayValue($componentConfig, 'restrictions');
 
-            foreach ($componentRestrictionsConfig['public_elements'] ?? [] as $publicElement) {
+            foreach ($this->stringListValue($componentRestrictionsConfig, 'public_elements') as $publicElement) {
                 $restrictions->addPublicPath(Path::fromString($publicElement));
             }
-            foreach ($componentRestrictionsConfig['private_elements'] ?? [] as $privateElement) {
+            foreach ($this->stringListValue($componentRestrictionsConfig, 'private_elements') as $privateElement) {
                 $restrictions->addPrivatePath(Path::fromString($privateElement));
             }
 
-            foreach ($componentRestrictionsConfig['allowed_dependencies'] ?? [] as $allowedDependency) {
+            foreach ($this->stringListValue($componentRestrictionsConfig, 'allowed_dependencies') as $allowedDependency) {
                 $restrictions->addAllowedDependencyComponent(Component::create($this->analysisContext, $allowedDependency));
             }
-            foreach ($componentRestrictionsConfig['forbidden_dependencies'] ?? [] as $forbiddenDependency) {
+            foreach ($this->stringListValue($componentRestrictionsConfig, 'forbidden_dependencies') as $forbiddenDependency) {
                 $restrictions->addForbiddenDependencyComponent(Component::create($this->analysisContext, $forbiddenDependency));
             }
 
-            if (isset($allowedState[$componentConfig['name']])) {
-                $restrictions->setAllowedState($allowedState[$componentConfig['name']]);
+            $componentName = $this->stringValue($componentConfig, 'name') ?? 'component';
+            $componentAllowedState = $this->allowedStateConfig($allowedState[$componentName] ?? null);
+            if ($componentAllowedState !== null) {
+                $restrictions->setAllowedState($componentAllowedState);
             }
 
-            $maxAllowableDistance = $componentRestrictionsConfig['max_allowable_distance'] ?? null;
+            $maxAllowableDistance = $this->floatValue($componentRestrictionsConfig, 'max_allowable_distance');
             if ($maxAllowableDistance === null) {
-                $maxAllowableDistance = $commonRestrictionsConfig['max_allowable_distance'] ?? null;
+                $maxAllowableDistance = $this->floatValue($commonRestrictionsConfig, 'max_allowable_distance');
             }
             $restrictions->setMaxAllowableDistance($maxAllowableDistance);
 
             $component = Component::create(
                 $this->analysisContext,
-                $componentConfig['name'],
+                $componentName,
                 $rootPaths,
                 $excludedPaths,
                 $restrictions
             );
 
-            $isEnabledForAnalysis = $componentConfig['is_analyze_enabled'] ?? true;
+            $isEnabledForAnalysis = $this->boolValue($componentConfig, 'is_analyze_enabled', true);
             if ($isEnabledForAnalysis) {
                 $this->analyzedComponents[] = $component;
             } else {
@@ -143,16 +153,186 @@ class PHPCleanArchitectureFacade
             }
         }
 
-        $eventManagerFactory = $config['factories']['event_manager'];
-        $dependenciesFinderFactory = $config['factories']['dependencies_finder'];
-        $this->eventManager = $eventManagerFactory();
+        $factories = $this->arrayValue($config, 'factories');
+        $eventManagerFactory = $this->callableValue($factories, 'event_manager');
+        $dependenciesFinderFactory = $this->callableValue($factories, 'dependencies_finder');
+        $reportRenderingServiceFactory = $this->callableValue($factories, 'report_rendering_service');
+
+        $eventManager = $eventManagerFactory();
+        if (!$eventManager instanceof EventManagerInterface) {
+            throw new \RuntimeException('Factory "event_manager" must return EventManagerInterface.');
+        }
+        $this->eventManager = $eventManager;
         $this->sourceFileFinder = new SourceFileFinder();
+        $dependenciesFinder = $dependenciesFinderFactory();
+        if (!$dependenciesFinder instanceof DependenciesFinderInterface) {
+            throw new \RuntimeException('Factory "dependencies_finder" must return DependenciesFinderInterface.');
+        }
         $this->componentAnalyzer = new ComponentAnalyzer(
-            $dependenciesFinderFactory(),
+            $dependenciesFinder,
             $this->eventManager,
             $this->analysisContext
         );
-        $this->reportRenderingServiceFactory = $config['factories']['report_rendering_service'];
+        $this->reportRenderingServiceFactory = $reportRenderingServiceFactory;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function componentConfigs(array $config): array
+    {
+        return $this->arrayListValue($config, 'components');
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function arrayValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+
+        return is_array($value) ? $this->stringKeyedArray($value) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function arrayListValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $result[] = $this->stringKeyedArray($item);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string>
+     */
+    private function stringListValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+        if (!is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter($value, static function ($item): bool {
+            return is_string($item);
+        }));
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function stringValue(array $data, string $key): ?string
+    {
+        $value = $data[$key] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function boolValue(array $data, string $key, bool $default): bool
+    {
+        $value = $data[$key] ?? null;
+
+        return is_bool($value) ? $value : $default;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function floatValue(array $data, string $key): ?float
+    {
+        $value = $data[$key] ?? null;
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function callableValue(array $data, string $key): callable
+    {
+        $value = $data[$key] ?? null;
+        if (!is_callable($value)) {
+            throw new \RuntimeException(sprintf('Factory "%s" must be callable.', $key));
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return array<string, array<string, array<string, bool>>>|null
+     */
+    private function allowedStateConfig($value): ?array
+    {
+        if (!is_array($value)) {
+            return null;
+        }
+
+        $allowedState = [];
+        foreach ($value as $dependencyComponentName => $dependentUnits) {
+            if (!is_string($dependencyComponentName) || !is_array($dependentUnits)) {
+                return null;
+            }
+
+            foreach ($dependentUnits as $sourceUnit => $dependencyUnits) {
+                if (!is_string($sourceUnit) || !is_array($dependencyUnits)) {
+                    return null;
+                }
+
+                foreach ($dependencyUnits as $targetUnit => $isAllowed) {
+                    if (!is_string($targetUnit) || !is_bool($isAllowed)) {
+                        return null;
+                    }
+
+                    $allowedState[$dependencyComponentName][$sourceUnit][$targetUnit] = $isAllowed;
+                }
+            }
+        }
+
+        return $allowedState;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -302,7 +482,7 @@ class PHPCleanArchitectureFacade
         if (!$this->isAnalyzePerformed) {
             $this->eventManager->notify(new AnalysisStartedEvent());
             $totalComponents = count($this->analyzedComponents);
-            foreach ($this->analyzedComponents as $index => $component) {
+            foreach (array_values($this->analyzedComponents) as $index => $component) {
                 $this->eventManager->notify(new ComponentAnalysisStartedEvent($index, $totalComponents, $component));
                 $this->componentAnalyzer->analyze($component);
                 $this->eventManager->notify(new ComponentAnalysisFinishedEvent($index, $totalComponents, $component));
@@ -346,7 +526,12 @@ class PHPCleanArchitectureFacade
     private function createReportRenderingService(): ReportRenderingServiceInterface
     {
         $reportRenderingServiceFactory = $this->reportRenderingServiceFactory;
-        return $reportRenderingServiceFactory($this->eventManager);
+        $reportRenderingService = $reportRenderingServiceFactory($this->eventManager);
+        if (!$reportRenderingService instanceof ReportRenderingServiceInterface) {
+            throw new \RuntimeException('Factory "report_rendering_service" must return ReportRenderingServiceInterface.');
+        }
+
+        return $reportRenderingService;
     }
 
     private function isMatchedByKnownComponent(string $fullPath): bool

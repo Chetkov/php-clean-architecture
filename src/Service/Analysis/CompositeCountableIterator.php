@@ -49,7 +49,12 @@ class CompositeCountableIterator implements \Iterator, \Countable
     #[\ReturnTypeWillChange]
     public function key()
     {
-        return $this->getCurrentIterator()->key();
+        $key = $this->getCurrentIterator()->key();
+        if ($key === null || is_bool($key) || is_float($key) || is_int($key) || is_string($key)) {
+            return $key;
+        }
+
+        return null;
     }
 
     /**

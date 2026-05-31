@@ -39,8 +39,9 @@ final class ConfigTreeBuilder
      */
     public function build(array $rootConfig): EffectiveConfigNode
     {
+        $configuredReportsPath = $rootConfig['reports_dir'] ?? null;
         $this->rootReportsPath = $this->pathResolver->normalizeRootReportPath(
-            $rootConfig['reports_dir'] ?? getcwd() . '/phpca-reports'
+            is_string($configuredReportsPath) && $configuredReportsPath !== '' ? $configuredReportsPath : getcwd() . '/phpca-reports'
         );
         $rootConfig = $this->normalizer->normalizeConfig($rootConfig);
         $rootConfig['reports_dir'] = $this->rootReportsPath;
@@ -78,13 +79,16 @@ final class ConfigTreeBuilder
         $children = [];
         $usedChildSlugs = [];
         foreach ($components as $component) {
-            if (!isset($component['sub']) || !is_array($component['sub'])) {
+            $subConfig = $component['sub'] ?? null;
+            if (!is_array($subConfig)) {
                 continue;
             }
 
-            $componentName = (string) ($component['name'] ?? 'component');
+            $componentName = isset($component['name']) && is_string($component['name']) && $component['name'] !== ''
+                ? $component['name']
+                : 'component';
             $childIdParts = $this->pathResolver->childIdParts($idParts, $componentName, $usedChildSlugs);
-            $childConfig = $this->inheritanceResolver->createEffectiveSubConfig($component['sub'], $inheritedContext);
+            $childConfig = $this->inheritanceResolver->createEffectiveSubConfig($this->stringKeyedArray($subConfig), $inheritedContext);
             if (!isset($childConfig['debug_scan_paths'])) {
                 $childConfig['debug_scan_paths'] = $this->componentRootPaths($component);
             }
@@ -92,7 +96,7 @@ final class ConfigTreeBuilder
             $childConfig['reports_dir'] = $childReportPath;
             $childAllowedStateContext = $this->allowedStateStorageResolver->configureChildStorage(
                 $childConfig,
-                $component['sub'],
+                $this->stringKeyedArray($subConfig),
                 $childIdParts,
                 $allowedStateContext
             );
@@ -121,7 +125,12 @@ final class ConfigTreeBuilder
     private function componentRootPaths(array $component): array
     {
         $paths = [];
-        foreach ($component['roots'] ?? [] as $rootConfig) {
+        $roots = $component['roots'] ?? [];
+        if (!is_array($roots)) {
+            return [];
+        }
+
+        foreach ($roots as $rootConfig) {
             if (!is_array($rootConfig) || empty($rootConfig['path']) || !is_string($rootConfig['path'])) {
                 continue;
             }
@@ -130,5 +139,22 @@ final class ConfigTreeBuilder
         }
 
         return $paths;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

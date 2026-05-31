@@ -18,7 +18,7 @@ final class ConfigTreeRunner
     {
         $savedPaths = [];
         foreach ($rootNode->flatten() as $node) {
-            $stateStorage = $node->config()['exclusions']['allowed_state']['storage'] ?? null;
+            $stateStorage = $this->allowedStateStorage($node);
             if (!is_string($stateStorage) || $stateStorage === '') {
                 continue;
             }
@@ -98,20 +98,17 @@ final class ConfigTreeRunner
      */
     private function defaultScanPaths(EffectiveConfigNode $node): array
     {
-        if (isset($node->config()['debug_scan_paths']) && is_array($node->config()['debug_scan_paths'])) {
-            return array_values(array_filter($node->config()['debug_scan_paths'], static function ($path): bool {
+        $debugScanPaths = $node->config()['debug_scan_paths'] ?? null;
+        if (is_array($debugScanPaths)) {
+            return array_values(array_filter($debugScanPaths, static function ($path): bool {
                 return is_string($path) && $path !== '';
             }));
         }
 
         $rootPaths = [];
-        foreach ($node->config()['components'] as $componentConfig) {
-            if (!is_array($componentConfig)) {
-                continue;
-            }
-
-            foreach ($componentConfig['roots'] ?? [] as $rootConfig) {
-                if (!is_array($rootConfig) || empty($rootConfig['path']) || !is_string($rootConfig['path'])) {
+        foreach ($this->componentConfigs($node) as $componentConfig) {
+            foreach ($this->arrayListValue($componentConfig, 'roots') as $rootConfig) {
+                if (empty($rootConfig['path']) || !is_string($rootConfig['path'])) {
                     continue;
                 }
 
@@ -254,7 +251,7 @@ final class ConfigTreeRunner
             throw new \RuntimeException(sprintf('Report data "%s" can not be decoded', $path));
         }
 
-        return $data;
+        return $this->stringKeyedArray($data);
     }
 
     private function relativeReportPath(string $rootReportPath, string $reportPath): string
@@ -276,22 +273,109 @@ final class ConfigTreeRunner
 
     private function isHistoryEnabled(EffectiveConfigNode $rootNode): bool
     {
-        return !empty($rootNode->config()['history']['enabled']);
+        return $this->boolValue($this->arrayValue($rootNode->config(), 'history'), 'enabled');
     }
 
     private function shouldCollectHistoryOnCheck(EffectiveConfigNode $rootNode): bool
     {
-        return !empty($rootNode->config()['history']['enabled'])
-            && !empty($rootNode->config()['history']['collect_on_check']);
+        $historyConfig = $this->arrayValue($rootNode->config(), 'history');
+
+        return $this->boolValue($historyConfig, 'enabled')
+            && $this->boolValue($historyConfig, 'collect_on_check');
     }
 
     private function historyDirectory(EffectiveConfigNode $rootNode): string
     {
-        $directory = $rootNode->config()['history']['dir'] ?? null;
+        $directory = $this->stringValue($this->arrayValue($rootNode->config(), 'history'), 'dir');
         if (is_string($directory) && $directory !== '') {
             return $directory;
         }
 
         return dirname($rootNode->reportPath()) . '/phpca-history';
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function componentConfigs(EffectiveConfigNode $node): array
+    {
+        return $this->arrayListValue($node->config(), 'components');
+    }
+
+    private function allowedStateStorage(EffectiveConfigNode $node): ?string
+    {
+        $exclusionsConfig = $this->arrayValue($node->config(), 'exclusions');
+        $allowedStateConfig = $this->arrayValue($exclusionsConfig, 'allowed_state');
+
+        return $this->stringValue($allowedStateConfig, 'storage');
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function arrayValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+
+        return is_array($value) ? $this->stringKeyedArray($value) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function arrayListValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $result[] = $this->stringKeyedArray($item);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function stringValue(array $data, string $key): ?string
+    {
+        $value = $data[$key] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function boolValue(array $data, string $key): bool
+    {
+        return ($data[$key] ?? false) === true;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

@@ -115,7 +115,7 @@ class AstDependenciesFinder implements DependenciesFinderInterface
      */
     private function findTargetContextInNamespace(Stmt\Namespace_ $namespace, string $unitOfCodeName): array
     {
-        $namespaceName = $namespace->name ? $namespace->name->toString() : '';
+        $namespaceName = $this->nameToString($namespace->name);
         $imports = [];
 
         foreach ($namespace->stmts as $node) {
@@ -142,11 +142,12 @@ class AstDependenciesFinder implements DependenciesFinderInterface
 
     private function isTargetClassLike(Stmt\ClassLike $node, string $namespace, string $unitOfCodeName): bool
     {
-        if (!$node->name instanceof Node\Identifier) {
+        $nodeName = $node->name;
+        if (!$nodeName instanceof Node\Identifier) {
             return false;
         }
 
-        $name = $namespace ? $namespace . '\\' . $node->name->toString() : $node->name->toString();
+        $name = $namespace ? $namespace . '\\' . $nodeName->toString() : $nodeName->toString();
 
         return trim($name, '\\') === trim($unitOfCodeName, '\\');
     }
@@ -157,11 +158,11 @@ class AstDependenciesFinder implements DependenciesFinderInterface
     private function parseUseImports(Node $node): array
     {
         if ($node instanceof Stmt\Use_) {
-            return $this->parseUseItems($node->uses, null, $node->type);
+            return $this->parseUseItems($node->uses, null, $this->useType($node->type));
         }
 
         if ($node instanceof Stmt\GroupUse) {
-            return $this->parseUseItems($node->uses, $node->prefix, $node->type);
+            return $this->parseUseItems($node->uses, $node->prefix, $this->useType($node->type));
         }
 
         return [];
@@ -246,18 +247,12 @@ class AstDependenciesFinder implements DependenciesFinderInterface
             || $node instanceof Expr\ClassConstFetch
             || $node instanceof Expr\Instanceof_
         ) {
-            if ($node->class instanceof Name) {
-                $this->addName($node->class, $dependencies);
-            }
+            $this->addNameFromNode($node->class, $dependencies);
         }
 
-        if (property_exists($node, 'attrGroups')) {
-            /** @var array<Node\AttributeGroup> $attrGroups */
-            $attrGroups = $node->attrGroups;
-            foreach ($attrGroups as $attrGroup) {
-                foreach ($attrGroup->attrs as $attribute) {
-                    $this->addName($attribute->name, $dependencies);
-                }
+        foreach ($this->attributeGroups($node) as $attrGroup) {
+            foreach ($attrGroup->attrs as $attribute) {
+                $this->addName($attribute->name, $dependencies);
             }
         }
 
@@ -276,7 +271,7 @@ class AstDependenciesFinder implements DependenciesFinderInterface
     }
 
     /**
-     * @param Node\ComplexType|Node\Identifier|Name|null $type
+     * @param Node|null $type
      * @param array<string, bool> $dependencies
      */
     private function addType(?Node $type, array &$dependencies): void
@@ -315,6 +310,51 @@ class AstDependenciesFinder implements DependenciesFinderInterface
         $namespacedName = $name->getAttribute('namespacedName');
         $dependency = $namespacedName instanceof Name ? $namespacedName->toString() : $name->toString();
         $this->addDependency($dependency, $dependencies);
+    }
+
+    /**
+     * @param mixed $type
+     */
+    private function useType($type): int
+    {
+        return is_int($type) ? $type : Stmt\Use_::TYPE_UNKNOWN;
+    }
+
+    private function nameToString(?Name $name): string
+    {
+        return $name instanceof Name ? $name->toString() : '';
+    }
+
+    /**
+     * @param mixed $node
+     * @param array<string, bool> $dependencies
+     */
+    private function addNameFromNode($node, array &$dependencies): void
+    {
+        if ($node instanceof Name) {
+            $this->addName($node, $dependencies);
+        }
+    }
+
+    /**
+     * @return array<Node\AttributeGroup>
+     */
+    private function attributeGroups(Node $node): array
+    {
+        if ($node instanceof Stmt\ClassLike) {
+            return $node->attrGroups;
+        }
+        if ($node instanceof Stmt\ClassMethod || $node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
+            return $node->attrGroups;
+        }
+        if ($node instanceof Node\Param) {
+            return $node->attrGroups;
+        }
+        if ($node instanceof Stmt\Property || $node instanceof Stmt\ClassConst) {
+            return $node->attrGroups;
+        }
+
+        return [];
     }
 
     /**

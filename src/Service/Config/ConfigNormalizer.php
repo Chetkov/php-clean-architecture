@@ -51,6 +51,7 @@ final class ConfigNormalizer
                 $componentConfig['name'] = $key;
             }
 
+            /** @var array<string, mixed> $componentConfig */
             $normalized[] = $componentConfig;
         }
 

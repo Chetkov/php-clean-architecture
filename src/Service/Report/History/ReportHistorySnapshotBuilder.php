@@ -41,7 +41,7 @@ final class ReportHistorySnapshotBuilder
             return [$this->reportSnapshot('root', 'System', [], '.', $rootReport)];
         }
 
-        return $this->suiteNodeReports($suiteData['tree'], [], $rootReport);
+        return $this->suiteNodeReports($this->stringKeyedArray($suiteData['tree']), [], $rootReport);
     }
 
     /**
@@ -53,10 +53,10 @@ final class ReportHistorySnapshotBuilder
      */
     private function suiteNodeReports(array $node, array $parentPath, ?array $fallbackReport = null): array
     {
-        $id = (string) ($node['id'] ?? 'root');
-        $title = (string) ($node['title'] ?? $id);
+        $id = $this->stringValue($node, 'id') ?? 'root';
+        $title = $this->stringValue($node, 'title') ?? $id;
         $path = array_merge($parentPath, [$title]);
-        $report = isset($node['report']) && is_array($node['report']) ? $node['report'] : $fallbackReport;
+        $report = isset($node['report']) && is_array($node['report']) ? $this->stringKeyedArray($node['report']) : $fallbackReport;
         $reports = [];
 
         if ($report !== null) {
@@ -64,16 +64,12 @@ final class ReportHistorySnapshotBuilder
                 $id,
                 $title,
                 $path,
-                (string) ($node['reportPath'] ?? '.'),
+                $this->stringValue($node, 'reportPath') ?? '.',
                 $report
             );
         }
 
-        foreach ($node['children'] ?? [] as $child) {
-            if (!is_array($child)) {
-                continue;
-            }
-
+        foreach ($this->arrayListValue($node, 'children') as $child) {
             $reports = array_merge($reports, $this->suiteNodeReports($child, $path));
         }
 
@@ -93,14 +89,14 @@ final class ReportHistorySnapshotBuilder
             'title' => $title,
             'path' => $path,
             'reportPath' => $reportPath,
-            'summary' => $report['summary'] ?? [],
+            'summary' => $this->arrayValue($report, 'summary'),
             'components' => array_map(function (array $component): array {
                 return $this->componentSnapshot($component);
-            }, $report['components'] ?? []),
+            }, $this->arrayListValue($report, 'components')),
             'externalComponents' => $report['externalComponents'] ?? [],
             'componentEdges' => array_map(function (array $edge): array {
                 return $this->componentEdgeSnapshot($edge);
-            }, $report['componentEdges'] ?? []),
+            }, $this->arrayListValue($report, 'componentEdges')),
         ];
     }
 
@@ -183,5 +179,66 @@ final class ReportHistorySnapshotBuilder
 
         $value = trim((string) $output[0]);
         return $value === '' ? null : $value;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function arrayValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+
+        return is_array($value) ? $this->stringKeyedArray($value) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function arrayListValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $result[] = $this->stringKeyedArray($item);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function stringValue(array $data, string $key): ?string
+    {
+        $value = $data[$key] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

@@ -108,8 +108,9 @@ class Path
      */
     public function isContains(UnitOfCode $unitOfCode): bool
     {
-        if ($unitOfCode->path() !== null) {
-            return $this->isPartOfPath($unitOfCode->path());
+        $unitPath = $unitOfCode->path();
+        if ($unitPath !== null) {
+            return $this->isPartOfPath($unitPath);
         }
 
         return $this->isPartOfNamespace($unitOfCode->name());

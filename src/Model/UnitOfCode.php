@@ -97,7 +97,7 @@ class UnitOfCode
                             || interface_exists($fullName, false));
                         $reflection = new \ReflectionClass($fullName);
                         $isAbstract = $reflection->isAbstract();
-                    } catch (\ReflectionException $e) {
+                    } catch (\ReflectionException $exception) {
                         $isAbstract = false;
                     }
                     $type = TypeClass::getInstance($isAbstract);

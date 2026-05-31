@@ -19,7 +19,17 @@ final class AllowedStateStorageResolver
      */
     public function configuredStorage(array $config): ?string
     {
-        $storage = $config['exclusions']['allowed_state']['storage'] ?? null;
+        $exclusions = $config['exclusions'] ?? null;
+        if (!is_array($exclusions)) {
+            return null;
+        }
+
+        $allowedState = $exclusions['allowed_state'] ?? null;
+        if (!is_array($allowedState)) {
+            return null;
+        }
+
+        $storage = $allowedState['storage'] ?? null;
         return is_string($storage) && $storage !== '' ? $storage : null;
     }
 
@@ -47,10 +57,17 @@ final class AllowedStateStorageResolver
         }
 
         $relativeIdParts = array_slice($childIdParts, count($inheritedContext->rootIdParts()));
-        $config['exclusions']['allowed_state']['storage'] = $this->pathResolver->childAllowedStateStoragePath(
+        $exclusions = $config['exclusions'] ?? [];
+        $exclusions = is_array($exclusions) ? $exclusions : [];
+        $allowedState = isset($exclusions['allowed_state']) && is_array($exclusions['allowed_state'])
+            ? $exclusions['allowed_state']
+            : [];
+        $allowedState['storage'] = $this->pathResolver->childAllowedStateStoragePath(
             $inheritedRootStorage,
             $relativeIdParts
         );
+        $exclusions['allowed_state'] = $allowedState;
+        $config['exclusions'] = $exclusions;
 
         return $inheritedContext;
     }

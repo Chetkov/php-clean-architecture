@@ -51,21 +51,24 @@ class VendorBasedComponentsCreationService
             }
 
             $composerData = json_decode($content, true);
-            if (json_last_error() !== 0) {
+            if (json_last_error() !== 0 || !is_array($composerData)) {
                 continue;
             }
 
             $packageName = $composerData['name'] ?? null;
-            if (!$packageName) {
+            if (!is_string($packageName) || $packageName === '') {
                 continue;
             }
 
             $autoloadSection = $composerData['autoload'] ?? [];
-            $rootPaths = $this->createRootPathsByAutoloadSection($autoloadSection, $composerFile->getPath());
+            $rootPaths = $this->createRootPathsByAutoloadSection(
+                is_array($autoloadSection) ? $this->stringKeyedArray($autoloadSection) : [],
+                $composerFile->getPath()
+            );
 
             $autoloadDevSection = $composerData['autoload-dev'] ?? [];
             $excludedPaths = $this->createExcludedPathsByAutoloadSection(
-                $autoloadDevSection,
+                is_array($autoloadDevSection) ? $this->stringKeyedArray($autoloadDevSection) : [],
                 $composerData['exclude-from-classmap'] ?? [],
                 $composerFile->getPath()
             );
@@ -156,6 +159,10 @@ class VendorBasedComponentsCreationService
                  $relativeRootPaths = [$relativeRootPaths];
             }
             foreach ($relativeRootPaths as $relativeRootPath) {
+                if (!is_string($relativeRootPath)) {
+                    continue;
+                }
+
                 $rootPaths[] = new Path(
                     $this->createFullPath($currentPath, $relativeRootPath),
                     $includeNamespace ? (string) $namespace : ''
@@ -200,5 +207,22 @@ class VendorBasedComponentsCreationService
             }
         }
         return false;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

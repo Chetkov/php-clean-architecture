@@ -49,7 +49,7 @@ class PathHelper
                 || interface_exists($fullName, false));
             $reflection = new \ReflectionClass($fullName);
             $path = $reflection->getFileName() ?: null;
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException $exception) {
             $path = null;
         }
         return $path;

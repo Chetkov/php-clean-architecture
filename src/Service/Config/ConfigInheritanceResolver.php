@@ -98,7 +98,12 @@ final class ConfigInheritanceResolver
 
         foreach ($override as $key => $value) {
             if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
-                $base[$key] = $this->mergeConfig($base[$key], $value);
+                if ($this->isList($base[$key]) || $this->isList($value)) {
+                    $base[$key] = $value;
+                    continue;
+                }
+
+                $base[$key] = $this->mergeConfig($this->stringKeyedArray($base[$key]), $this->stringKeyedArray($value));
                 continue;
             }
 
@@ -127,5 +132,22 @@ final class ConfigInheritanceResolver
         }
 
         return true;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

@@ -11,6 +11,7 @@ trait CachingTrait
 
     /**
      * @param string $key
+     *
      * @return mixed|null
      */
     private function get(string $key)
@@ -28,9 +29,12 @@ trait CachingTrait
     }
 
     /**
+     * @template T
+     *
      * @param string $key
-     * @param callable $callable
-     * @return mixed
+     * @param callable(): T $callable
+     *
+     * @return T
      */
     private function execWithCache(string $key, callable $callable)
     {
@@ -39,6 +43,8 @@ trait CachingTrait
             $result = $callable();
             $this->set($key, $result);
         }
+
+        /** @var T $result */
         return $result;
     }
 }

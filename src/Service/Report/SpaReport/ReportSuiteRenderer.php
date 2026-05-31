@@ -78,7 +78,7 @@ final class ReportSuiteRenderer
             throw new \RuntimeException(sprintf('Report data "%s" can not be decoded', $path));
         }
 
-        return $data;
+        return $this->stringKeyedArray($data);
     }
 
     private function relativeReportPath(string $rootReportPath, string $reportPath): string
@@ -110,13 +110,17 @@ final class ReportSuiteRenderer
         }
 
         if (isset($data['tree']) && is_array($data['tree'])) {
-            $data['tree'] = $this->stripInlineReports($data['tree']);
+            $data['tree'] = $this->stripInlineReports($this->stringKeyedArray($data['tree']));
         }
 
         if (isset($data['children']) && is_array($data['children'])) {
-            $data['children'] = array_map(function (array $child): array {
-                return $this->stripInlineReports($child);
-            }, $data['children']);
+            $children = [];
+            foreach ($data['children'] as $child) {
+                if (is_array($child)) {
+                    $children[] = $this->stripInlineReports($this->stringKeyedArray($child));
+                }
+            }
+            $data['children'] = $children;
         }
 
         return $data;
@@ -171,5 +175,22 @@ final class ReportSuiteRenderer
         if (file_put_contents($indexPath, $html) === false) {
             throw new \RuntimeException(sprintf('File "%s" was not written', $indexPath));
         }
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

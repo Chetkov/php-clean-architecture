@@ -20,6 +20,7 @@ final class SourceFileFinder
         string $fileExtension = '.php',
         array $shebangTemplates = ['/usr/bin/env php', '/usr/bin/php']
     ): CompositeCountableIterator {
+        /** @var CompositeCountableIterator<\SplFileInfo> $filesIterator */
         $filesIterator = new CompositeCountableIterator();
         foreach ($paths as $path) {
             if (is_file($path->path())) {
@@ -30,9 +31,19 @@ final class SourceFileFinder
                 continue;
             }
 
+            /** @var \RecursiveIteratorIterator<\RecursiveDirectoryIterator> $recursiveDirectoryIterator */
             $recursiveDirectoryIterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path->path()));
+            $phpFiles = [];
             $phpExtIterator = new \RegexIterator($recursiveDirectoryIterator, "/\\$fileExtension$/i");
-            $filesIterator->addIterator($phpExtIterator);
+            /** @var \SplFileInfo $phpFile */
+            foreach ($phpExtIterator as $phpFile) {
+                $phpFiles[] = $phpFile;
+            }
+            if ($phpFiles !== []) {
+                /** @var \ArrayIterator<int, \SplFileInfo> $phpFilesIterator */
+                $phpFilesIterator = new \ArrayIterator($phpFiles);
+                $filesIterator->addIterator($phpFilesIterator);
+            }
 
             $phpFilesWithoutPhpExtensions = [];
             $notPhpExtIterator = new \RegexIterator($recursiveDirectoryIterator, "/^((?!\\$fileExtension).)*$/i");
@@ -61,7 +72,9 @@ final class SourceFileFinder
             }
 
             if (!empty($phpFilesWithoutPhpExtensions)) {
-                $filesIterator->addIterator(new \ArrayIterator($phpFilesWithoutPhpExtensions));
+                /** @var \ArrayIterator<int, \SplFileInfo> $phpFilesWithoutPhpExtensionsIterator */
+                $phpFilesWithoutPhpExtensionsIterator = new \ArrayIterator($phpFilesWithoutPhpExtensions);
+                $filesIterator->addIterator($phpFilesWithoutPhpExtensionsIterator);
             }
         }
 

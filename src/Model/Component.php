@@ -122,11 +122,8 @@ class Component
                         return true;
                     }
                 }
-                if (
-                    $unitOfCode->path() !== null
-                    && !empty($path->path())
-                    && stripos($unitOfCode->path(), $path->path()) === 0
-                ) {
+                $unitPath = $unitOfCode->path();
+                if ($unitPath !== null && !empty($path->path()) && stripos($unitPath, $path->path()) === 0) {
                     return true;
                 }
             }

@@ -27,15 +27,22 @@ final class ReportHistoryStorage
         $this->writeJson($snapshotFile, $snapshot);
 
         $index = $this->readIndex();
+        $indexSnapshots = $this->arrayListValue($index, 'snapshots');
         $index['snapshots'] = array_values(array_filter(
-            $index['snapshots'] ?? [],
+            $indexSnapshots,
             static function ($item) use ($snapshotId): bool {
-                return !is_array($item) || ($item['id'] ?? null) !== $snapshotId;
+                return ($item['id'] ?? null) !== $snapshotId;
             }
         ));
         $index['snapshots'][] = $this->snapshotIndexItem($snapshot);
         usort($index['snapshots'], static function (array $left, array $right): int {
-            return strcmp((string) ($left['generatedAt'] ?? ''), (string) ($right['generatedAt'] ?? ''));
+            $leftGeneratedAt = $left['generatedAt'] ?? '';
+            $rightGeneratedAt = $right['generatedAt'] ?? '';
+
+            return strcmp(
+                is_string($leftGeneratedAt) ? $leftGeneratedAt : '',
+                is_string($rightGeneratedAt) ? $rightGeneratedAt : ''
+            );
         });
         $index['updatedAt'] = date(DATE_ATOM);
         $this->writeJson($this->indexPath(), $index);
@@ -50,8 +57,8 @@ final class ReportHistoryStorage
     {
         $index = $this->readIndex();
         $snapshots = [];
-        foreach ($index['snapshots'] ?? [] as $item) {
-            if (!is_array($item) || empty($item['file']) || !is_string($item['file'])) {
+        foreach ($this->arrayListValue($index, 'snapshots') as $item) {
+            if (empty($item['file']) || !is_string($item['file'])) {
                 continue;
             }
 
@@ -76,20 +83,21 @@ final class ReportHistoryStorage
     private function snapshotIndexItem(array $snapshot): array
     {
         $snapshotId = $this->snapshotId($snapshot);
-        $firstReport = $snapshot['reports'][0] ?? [];
-        $summary = is_array($firstReport) ? ($firstReport['summary'] ?? []) : [];
+        $reports = $this->arrayListValue($snapshot, 'reports');
+        $firstReport = $reports[0] ?? [];
+        $summary = $this->arrayValue($firstReport, 'summary');
 
         return [
             'id' => $snapshotId,
             'generatedAt' => $this->generatedAt($snapshot),
             'file' => 'snapshots/' . $snapshotId . '.json',
             'summary' => [
-                'components' => $summary['components'] ?? 0,
-                'units' => $summary['units'] ?? 0,
-                'dependencies' => $summary['dependencies'] ?? 0,
-                'violations' => $summary['violations'] ?? 0,
-                'activeViolations' => $summary['activeViolations'] ?? 0,
-                'legacy' => $summary['legacy'] ?? [],
+                'components' => $this->intValue($summary, 'components'),
+                'units' => $this->intValue($summary, 'units'),
+                'dependencies' => $this->intValue($summary, 'dependencies'),
+                'violations' => $this->intValue($summary, 'violations'),
+                'activeViolations' => $this->intValue($summary, 'activeViolations'),
+                'legacy' => $this->arrayValue($summary, 'legacy'),
             ],
         ];
     }
@@ -157,7 +165,7 @@ final class ReportHistoryStorage
             throw new \RuntimeException(sprintf('History file "%s" can not be decoded.', $path));
         }
 
-        return $data;
+        return $this->stringKeyedArray($data);
     }
 
     /**
@@ -195,5 +203,66 @@ final class ReportHistoryStorage
         if (!mkdir($path, 0777, true) && !is_dir($path)) {
             throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
         }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function arrayValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+
+        return is_array($value) ? $this->stringKeyedArray($value) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function arrayListValue(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $result[] = $this->stringKeyedArray($item);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function intValue(array $data, string $key): int
+    {
+        $value = $data[$key] ?? 0;
+
+        return is_int($value) ? $value : 0;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

@@ -27,7 +27,7 @@ class TypeClass extends Type
      */
     public static function getInstance(bool $isAbstract = false): Type
     {
-        $uniqueKey = sha1(static::class . $isAbstract);
+        $uniqueKey = sha1(static::class . ($isAbstract ? ':abstract' : ':concrete'));
         if (!isset(self::$instances[$uniqueKey])) {
             self::$instances[$uniqueKey] = new self($isAbstract);
         }

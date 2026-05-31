@@ -74,7 +74,7 @@ class PhpParserSourceUnitDiscovery implements SourceUnitDiscoveryInterface
     {
         foreach ($nodes as $node) {
             if ($node instanceof Stmt\Namespace_) {
-                $nestedNamespace = $node->name ? $node->name->toString() : '';
+                $nestedNamespace = $this->nameToString($node->name);
                 $this->collectSourceUnits($node->stmts, $nestedNamespace, $path, $sourceUnits);
                 continue;
             }
@@ -106,11 +106,12 @@ class PhpParserSourceUnitDiscovery implements SourceUnitDiscoveryInterface
             return null;
         }
 
-        if (!$node->name instanceof Node\Identifier) {
+        $nodeName = $node->name;
+        if (!$nodeName instanceof Node\Identifier) {
             return null;
         }
 
-        $name = $namespace ? $namespace . '\\' . $node->name->toString() : $node->name->toString();
+        $name = $namespace ? $namespace . '\\' . $nodeName->toString() : $nodeName->toString();
         if ($node instanceof Stmt\Interface_) {
             return new SourceUnit($name, $path, SourceUnit::KIND_INTERFACE, true);
         }
@@ -125,5 +126,10 @@ class PhpParserSourceUnitDiscovery implements SourceUnitDiscoveryInterface
         }
 
         return new SourceUnit($name, $path, SourceUnit::KIND_CLASS, $node->isAbstract());
+    }
+
+    private function nameToString(?\PhpParser\Node\Name $name): string
+    {
+        return $name instanceof \PhpParser\Node\Name ? $name->toString() : '';
     }
 }

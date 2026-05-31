@@ -28,7 +28,7 @@ class Restrictions
     /** @var bool */
     private $isAllowedStateEnabled = false;
 
-    /** @var array<string, array<string, array<string, array<string, bool>>>> */
+    /** @var array<string, array<string, array<string, bool>>> */
     private $allowedState;
 
     /**
@@ -36,7 +36,7 @@ class Restrictions
      * @param array<Path> $privatePaths
      * @param array<Component> $allowedDependencyComponents
      * @param array<Component> $forbiddenDependencyComponents
-     * @param array<string, array<string, array<string, array<string, bool>>>> $allowedState
+     * @param array<string, array<string, array<string, bool>>> $allowedState
      * @param float|null $maxAllowableDistance
      */
     public function __construct(
@@ -164,7 +164,7 @@ class Restrictions
     }
 
     /**
-     * @param array<string, array<string, array<string, array<string, bool>>>> $allowedState
+     * @param array<string, array<string, array<string, bool>>> $allowedState
      * @return Restrictions
      */
     public function setAllowedState(array $allowedState): Restrictions

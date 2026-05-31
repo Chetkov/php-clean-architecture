@@ -18,7 +18,8 @@
     "require-dev": {
         "phpstan/phpstan": "^2.1",
         "squizlabs/php_codesniffer": "^3.6",
-        "phpunit/phpunit": "^12"
+        "phpunit/phpunit": "^12",
+        "phan/phan": "^5.5"
     },
     "autoload": {
         "psr-4": {
@@ -40,12 +41,14 @@
         "php-linter": "php -l bin && php -l src",
         "test": "vendor/bin/phpunit",
         "code-sniffer": "vendor/bin/phpcs bin src tests",
-        "phpstan": "php -d memory_limit=512M vendor/bin/phpstan analyse -l 8 bin src tests",
+        "phpstan": "php -d memory_limit=1024M vendor/bin/phpstan analyse --configuration=phpstan.neon --error-format=table --no-progress",
+        "phan": "vendor/bin/phan --config-file .phan/config.php --no-progress-bar --allow-polyfill-parser",
         "php-clean-architecture": "bin/phpca-check ./phpca-config.php",
         "quality-checker": [
             "@php-linter",
             "@code-sniffer",
             "@phpstan",
+            "@phan",
             "@php-clean-architecture"
         ]
     }

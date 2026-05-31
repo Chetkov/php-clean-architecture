@@ -20,9 +20,10 @@ final class ReportDataBuilder
     public function build(Component ...$components): array
     {
         $enabledComponents = $this->enabledComponents(...$components);
-        $enabledComponentIds = array_flip(array_map(function (Component $component): string {
-            return $this->componentId($component);
-        }, $enabledComponents));
+        $enabledComponentIds = [];
+        foreach ($enabledComponents as $component) {
+            $enabledComponentIds[$this->componentId($component)] = 1;
+        }
         $units = [];
         $externalUnits = [];
         $externalComponents = [];
@@ -289,10 +290,7 @@ final class ReportDataBuilder
             ];
         }
 
-        $componentEdges[$edgeId]['weight']++;
-        $componentEdges[$edgeId]['sourceUnitIds'][$dependencyFacts['fromUnitId']] = true;
-        $componentEdges[$edgeId]['targetUnitIds'][$dependencyFacts['toUnitId']] = true;
-        $componentEdges[$edgeId]['counts'][$dependencyFacts['status']]++;
+        $componentEdges[$edgeId] = $this->incrementComponentEdge($componentEdges[$edgeId], $dependencyFacts);
     }
 
     /**
@@ -302,20 +300,73 @@ final class ReportDataBuilder
      */
     private function componentEdgeData(array $componentEdges): array
     {
-        return array_values(array_map(function (array $edge): array {
-            $counts = $edge['counts'];
+        $result = [];
+        foreach ($componentEdges as $edge) {
+            $counts = $this->dependencyStatusCounts($edge['counts'] ?? []);
+            $sourceUnitIds = is_array($edge['sourceUnitIds'] ?? null) ? $edge['sourceUnitIds'] : [];
+            $targetUnitIds = is_array($edge['targetUnitIds'] ?? null) ? $edge['targetUnitIds'] : [];
 
-            return [
-                'id' => $edge['id'],
-                'fromComponentId' => $edge['fromComponentId'],
-                'toComponentId' => $edge['toComponentId'],
-                'weight' => $edge['weight'],
-                'sourceUnitCount' => count($edge['sourceUnitIds']),
-                'targetUnitCount' => count($edge['targetUnitIds']),
+            $result[] = [
+                'id' => $this->stringValue($edge, 'id') ?? '',
+                'fromComponentId' => $this->stringValue($edge, 'fromComponentId') ?? '',
+                'toComponentId' => $this->stringValue($edge, 'toComponentId') ?? '',
+                'weight' => $this->intValue($edge, 'weight'),
+                'sourceUnitCount' => count($sourceUnitIds),
+                'targetUnitCount' => count($targetUnitIds),
                 'counts' => $counts,
                 'status' => $this->worstDependencyStatus($counts),
             ];
-        }, $componentEdges));
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $edge
+     * @param array{fromComponentId: string, toComponentId: string, fromUnitId: string, toUnitId: string, status: string} $dependencyFacts
+     *
+     * @return array<string, mixed>
+     */
+    private function incrementComponentEdge(array $edge, array $dependencyFacts): array
+    {
+        $counts = $this->dependencyStatusCounts($edge['counts'] ?? []);
+        $status = $dependencyFacts['status'];
+        if (array_key_exists($status, $counts)) {
+            $counts[$status]++;
+        }
+
+        $sourceUnitIds = is_array($edge['sourceUnitIds'] ?? null) ? $edge['sourceUnitIds'] : [];
+        $targetUnitIds = is_array($edge['targetUnitIds'] ?? null) ? $edge['targetUnitIds'] : [];
+        $sourceUnitIds[$dependencyFacts['fromUnitId']] = true;
+        $targetUnitIds[$dependencyFacts['toUnitId']] = true;
+
+        $edge['weight'] = $this->intValue($edge, 'weight') + 1;
+        $edge['sourceUnitIds'] = $sourceUnitIds;
+        $edge['targetUnitIds'] = $targetUnitIds;
+        $edge['counts'] = $counts;
+
+        return $edge;
+    }
+
+    /**
+     * @param mixed $counts
+     *
+     * @return array{allowed: int, allowedState: int, blocked: int, internal: int, private: int}
+     */
+    private function dependencyStatusCounts($counts): array
+    {
+        if (!is_array($counts)) {
+            $counts = [];
+        }
+        $counts = $this->stringKeyedArray($counts);
+
+        return [
+            'allowed' => $this->intValue($counts, 'allowed'),
+            'allowedState' => $this->intValue($counts, 'allowedState'),
+            'blocked' => $this->intValue($counts, 'blocked'),
+            'internal' => $this->intValue($counts, 'internal'),
+            'private' => $this->intValue($counts, 'private'),
+        ];
     }
 
     private function dependencyCountKey(
@@ -498,18 +549,16 @@ final class ReportDataBuilder
         $modernUnits = $totalUnits - $legacyUnits;
         $files = [];
         foreach ($units as $index => $unit) {
-            $path = null;
-            $isLegacy = false;
-            $linesOfCode = 0;
-
             if ($unit instanceof UnitOfCode) {
                 $path = $unit->path();
                 $isLegacy = $unit->isLegacy();
                 $linesOfCode = $unit->linesOfCode();
             } else {
-                $path = $unit['path'] ?? null;
+                $pathValue = $unit['path'] ?? null;
+                $path = is_string($pathValue) && $pathValue !== '' ? $pathValue : null;
                 $isLegacy = !empty($unit['isLegacy']);
-                $linesOfCode = (int) ($unit['linesOfCode'] ?? 0);
+                $linesOfCodeValue = $unit['linesOfCode'] ?? 0;
+                $linesOfCode = is_int($linesOfCodeValue) ? $linesOfCodeValue : 0;
             }
 
             $key = $path ? 'path:' . $path : 'unit:' . (string) $index;
@@ -521,8 +570,13 @@ final class ReportDataBuilder
                 continue;
             }
 
-            $files[$key]['isLegacy'] = $files[$key]['isLegacy'] || $isLegacy;
-            $files[$key]['linesOfCode'] = max($files[$key]['linesOfCode'], max(0, $linesOfCode));
+            $existingIsLegacy = $files[$key]['isLegacy'];
+            $existingLinesOfCode = $files[$key]['linesOfCode'];
+            $files[$key]['isLegacy'] = $existingIsLegacy === true || $isLegacy;
+            $files[$key]['linesOfCode'] = max(
+                $existingLinesOfCode,
+                max(0, $linesOfCode)
+            );
         }
 
         $totalLinesOfCode = array_sum(array_column($files, 'linesOfCode'));
@@ -546,5 +600,42 @@ final class ReportDataBuilder
     private function generateUid(string $name): string
     {
         return strtolower((string) preg_replace('/[ \/\\\]/', '-', $name));
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function stringValue(array $data, string $key): ?string
+    {
+        $value = $data[$key] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function intValue(array $data, string $key): int
+    {
+        $value = $data[$key] ?? 0;
+
+        return is_int($value) ? $value : 0;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

@@ -10,7 +10,6 @@ use Chetkov\PHPCleanArchitecture\Service\Analysis\Event\FileAnalyzedEvent;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\SourceDiscovery\PhpParserSourceUnitDiscovery;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\SourceDiscovery\SourceUnitDiscoveryInterface;
 use Chetkov\PHPCleanArchitecture\Service\EventManagerInterface;
-use Chetkov\PHPCleanArchitecture\Model\Path;
 use Chetkov\PHPCleanArchitecture\Model\UnitOfCode;
 use Chetkov\PHPCleanArchitecture\Service\Analysis\DependenciesFinder\DependenciesFinderInterface;
 
