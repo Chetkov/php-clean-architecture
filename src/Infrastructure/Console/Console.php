@@ -6,12 +6,24 @@ namespace Chetkov\PHPCleanArchitecture\Infrastructure\Console;
 
 class Console
 {
+    private const DEFAULT_TERMINAL_WIDTH = 120;
+
     /**
      * @return int
      */
     public static function getTerminalWidth(): int
     {
-        return (int) shell_exec("tput cols");
+        $columns = getenv('COLUMNS');
+        if (is_string($columns) && ctype_digit($columns) && (int) $columns > 0) {
+            return (int) $columns;
+        }
+
+        $width = @shell_exec('command -v tput >/dev/null 2>&1 && tput cols 2>/dev/null');
+        if (is_string($width) && ctype_digit(trim($width)) && (int) trim($width) > 0) {
+            return (int) trim($width);
+        }
+
+        return self::DEFAULT_TERMINAL_WIDTH;
     }
 
     /**
